@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Book Visualizer — Paragraph Blocks</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#0f1830; --text:#e9eef9; --muted:#9fb3d2;
+    --chip:#1a2746; --border:#233357; --accent:#5ac8fa; --accent-2:#2ea0f4;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f7f9fd; --panel:#ffffff; --text:#0b1220; --muted:#5a6b85; --chip:#eef3fc; --border:#dfe7f5; --accent:#2ea0f4; --accent-2:#5ac8fa }
+  }
+  *{ box-sizing:border-box }
+  html,body{ height:100% }
+  body{ margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial }
+
+  /* Sticky search bar */
+  .searchbar{
+    position:sticky; top:0; z-index:10; display:flex; gap:.6rem; align-items:center; padding:.6rem .8rem;
+    background:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,0)), var(--panel);
+    border-bottom:1px solid var(--border); backdrop-filter:saturate(140%) blur(8px);
+  }
+  .input{
+    flex:1; display:flex; align-items:center; gap:.5rem; background:var(--chip); border:1px solid var(--border);
+    border-radius:.7rem; padding:.5rem .7rem; color:var(--text);
+  }
+  .input input{
+    flex:1; background:transparent; border:none; outline:none; color:inherit; font:inherit;
+  }
+  .badge{ color:var(--muted); font-size:.9rem }
+  .btn{ appearance:none; border:1px solid var(--border); background:var(--panel); color:var(--text);
+        padding:.45rem .7rem; border-radius:.7rem; cursor:pointer; font-weight:600 }
+
+  main{ padding:.8rem }
+  #viz{
+    width:100%;
+    height: 90dvh;                /* <= fit within 90% of the screen height */
+    border:1px solid var(--border);
+    border-radius:1rem;
+    display:block;
+    background:radial-gradient(1200px 700px at 30% -10%, rgba(90,200,250,.08), transparent), var(--panel);
+  }
+
+  /* Overlay with full text; paragraphs inline, wrapping; no horizontal scroll */
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; transform:translateY(100%); transition:transform .32s ease;
+    background:var(--panel); border-top:1px solid var(--border); border-radius:1rem 1rem 0 0; max-height:80dvh;
+    box-shadow:0 -20px 40px rgba(0,0,0,.25); z-index:30; display:flex; flex-direction:column
+  }
+  .sheet.open{ transform:translateY(0) }
+  .sheet-head{
+    position:sticky; top:0; z-index:1;
+    display:flex; align-items:center; gap:.6rem; padding:.7rem .9rem; border-bottom:1px solid var(--border);
+    background: var(--panel);
+  }
+  .sheet-title{ font-weight:600 }
+  .close{ margin-left:auto; appearance:none; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:.6rem; padding:.35rem .6rem; cursor:pointer }
+  .sheet-body{ padding:.8rem .9rem; overflow:auto; line-height:1.55 }
+  /* Each paragraph is inline so they appear continuous; wrap naturally; no horizontal scrolling */
+  .p{
+    display:inline;              /* inline flow */
+    white-space:normal;          /* wrap like normal text */
+    word-break:break-word;       /* allow breaks inside long tokens */
+    overflow-wrap:anywhere;      /* wrap anywhere if needed */
+  }
+  /* soft space between inline paragraphs to avoid jammed words */
+  .p + .p::before{ content:" "; }
+
+  .p.highlight{ outline:2px solid var(--accent); border-radius:.25rem; padding:.05rem .1rem; scroll-margin-top:72px; background:rgba(90,200,250,.08) }
+  mark{ background:rgba(90,200,250,.35); color:inherit; padding:0 .08em; border-radius:.2em }
+
+  /* Tooltip */
+  .tooltip{
+    position:fixed; pointer-events:none; background:rgba(0,0,0,.75); color:#fff;
+    padding:.28rem .45rem; border-radius:.35rem; font-size:.8rem; transform:translate(-50%, calc(-100% - 8px));
+    white-space:nowrap; opacity:0; transition:opacity .12s ease; z-index:50
+  }
+</style>
+</head>
+<body>
+
+  <!-- Sticky search bar -->
+  <div class="searchbar">
+    <div class="input">
+      <span aria-hidden="true">🔎</span>
+      <input id="search" type="text" placeholder="Search text — highlights matching paragraphs (Esc to clear)"/>
+    </div>
+    <button class="btn" id="clear">Clear</button>
+    <div class="badge" id="stats">Loading…</div>
+  </div>
+
+  <main>
+    <svg id="viz" role="img" aria-label="Paragraph blocks" tabindex="0"></svg>
+  </main>
+
+  <!-- Full text overlay -->
+  <div class="sheet" id="sheet" aria-modal="true" role="dialog">
+    <div class="sheet-head">
+      <div class="sheet-title" id="sheet-title">Book Text</div>
+      <button type="button" class="close" id="close-btn">Close</button>
+    </div>
+    <div class="sheet-body" id="sheet-body"></div>
+  </div>
+
+  <div class="tooltip" id="tip"></div>
+
+<script>
+/* ---------- Config: data sources ---------- */
+const JSON_URL = "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/hhgttg_word_index.json";
+const TXT_URL  = "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/Hitchhiker%20Guide%20to%20the%20Galaxy.txt";
+
+/* ---------- UI refs ---------- */
+const svg = document.getElementById('viz');
+const tip = document.getElementById('tip');
+const stats = document.getElementById('stats');
+const sheet = document.getElementById('sheet');
+const sheetBody = document.getElementById('sheet-body');
+const closeBtn = document.getElementById('close-btn');
+const searchInput = document.getElementById('search');
+const clearBtn = document.getElementById('clear');
+
+/* ---------- Color word map & helpers ---------- */
+/* ---------- Color dictionary + robust detector ---------- */
+
+// Canonical single-word color keys (you can extend freely)
+const COLOR_MAP = {
+  red:'#ef4444', crimson:'#dc2626', scarlet:'#f43f5e', maroon:'#7f1d1d',
+  blue:'#3b82f6', navy:'#1e3a8a', azure:'#0ea5e9', cyan:'#06b6d4', teal:'#0d9488',
+  green:'#22c55e', lime:'#84cc16', olive:'#4d7c0f',
+  yellow:'#eab308', gold:'#f59e0b', amber:'#f59e0b',
+  orange:'#fb923c', coral:'#fb7185', peach:'#fdba74',
+  purple:'#a855f7', violet:'#8b5cf6', indigo:'#6366f1', magenta:'#ec4899', pink:'#f472b6', lavender:'#c4b5fd',
+  brown:'#a16207', beige:'#f5f5dc', tan:'#d2b48c',
+  black:'#111827', white:'#e5e7eb', gray:'#6b7280', grey:'#6b7280', silver:'#9ca3af'
+};
+
+// Build one big regex that catches:
+// - exact words
+// - “-ish” suffix (reddish → red)
+// - hyphen/slash combos (blue-green, silver/gray → both counted)
+// - case-insensitive
+const CANON_KEYS = Object.keys(COLOR_MAP).map(k => k === 'grey' ? 'gray' : k); // normalize grey→gray
+
+const COLOR_TOKEN = CANON_KEYS
+  .sort((a,b)=> b.length-a.length)             // longer first, safer matching
+  .map(k => k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'))
+  .join('|');
+
+const COLOR_REGEX = new RegExp(
+  // capture tokens possibly connected by - or /
+  `\\b((?:${COLOR_TOKEN})(?:-ish)?)\\b(?:[\\-/]((?:${COLOR_TOKEN})(?:-ish)?))?`,
+  'gi'
+);
+
+// Normalize a matched token to canonical key
+function normalizeColorTokenLoose(tok){
+  if(!tok) return null;
+  let t = tok.toLowerCase();
+  t = t.replace(/[^a-z]/g,'');     // strip hyphen/slash in this unit
+  if (t.endsWith('ish') && t.length>4) t = t.slice(0,-3); // reddish -> red
+  if (t === 'grey') t = 'gray';
+  return CANON_KEYS.includes(t) ? t : null;
+}
+
+// Detect colors in raw paragraph text; returns array [{key, hex, count}] sorted by count desc
+function detectColorsInText(raw){
+  const counts = new Map();
+  let m;
+  while ((m = COLOR_REGEX.exec(raw)) !== null){
+    const a = normalizeColorTokenLoose(m[1]);
+    const b = normalizeColorTokenLoose(m[2]); // from hyphen/slash pair, if present
+    if (a){ counts.set(a, (counts.get(a)||0)+1); }
+    if (b){ counts.set(b, (counts.get(b)||0)+1); }
+  }
+  // fold 'grey' into 'gray' already handled; map to array
+  const arr = Array.from(counts.entries())
+    .map(([key,count])=> ({ key, count, hex: COLOR_MAP[key] }))
+    .sort((x,y)=> y.count - x.count);
+
+  return arr; // possibly empty
+}
+
+
+/* ---------- SVG helpers ---------- */
+function elt(tag, attrs={}){ const e=document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+function rect(x,y,w,h,r,fill){ return elt('rect',{x,y,width:w,height:h,rx:r||0,ry:r||0,fill}); }
+function clearSVG(){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+
+/* ---------- String helpers ---------- */
+function escapeHtml(s){ return s.replace(/[&<>]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+/* ---------- Data holders ---------- */
+let model=null; // { text, chapters:[{idx, weight, paras:[{idx,start,end,len,wordCount,colorHex,colorKey,textLower}] }], totalWeight, paragraphsText:[] }
+let fullTextBuilt=false;
+let currentQuery = "";
+
+/* ---------- Build chapter->paragraph structure and precompute spans ---------- */
+function buildModel(rows, text){
+  const byPara=new Map();
+  for (const r of rows){
+    const arr = byPara.get(r.paragraph_idx) || [];
+    arr.push(r); byPara.set(r.paragraph_idx, arr);
+  }
+
+  const paras=[];
+  byPara.forEach((list, pid)=>{
+    list.sort((a,b)=> a.start_char - b.start_char);
+    const start=list[0]?.start_char ?? 0;
+    const last=list[list.length-1]; const end= last ? last.start_char + (last.word?.length||0) : start;
+    const chapter_idx = list[0]?.chapter_idx ?? 0;
+
+    const paraText = text.slice(start, end);
+    const colors = detectColorsInText(paraText);       // <-- NEW: robust color detection in full text
+    const colorPrimary = colors[0]?.key || null;
+
+    paras.push({
+      idx:+pid, chapter_idx, start, end, len:end-start, wordCount:list.length,
+      colors,                         // [{key, hex, count}, ...]
+      colorPrimary,                   // top color key or null
+      colorHex: colors[0]?.hex || null,
+      textLower: paraText.toLowerCase()
+    });
+  });
+
+  paras.sort((a,b)=> a.idx - b.idx);
+
+  // group by chapter
+  const byChapter=new Map();
+  for (const p of paras){
+    if (!byChapter.has(p.chapter_idx)) byChapter.set(p.chapter_idx, []);
+    byChapter.get(p.chapter_idx).push(p);
+  }
+  const chapters=[]; let totalWeight=0;
+  byChapter.forEach((arr, ci)=>{
+    const weight = arr.reduce((s,p)=> s+p.len, 0); totalWeight += weight;
+    chapters.push({ idx:ci, weight, paras:arr });
+  });
+  chapters.sort((a,b)=> a.idx-b.idx);
+
+  // lookups for overlay
+  const paraTextByIdx = {};
+  for (const p of paras){ paraTextByIdx[p.idx] = text.slice(p.start, p.end); }
+
+  return { text, paras, paraTextByIdx, chapters, totalWeight: Math.max(1,totalWeight) };
+}
+
+
+
+/* ---------- Search match flags for current query ---------- */
+function computeMatches(q){
+  const needle = q.trim().toLowerCase();
+  for (const ch of model.chapters){
+    for (const p of ch.paras){
+      p._match = needle ? p.textLower.includes(needle) : false;
+    }
+  }
+}
+
+/* ---------- Render: rows per chapter (height ∝ chapter text), paragraph widths ∝ paragraph text ---------- */
+function render(){
+  if (!model) return;
+  clearSVG();
+
+  const bbox = svg.getBoundingClientRect();
+  const W = Math.max(320, bbox.width);
+  const H = Math.max(200, bbox.height);
+
+  const padX = 10, padY = 10;
+  const rowGap = 8;
+  const blockGap = 2;
+  const minRow = 18;
+
+  const nCh = model.chapters.length;
+  const Hpad = Math.max(0, H - padY*2 - rowGap*Math.max(0, nCh-1));
+
+  // two-pass height allocation (fits all rows)
+  let leftover = Hpad - nCh * minRow;
+  if (leftover < 0) leftover = 0;
+  const totalW = model.chapters.reduce((s,ch)=> s + ch.weight, 0) || 1;
+  const heights = model.chapters.map(ch => minRow + Math.floor(leftover * (ch.weight / totalW)));
+  let sumH = heights.reduce((a,b)=> a+b, 0);
+  let diff = Hpad - sumH, k=0;
+  while (diff !== 0 && k < heights.length * 2){
+    const i = k % heights.length;
+    const delta = diff > 0 ? 1 : -1;
+    if (delta < 0 && heights[i] <= minRow){ k++; continue; }
+    heights[i] += delta; diff -= delta; k++;
+  }
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  // defs for gradients
+  const defs = elt('defs'); svg.appendChild(defs);
+  function ensureGradientForParagraph(p){
+    // return fill string either 'url(#gid)' or solid hex
+    const colors = p.colors || [];
+    if (colors.length === 0) return null;
+    if (colors.length === 1) return colors[0].hex;
+
+    // limit to top N colors to keep defs small
+    const top = colors.slice(0, 6);
+    const totalCount = top.reduce((s,c)=> s + c.count, 0) || 1;
+
+    const gid = `grad-${p.idx}`;
+    // create gradient only once
+    if (!document.getElementById(gid)){
+      const lg = elt('linearGradient', { id: gid, x1: '0%', y1: '0%', x2: '100%', y2: '0%' });
+      let acc = 0;
+      top.forEach((c, i)=>{
+        const share = c.count / totalCount;
+        const start = (acc * 100).toFixed(2) + '%';
+        const end   = ((acc + share) * 100).toFixed(2) + '%';
+        const stop1 = elt('stop', { offset: start, 'stop-color': c.hex });
+        const stop2 = elt('stop', { offset: end,   'stop-color': c.hex });
+        lg.appendChild(stop1); lg.appendChild(stop2);
+        acc += share;
+      });
+      defs.appendChild(lg);
+    }
+    return `url(#${gid})`;
+  }
+
+  // cover to hide tooltip on empty space
+  const cover = rect(0, 0, W, H, 0, 'transparent');
+  cover.addEventListener('pointerenter', () => tip.style.opacity = 0);
+  svg.appendChild(cover);
+
+  // draw
+  let y = padY;
+  const chapterWidth = W - padX*2;
+
+  model.chapters.forEach((ch, ci) => {
+    const h = heights[ci];
+    const g = elt('g', { transform: `translate(${padX},${y})` }); svg.appendChild(g);
+
+    const bg = rect(0,0,chapterWidth,h,8,'rgba(255,255,255,0.02)');
+    bg.style.stroke = 'var(--border)'; bg.style.strokeWidth = '0.6';
+    g.appendChild(bg);
+
+    const chapTotal = ch.paras.reduce((s,p)=> s+p.len, 0) || 1;
+
+    let x = 0;
+    ch.paras.forEach((p, pi)=>{
+      const rawW = chapterWidth * (p.len / chapTotal);
+      const w = (pi === ch.paras.length - 1) ? (chapterWidth - x) : Math.max(1, Math.round(rawW));
+
+      const fill = (p.colors && p.colors.length >= 2)
+        ? ensureGradientForParagraph(p)
+        : (p.colorHex || 'rgba(255,255,255,.06)');
+
+      const r = rect(
+        x + (pi ? blockGap : blockGap),
+        blockGap,
+        Math.max(1, w - blockGap*2),
+        Math.max(1, h - blockGap*2),
+        6,
+        fill || 'rgba(255,255,255,.06)'
+      );
+
+      // Search highlighting
+      const isQuery = currentQuery.trim().length > 0;
+      const matched = !!p._match;
+      if (isQuery){
+        r.style.stroke = matched ? 'var(--accent)' : 'var(--border)';
+        r.style.strokeWidth = matched ? '1.5' : '0.6';
+        r.style.opacity = matched ? '1' : '0.45';
+      } else {
+        r.style.stroke = 'var(--border)';
+        r.style.strokeWidth = '0.6';
+        r.style.opacity = '1';
+      }
+
+      // Tooltip lists ALL detected colors
+      r.addEventListener('pointerenter', (e)=>{
+        const colorTxt = (p.colors && p.colors.length)
+            ? 'colors: ' + p.colors.map(c=>c.key).join(', ')
+            : null;
+        const pieces = [
+          `Para ${p.idx+1}`,
+          `${p.wordCount} words`,
+          colorTxt,
+          matched ? `matches "${currentQuery.trim()}"` : null
+        ].filter(Boolean);
+        tip.textContent = pieces.join(' · ');
+        tip.style.left = e.clientX + 'px';
+        tip.style.top  = e.clientY + 'px';
+        tip.style.opacity = 1;
+      });
+      r.addEventListener('pointerleave', ()=> tip.style.opacity = 0);
+
+      r.addEventListener('click', ()=> openOverlayScrollTo(p.idx));
+
+      g.appendChild(r);
+      x += w;
+    });
+
+    y += h + rowGap;
+  });
+}
+
+
+
+/* ---------- Overlay text build (inline paragraphs) & match highlighting ---------- */
+function ensureFullText(){
+  if (fullTextBuilt) return;
+  sheetBody.innerHTML = '';
+  const frag = document.createDocumentFragment();
+
+  // Use the flat `model.paras` so we render in true paragraph_idx order,
+  // and give each element id="p-<paragraph_idx>"
+  for (const p of model.paras){
+    const el = document.createElement('span');   // inline flow
+    el.className = 'p';
+    el.id = 'p-' + p.idx;
+    el.textContent = model.paraTextByIdx[p.idx] || '';
+    frag.appendChild(el);
+  }
+  sheetBody.appendChild(frag);
+  fullTextBuilt = true;
+}
+
+
+/* Highlight only the token: if search query exists, highlight it;
+   otherwise (empty query) highlight the detected color word for that paragraph (if any). */
+function highlightOverlayTokens(q){
+  if (!fullTextBuilt) return;
+  const hasQuery = !!q.trim();
+  const queryRegex = hasQuery ? new RegExp(`\\b${escapeRegExp(q.trim())}\\b`, 'gi') : null;
+
+  for (const el of sheetBody.querySelectorAll('.p')){
+    const idx = +el.id.slice(2);           // paragraph_idx from id="p-<idx>"
+    const raw = model.paraTextByIdx[idx] || '';
+    let html = escapeHtml(raw);
+
+    if (hasQuery){
+      html = html.replace(queryRegex, m => `<mark>${escapeHtml(m)}</mark>`);
+    } else {
+      // highlight color word when there is no query
+      // find paragraph to read colorKey
+      let colorKey = null;
+      // Optional fast path: you can keep a small map idx->colorKey if desired
+      for (const ch of model.chapters){
+        const found = ch.paras.find(p => p.idx === idx);
+        if (found){ colorKey = found.colorKey || null; break; }
+      }
+      if (colorKey){
+        const colorRegex = new RegExp(`\\b${escapeRegExp(colorKey)}\\b`, 'gi');
+        html = html.replace(colorRegex, m => `<mark>${escapeHtml(m)}</mark>`);
+      }
+    }
+
+    el.innerHTML = html;
+  }
+}
+
+
+function openOverlayScrollTo(paragraphIdx){
+  ensureFullText();
+  highlightOverlayTokens(currentQuery);
+  sheet.classList.add('open');
+
+  const prev = sheetBody.querySelector('.p.highlight');
+  if (prev) prev.classList.remove('highlight');
+
+  const target = document.getElementById('p-'+paragraphIdx);
+  if (target){
+    target.classList.add('highlight');
+    setTimeout(()=> target.scrollIntoView({behavior:'smooth', block:'start'}), 40);
+  }
+}
+
+
+/* ---------- Search handlers (close overlay on update) ---------- */
+function applySearch(q){
+  currentQuery = q || "";
+  computeMatches(currentQuery);
+  render();
+
+  // Close overlay whenever the search string changes
+  if (sheet.classList.contains('open')) closeSheet();
+}
+searchInput.addEventListener('input', (e)=> applySearch(e.target.value));
+clearBtn.addEventListener('click', ()=>{
+  searchInput.value = "";
+  applySearch("");
+  searchInput.focus();
+});
+window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape'){ searchInput.value=""; applySearch(""); }});
+
+/* ---------- Overlay close (button, backdrop, Escape) ---------- */
+function closeSheet(){ sheet.classList.remove('open'); }
+closeBtn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); closeSheet(); });
+sheet.addEventListener('click', (e)=>{ if (e.target === sheet) closeSheet(); });
+document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && sheet.classList.contains('open')) closeSheet(); });
+
+/* ---------- Double-click in overlay: set search to selected word (also closes overlay via applySearch) ---------- */
+sheetBody.addEventListener('dblclick', ()=>{
+  const sel = (window.getSelection && window.getSelection().toString()) || "";
+  const word = sel.trim();
+  if (word){
+    searchInput.value = word;
+    applySearch(word); // closes overlay as required
+  }
+});
+
+/* ---------- Tooltip follow ---------- */
+window.addEventListener('pointermove', (e)=>{ if (tip.style.opacity>0){ tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; } });
+
+/* ---------- Re-render on resize ---------- */
+new ResizeObserver(()=> render()).observe(svg);
+
+/* ---------- Init: fetch JSON + TXT, validate, build, render ---------- */
+(async function init(){
+  try{
+    const [rowsResp, txtResp] = await Promise.all([
+      fetch(JSON_URL, {cache:'no-store'}), fetch(TXT_URL, {cache:'no-store'})
+    ]);
+    if (!rowsResp.ok) throw new Error('Failed to load JSON');
+    if (!txtResp.ok) throw new Error('Failed to load TXT');
+    const rows = await rowsResp.json();
+    const text = await txtResp.text();
+    const ok = Array.isArray(rows) && (rows.length===0 || ['word_idx','start_char','word','paragraph_idx','chapter_idx'].every(k=> k in rows[0]));
+    if (!ok) throw new Error('Unexpected JSON shape');
+
+    model = buildModel(rows, text);
+    stats.textContent = `Loaded: ${model.chapters.length} ch · ${model.chapters.reduce((s,ch)=>s+ch.paras.length,0)} paras`;
+    computeMatches(""); // initialize
+    render();
+  } catch(err){
+    console.error(err);
+    stats.textContent = 'Load error';
+    alert('Failed to load sources: ' + err.message);
+  }
+})();
+</script>
+</body>
+</html>
