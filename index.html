@@ -115,8 +115,20 @@
 
 <script>
 /* ---------- Config: data sources ---------- */
-const JSON_URL = "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/hhgttg_word_index.json";
-const TXT_URL  = "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/Hitchhiker%20Guide%20to%20the%20Galaxy.txt";
+const urlParams = new URLSearchParams(window.location.search);
+const book = urlParams.get("book");
+
+let JSON_URL, TXT_URL;
+
+if (book) {
+  const BASE = "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/"+ book+ "/";
+  JSON_URL = BASE + "hhgttg_word_index.json";
+  TXT_URL  = BASE + "book.txt";
+} else {
+  // Fallback: original Hitchhiker's Guide defaults
+  JSON_URL = "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/hhgttg_word_index.json";
+  TXT_URL  = "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/Hitchhiker%20Guide%20to%20the%20Galaxy.txt";
+}
 
 /* ---------- UI refs ---------- */
 const svg = document.getElementById('viz');
@@ -541,6 +553,17 @@ new ResizeObserver(()=> render()).observe(svg);
     model = buildModel(rows, text);
     stats.textContent = `Loaded: ${model.chapters.length} ch · ${model.chapters.reduce((s,ch)=>s+ch.paras.length,0)} paras`;
     computeMatches("");
+
+    const initialSearch = urlParams.get("search") || "";
+if (initialSearch) {
+  searchInput.value = initialSearch;
+  applySearch(initialSearch);
+
+    // turn on filter-only mode
+  filterOnly = true;
+  filterToggle.setAttribute('aria-pressed', 'true');
+}
+
     render();
   } catch(err){
     console.error(err);
