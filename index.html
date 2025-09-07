@@ -32,11 +32,19 @@
   .badge{ color:var(--muted); font-size:.9rem }
   .btn{ appearance:none; border:1px solid var(--border); background:var(--panel); color:var(--text);
         padding:.45rem .7rem; border-radius:.7rem; cursor:pointer; font-weight:600 }
+  /* Toggle pill */
+  .toggle{
+    appearance:none; border:1px solid var(--border); background:var(--panel); color:var(--text);
+    padding:.45rem .7rem; border-radius:999px; cursor:pointer; font-weight:600;
+  }
+  .toggle[aria-pressed="true"]{
+    background: var(--accent); color:#03223a; border-color: transparent;
+  }
 
   main{ padding:.8rem }
   #viz{
     width:100%;
-    height: 90dvh;                /* <= fit within 90% of the screen height */
+    height: 90dvh;                /* fit within 90% of the screen height */
     border:1px solid var(--border);
     border-radius:1rem;
     display:block;
@@ -60,14 +68,12 @@
   .sheet-body{ padding:.8rem .9rem; overflow:auto; line-height:1.55 }
   /* Each paragraph is inline so they appear continuous; wrap naturally; no horizontal scrolling */
   .p{
-    display:inline;              /* inline flow */
-    white-space:normal;          /* wrap like normal text */
-    word-break:break-word;       /* allow breaks inside long tokens */
-    overflow-wrap:anywhere;      /* wrap anywhere if needed */
+    display:inline;
+    white-space:normal;
+    word-break:break-word;
+    overflow-wrap:anywhere;
   }
-  /* soft space between inline paragraphs to avoid jammed words */
   .p + .p::before{ content:" "; }
-
   .p.highlight{ outline:2px solid var(--accent); border-radius:.25rem; padding:.05rem .1rem; scroll-margin-top:72px; background:rgba(90,200,250,.08) }
   mark{ background:rgba(90,200,250,.35); color:inherit; padding:0 .08em; border-radius:.2em }
 
@@ -88,6 +94,7 @@
       <input id="search" type="text" placeholder="Search text — highlights matching paragraphs (Esc to clear)"/>
     </div>
     <button class="btn" id="clear">Clear</button>
+    <button class="toggle" id="filter-toggle" aria-pressed="false" title="When on: show only colored paragraphs, or only matches if searching">Show Filtered Only</button>
     <div class="badge" id="stats">Loading…</div>
   </div>
 
@@ -120,11 +127,15 @@ const sheetBody = document.getElementById('sheet-body');
 const closeBtn = document.getElementById('close-btn');
 const searchInput = document.getElementById('search');
 const clearBtn = document.getElementById('clear');
+const filterToggle = document.getElementById('filter-toggle');
 
-/* ---------- Color word map & helpers ---------- */
+/* ---------- State ---------- */
+let filterOnly = false;     // toggle state: show only filtered (color/matches) when true
+let model=null;
+let fullTextBuilt=false;
+let currentQuery = "";
+
 /* ---------- Color dictionary + robust detector ---------- */
-
-// Canonical single-word color keys (you can extend freely)
 const COLOR_MAP = {
   red:'#ef4444', crimson:'#dc2626', scarlet:'#f43f5e', maroon:'#7f1d1d',
   blue:'#3b82f6', navy:'#1e3a8a', azure:'#0ea5e9', cyan:'#06b6d4', teal:'#0d9488',
@@ -135,53 +146,33 @@ const COLOR_MAP = {
   brown:'#a16207', beige:'#f5f5dc', tan:'#d2b48c',
   black:'#111827', white:'#e5e7eb', gray:'#6b7280', grey:'#6b7280', silver:'#9ca3af'
 };
-
-// Build one big regex that catches:
-// - exact words
-// - “-ish” suffix (reddish → red)
-// - hyphen/slash combos (blue-green, silver/gray → both counted)
-// - case-insensitive
-const CANON_KEYS = Object.keys(COLOR_MAP).map(k => k === 'grey' ? 'gray' : k); // normalize grey→gray
-
+const CANON_KEYS = Object.keys(COLOR_MAP).map(k => k === 'grey' ? 'gray' : k);
 const COLOR_TOKEN = CANON_KEYS
-  .sort((a,b)=> b.length-a.length)             // longer first, safer matching
+  .sort((a,b)=> b.length-a.length)
   .map(k => k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'))
   .join('|');
+const COLOR_REGEX = new RegExp(`\\b((?:${COLOR_TOKEN})(?:-ish)?)\\b(?:[\\-/]((?:${COLOR_TOKEN})(?:-ish)?))?`, 'gi');
 
-const COLOR_REGEX = new RegExp(
-  // capture tokens possibly connected by - or /
-  `\\b((?:${COLOR_TOKEN})(?:-ish)?)\\b(?:[\\-/]((?:${COLOR_TOKEN})(?:-ish)?))?`,
-  'gi'
-);
-
-// Normalize a matched token to canonical key
 function normalizeColorTokenLoose(tok){
   if(!tok) return null;
   let t = tok.toLowerCase();
-  t = t.replace(/[^a-z]/g,'');     // strip hyphen/slash in this unit
-  if (t.endsWith('ish') && t.length>4) t = t.slice(0,-3); // reddish -> red
+  t = t.replace(/[^a-z]/g,'');
+  if (t.endsWith('ish') && t.length>4) t = t.slice(0,-3);
   if (t === 'grey') t = 'gray';
   return CANON_KEYS.includes(t) ? t : null;
 }
-
-// Detect colors in raw paragraph text; returns array [{key, hex, count}] sorted by count desc
 function detectColorsInText(raw){
-  const counts = new Map();
-  let m;
+  const counts = new Map(); let m;
   while ((m = COLOR_REGEX.exec(raw)) !== null){
     const a = normalizeColorTokenLoose(m[1]);
-    const b = normalizeColorTokenLoose(m[2]); // from hyphen/slash pair, if present
+    const b = normalizeColorTokenLoose(m[2]);
     if (a){ counts.set(a, (counts.get(a)||0)+1); }
     if (b){ counts.set(b, (counts.get(b)||0)+1); }
   }
-  // fold 'grey' into 'gray' already handled; map to array
-  const arr = Array.from(counts.entries())
+  return Array.from(counts.entries())
     .map(([key,count])=> ({ key, count, hex: COLOR_MAP[key] }))
     .sort((x,y)=> y.count - x.count);
-
-  return arr; // possibly empty
 }
-
 
 /* ---------- SVG helpers ---------- */
 function elt(tag, attrs={}){ const e=document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
@@ -191,13 +182,14 @@ function clearSVG(){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
 /* ---------- String helpers ---------- */
 function escapeHtml(s){ return s.replace(/[&<>]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function makeColorHighlightRegex(keys){
+  if (!keys || !keys.length) return null;
+  const escaped = keys.filter(Boolean).map(k => k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).sort((a,b)=> b.length-a.length);
+  if (!escaped.length) return null;
+  return new RegExp(`(^|[^A-Za-z])((?:${escaped.join('|')})(?:-ish)?)(?=[^A-Za-z]|$)`, 'gi');
+}
 
-/* ---------- Data holders ---------- */
-let model=null; // { text, chapters:[{idx, weight, paras:[{idx,start,end,len,wordCount,colorHex,colorKey,textLower}] }], totalWeight, paragraphsText:[] }
-let fullTextBuilt=false;
-let currentQuery = "";
-
-/* ---------- Build chapter->paragraph structure and precompute spans ---------- */
+/* ---------- Build model ---------- */
 function buildModel(rows, text){
   const byPara=new Map();
   for (const r of rows){
@@ -213,21 +205,18 @@ function buildModel(rows, text){
     const chapter_idx = list[0]?.chapter_idx ?? 0;
 
     const paraText = text.slice(start, end);
-    const colors = detectColorsInText(paraText);       // <-- NEW: robust color detection in full text
+    const colors = detectColorsInText(paraText);
     const colorPrimary = colors[0]?.key || null;
 
     paras.push({
       idx:+pid, chapter_idx, start, end, len:end-start, wordCount:list.length,
-      colors,                         // [{key, hex, count}, ...]
-      colorPrimary,                   // top color key or null
-      colorHex: colors[0]?.hex || null,
+      colors, colorPrimary, colorHex: colors[0]?.hex || null,
       textLower: paraText.toLowerCase()
     });
   });
 
   paras.sort((a,b)=> a.idx - b.idx);
 
-  // group by chapter
   const byChapter=new Map();
   for (const p of paras){
     if (!byChapter.has(p.chapter_idx)) byChapter.set(p.chapter_idx, []);
@@ -240,16 +229,17 @@ function buildModel(rows, text){
   });
   chapters.sort((a,b)=> a.idx-b.idx);
 
-  // lookups for overlay
   const paraTextByIdx = {};
-  for (const p of paras){ paraTextByIdx[p.idx] = text.slice(p.start, p.end); }
+  const colorKeysByIdx = {};
+  for (const p of paras){
+    paraTextByIdx[p.idx] = text.slice(p.start, p.end);
+    colorKeysByIdx[p.idx] = (p.colors || []).map(c => c.key);
+  }
 
-  return { text, paras, paraTextByIdx, chapters, totalWeight: Math.max(1,totalWeight) };
+  return { text, paras, paraTextByIdx, colorKeysByIdx, chapters, totalWeight: Math.max(1,totalWeight) };
 }
 
-
-
-/* ---------- Search match flags for current query ---------- */
+/* ---------- Search match flags ---------- */
 function computeMatches(q){
   const needle = q.trim().toLowerCase();
   for (const ch of model.chapters){
@@ -259,7 +249,33 @@ function computeMatches(q){
   }
 }
 
-/* ---------- Render: rows per chapter (height ∝ chapter text), paragraph widths ∝ paragraph text ---------- */
+/* ---------- Filter helpers ---------- */
+function paragraphsForChapter(ch){
+  // When toggle ON:
+  // - If there's a search query, show only matching paragraphs
+  // - If not, show only colored paragraphs
+  if (!filterOnly) return ch.paras;
+
+  const hasQuery = currentQuery.trim().length > 0;
+  if (hasQuery){
+    return ch.paras.filter(p => !!p._match);
+  } else {
+    return ch.paras.filter(p => p.colors && p.colors.length > 0);
+  }
+}
+function chaptersToDraw(){
+  // Recompute chapter weights using filtered paragraphs
+  const list = [];
+  for (const ch of model.chapters){
+    const pFiltered = paragraphsForChapter(ch);
+    if (pFiltered.length === 0) continue; // hide empty chapters under filter
+    const w = pFiltered.reduce((s,p)=> s + p.len, 0);
+    list.push({ idx: ch.idx, paras: pFiltered, weight: w });
+  }
+  return list;
+}
+
+/* ---------- Render (two-pass heights + gradient fills) ---------- */
 function render(){
   if (!model) return;
   clearSVG();
@@ -273,14 +289,15 @@ function render(){
   const blockGap = 2;
   const minRow = 18;
 
-  const nCh = model.chapters.length;
+  const chaptersDraw = chaptersToDraw();
+  const nCh = chaptersDraw.length;
   const Hpad = Math.max(0, H - padY*2 - rowGap*Math.max(0, nCh-1));
 
-  // two-pass height allocation (fits all rows)
+  // two-pass allocation across *visible* chapters
   let leftover = Hpad - nCh * minRow;
   if (leftover < 0) leftover = 0;
-  const totalW = model.chapters.reduce((s,ch)=> s + ch.weight, 0) || 1;
-  const heights = model.chapters.map(ch => minRow + Math.floor(leftover * (ch.weight / totalW)));
+  const totalW = chaptersDraw.reduce((s,ch)=> s + ch.weight, 0) || 1;
+  const heights = chaptersDraw.map(ch => minRow + Math.floor(leftover * (ch.weight / totalW)));
   let sumH = heights.reduce((a,b)=> a+b, 0);
   let diff = Hpad - sumH, k=0;
   while (diff !== 0 && k < heights.length * 2){
@@ -295,27 +312,23 @@ function render(){
   // defs for gradients
   const defs = elt('defs'); svg.appendChild(defs);
   function ensureGradientForParagraph(p){
-    // return fill string either 'url(#gid)' or solid hex
     const colors = p.colors || [];
     if (colors.length === 0) return null;
     if (colors.length === 1) return colors[0].hex;
 
-    // limit to top N colors to keep defs small
     const top = colors.slice(0, 6);
     const totalCount = top.reduce((s,c)=> s + c.count, 0) || 1;
 
     const gid = `grad-${p.idx}`;
-    // create gradient only once
     if (!document.getElementById(gid)){
       const lg = elt('linearGradient', { id: gid, x1: '0%', y1: '0%', x2: '100%', y2: '0%' });
       let acc = 0;
-      top.forEach((c, i)=>{
+      top.forEach((c)=>{
         const share = c.count / totalCount;
         const start = (acc * 100).toFixed(2) + '%';
         const end   = ((acc + share) * 100).toFixed(2) + '%';
-        const stop1 = elt('stop', { offset: start, 'stop-color': c.hex });
-        const stop2 = elt('stop', { offset: end,   'stop-color': c.hex });
-        lg.appendChild(stop1); lg.appendChild(stop2);
+        lg.appendChild(elt('stop', { offset: start, 'stop-color': c.hex }));
+        lg.appendChild(elt('stop', { offset: end,   'stop-color': c.hex }));
         acc += share;
       });
       defs.appendChild(lg);
@@ -332,7 +345,7 @@ function render(){
   let y = padY;
   const chapterWidth = W - padX*2;
 
-  model.chapters.forEach((ch, ci) => {
+  chaptersDraw.forEach((ch, ci) => {
     const h = heights[ci];
     const g = elt('g', { transform: `translate(${padX},${y})` }); svg.appendChild(g);
 
@@ -360,29 +373,28 @@ function render(){
         fill || 'rgba(255,255,255,.06)'
       );
 
-      // Search highlighting
       const isQuery = currentQuery.trim().length > 0;
       const matched = !!p._match;
       if (isQuery){
         r.style.stroke = matched ? 'var(--accent)' : 'var(--border)';
         r.style.strokeWidth = matched ? '1.5' : '0.6';
-        r.style.opacity = matched ? '1' : '0.45';
+        r.style.opacity = matched ? '1' : (filterOnly ? '0.20' : '0.45');
       } else {
+        const colored = p.colors && p.colors.length>0;
         r.style.stroke = 'var(--border)';
         r.style.strokeWidth = '0.6';
-        r.style.opacity = '1';
+        r.style.opacity = (!filterOnly || colored) ? '1' : '0.20';
       }
 
-      // Tooltip lists ALL detected colors
       r.addEventListener('pointerenter', (e)=>{
         const colorTxt = (p.colors && p.colors.length)
-            ? 'colors: ' + p.colors.map(c=>c.key).join(', ')
-            : null;
+          ? 'colors: ' + p.colors.map(c=>c.key).join(', ')
+          : null;
         const pieces = [
           `Para ${p.idx+1}`,
           `${p.wordCount} words`,
           colorTxt,
-          matched ? `matches "${currentQuery.trim()}"` : null
+          matched && isQuery ? `matches "${currentQuery.trim()}"` : null
         ].filter(Boolean);
         tip.textContent = pieces.join(' · ');
         tip.style.left = e.clientX + 'px';
@@ -390,7 +402,6 @@ function render(){
         tip.style.opacity = 1;
       });
       r.addEventListener('pointerleave', ()=> tip.style.opacity = 0);
-
       r.addEventListener('click', ()=> openOverlayScrollTo(p.idx));
 
       g.appendChild(r);
@@ -399,21 +410,29 @@ function render(){
 
     y += h + rowGap;
   });
+
+  updateStatsBadge(chaptersDraw);
 }
 
+/* ---------- Stats badge ---------- */
+function updateStatsBadge(chaptersDraw){
+  const totalCh = model.chapters.length;
+  const totalParas = model.chapters.reduce((s,ch)=> s+ch.paras.length,0);
+  const showingCh = chaptersDraw.length;
+  const showingParas = chaptersDraw.reduce((s,ch)=> s+ch.paras.length,0);
+  const mode = currentQuery.trim().length ? 'matches' : 'colored';
+  const suffix = filterOnly ? ` · showing ${showingParas}/${totalParas} ${mode}` : '';
+  stats.textContent = ``;
+}
 
-
-/* ---------- Overlay text build (inline paragraphs) & match highlighting ---------- */
+/* ---------- Overlay (inline paragraphs) & highlighting ---------- */
 function ensureFullText(){
   if (fullTextBuilt) return;
   sheetBody.innerHTML = '';
   const frag = document.createDocumentFragment();
-
-  // Use the flat `model.paras` so we render in true paragraph_idx order,
-  // and give each element id="p-<paragraph_idx>"
   for (const p of model.paras){
-    const el = document.createElement('span');   // inline flow
-    el.className = 'p';
+    const el = document.createElement('span'); // inline
+    el.className='p';
     el.id = 'p-' + p.idx;
     el.textContent = model.paraTextByIdx[p.idx] || '';
     frag.appendChild(el);
@@ -422,40 +441,32 @@ function ensureFullText(){
   fullTextBuilt = true;
 }
 
-
-/* Highlight only the token: if search query exists, highlight it;
-   otherwise (empty query) highlight the detected color word for that paragraph (if any). */
 function highlightOverlayTokens(q){
   if (!fullTextBuilt) return;
-  const hasQuery = !!q.trim();
-  const queryRegex = hasQuery ? new RegExp(`\\b${escapeRegExp(q.trim())}\\b`, 'gi') : null;
+
+  const needle = q.trim();
+  const hasQuery = needle.length > 0;
+  const literalQueryRx = hasQuery
+    ? new RegExp(`(^|[^A-Za-z])(${escapeRegExp(needle)})(?=[^A-Za-z]|$)`, 'gi')
+    : null;
 
   for (const el of sheetBody.querySelectorAll('.p')){
-    const idx = +el.id.slice(2);           // paragraph_idx from id="p-<idx>"
+    const idx = +el.id.slice(2);
     const raw = model.paraTextByIdx[idx] || '';
     let html = escapeHtml(raw);
 
     if (hasQuery){
-      html = html.replace(queryRegex, m => `<mark>${escapeHtml(m)}</mark>`);
+      html = html.replace(literalQueryRx, (m, left, token) => `${left}<mark>${escapeHtml(token)}</mark>`);
     } else {
-      // highlight color word when there is no query
-      // find paragraph to read colorKey
-      let colorKey = null;
-      // Optional fast path: you can keep a small map idx->colorKey if desired
-      for (const ch of model.chapters){
-        const found = ch.paras.find(p => p.idx === idx);
-        if (found){ colorKey = found.colorKey || null; break; }
-      }
-      if (colorKey){
-        const colorRegex = new RegExp(`\\b${escapeRegExp(colorKey)}\\b`, 'gi');
-        html = html.replace(colorRegex, m => `<mark>${escapeHtml(m)}</mark>`);
+      const keys = model.colorKeysByIdx[idx] || [];
+      const rx = makeColorHighlightRegex(keys);
+      if (rx){
+        html = html.replace(rx, (m, left, token) => `${left}<mark>${escapeHtml(token)}</mark>`);
       }
     }
-
     el.innerHTML = html;
   }
 }
-
 
 function openOverlayScrollTo(paragraphIdx){
   ensureFullText();
@@ -464,7 +475,6 @@ function openOverlayScrollTo(paragraphIdx){
 
   const prev = sheetBody.querySelector('.p.highlight');
   if (prev) prev.classList.remove('highlight');
-
   const target = document.getElementById('p-'+paragraphIdx);
   if (target){
     target.classList.add('highlight');
@@ -472,15 +482,12 @@ function openOverlayScrollTo(paragraphIdx){
   }
 }
 
-
-/* ---------- Search handlers (close overlay on update) ---------- */
+/* ---------- Search & toggle handlers ---------- */
 function applySearch(q){
   currentQuery = q || "";
   computeMatches(currentQuery);
   render();
-
-  // Close overlay whenever the search string changes
-  if (sheet.classList.contains('open')) closeSheet();
+  if (sheet.classList.contains('open')) closeSheet(); // close overlay on search update
 }
 searchInput.addEventListener('input', (e)=> applySearch(e.target.value));
 clearBtn.addEventListener('click', ()=>{
@@ -490,19 +497,25 @@ clearBtn.addEventListener('click', ()=>{
 });
 window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape'){ searchInput.value=""; applySearch(""); }});
 
+filterToggle.addEventListener('click', ()=>{
+  filterOnly = !filterOnly;
+  filterToggle.setAttribute('aria-pressed', String(filterOnly));
+  render();
+});
+
 /* ---------- Overlay close (button, backdrop, Escape) ---------- */
 function closeSheet(){ sheet.classList.remove('open'); }
 closeBtn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); closeSheet(); });
 sheet.addEventListener('click', (e)=>{ if (e.target === sheet) closeSheet(); });
 document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && sheet.classList.contains('open')) closeSheet(); });
 
-/* ---------- Double-click in overlay: set search to selected word (also closes overlay via applySearch) ---------- */
+/* ---------- Double-click in overlay: set search to selected word ---------- */
 sheetBody.addEventListener('dblclick', ()=>{
   const sel = (window.getSelection && window.getSelection().toString()) || "";
   const word = sel.trim();
   if (word){
     searchInput.value = word;
-    applySearch(word); // closes overlay as required
+    applySearch(word);
   }
 });
 
@@ -527,7 +540,7 @@ new ResizeObserver(()=> render()).observe(svg);
 
     model = buildModel(rows, text);
     stats.textContent = `Loaded: ${model.chapters.length} ch · ${model.chapters.reduce((s,ch)=>s+ch.paras.length,0)} paras`;
-    computeMatches(""); // initialize
+    computeMatches("");
     render();
   } catch(err){
     console.error(err);
