@@ -294,28 +294,30 @@ function render(){
 
   const bbox = svg.getBoundingClientRect();
   const W = Math.max(320, bbox.width);
-  const H = Math.max(200, bbox.height);
+  const H = Math.max(200, bbox.height); // svg is styled to 90dvh in CSS
 
-  // layout constants
   const padX = 10, padY = 10;
   const rowGap = 8;
   const blockGap = 2;
   const minRow = 18;
 
-  // chapters to draw (respects filter toggle + search)
+  // respect filter + search
   const chaptersDraw = chaptersToDraw();
   const nCh = chaptersDraw.length;
-  const Hpad = Math.max(0, H - padY*2 - rowGap*Math.max(0, nCh-1));
 
-  // --- two-pass height allocation (fits all rows) ---
-  let leftover = Hpad - nCh * minRow; if (leftover < 0) leftover = 0;
-  const totalW = chaptersDraw.reduce((s,ch)=> s + ch.weight, 0) || 1;
-  const heights = chaptersDraw.map(ch => minRow + Math.floor(leftover * (ch.weight / totalW)));
-  let sumH = heights.reduce((a,b)=> a+b, 0), diff = Hpad - sumH, k=0;
-  while (diff !== 0 && k < heights.length*2){
-    const i = k % heights.length, step = diff > 0 ? 1 : -1;
+  // --- Two-pass HEIGHT allocation so all rows fit within H ---
+  const Hpad = Math.max(0, H - padY*2 - rowGap*Math.max(0, nCh-1));
+  let leftoverH = Hpad - nCh * minRow; if (leftoverH < 0) leftoverH = 0;
+
+  const totalWeight = chaptersDraw.reduce((s,ch)=> s + ch.weight, 0) || 1;
+  const heights = chaptersDraw.map(ch => minRow + Math.floor(leftoverH * (ch.weight / totalWeight)));
+
+  // fix rounding to fill exactly
+  let sumH = heights.reduce((a,b)=> a+b, 0), diffH = Hpad - sumH, k=0;
+  while (diffH !== 0 && k < heights.length*2){
+    const i = k % heights.length, step = diffH > 0 ? 1 : -1;
     if (step < 0 && heights[i] <= minRow) { k++; continue; }
-    heights[i] += step; diff -= step; k++;
+    heights[i] += step; diffH -= step; k++;
   }
 
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -327,17 +329,17 @@ function render(){
     if (colors.length === 0) return null;
     if (colors.length === 1) return colors[0].hex;
     const top = colors.slice(0,6);
-    const totalCount = top.reduce((s,c)=> s + c.count, 0) || 1;
+    const total = top.reduce((s,c)=> s + c.count, 0) || 1;
     const gid = `grad-${p.idx}`;
     if (!document.getElementById(gid)){
       const lg = elt('linearGradient', { id: gid, x1:'0%', y1:'0%', x2:'100%', y2:'0%' });
       let acc = 0;
       top.forEach(c=>{
-        const share = c.count / totalCount;
-        const start = (acc*100).toFixed(2)+'%';
-        const end   = ((acc+share)*100).toFixed(2)+'%';
-        lg.appendChild(elt('stop',{offset:start,'stop-color':c.hex}));
-        lg.appendChild(elt('stop',{offset:end,  'stop-color':c.hex}));
+        const share = c.count / total;
+        const a = (acc*100).toFixed(2)+'%';
+        const b = ((acc+share)*100).toFixed(2)+'%';
+        lg.appendChild(elt('stop',{offset:a,'stop-color':c.hex}));
+        lg.appendChild(elt('stop',{offset:b,'stop-color':c.hex}));
         acc += share;
       });
       defs.appendChild(lg);
@@ -345,7 +347,7 @@ function render(){
     return `url(#${gid})`;
   }
 
-  // cover to hide tooltip on empty space
+  // hide tooltip on empty space
   const cover = rect(0,0,W,H,0,'transparent');
   cover.addEventListener('pointerenter', ()=> tip.style.opacity = 0);
   svg.appendChild(cover);
@@ -358,18 +360,22 @@ function render(){
     const h = heights[ci];
     const g = elt('g', { transform:`translate(${padX},${y})` }); svg.appendChild(g);
 
-    // row background
+    // row bg
     const bg = rect(0,0,chapterWidth,h,8,'rgba(255,255,255,0.02)');
     bg.style.stroke='var(--border)'; bg.style.strokeWidth='0.6';
     g.appendChild(bg);
 
-    // --- two-pass width allocation: min width = row height ---
+    // --- Two-pass WIDTH allocation with min width = row height (clamped to fit) ---
     const innerW = chapterWidth - blockGap*2;
-    const minW   = Math.max(1, h - blockGap*2); // <= requested rule
+    const desiredMinW = Math.max(1, h - blockGap*2);
+    const nP = ch.paras.length;
+    const minW = Math.max(1, Math.min(desiredMinW, Math.floor(innerW / Math.max(1,nP)))); // clamp to fit
     const totalParaWeight = ch.paras.reduce((s,p)=> s + p.len, 0) || 1;
-    let leftoverW = innerW - ch.paras.length * minW; if (leftoverW < 0) leftoverW = 0;
 
+    let leftoverW = innerW - nP * minW; if (leftoverW < 0) leftoverW = 0;
     const widths = ch.paras.map(p => minW + Math.floor(leftoverW * (p.len / totalParaWeight)));
+
+    // rounding fix
     let sumW = widths.reduce((a,b)=> a+b, 0), diffW = innerW - sumW, k2=0;
     while (diffW !== 0 && k2 < widths.length*2){
       const i = k2 % widths.length, step = diffW > 0 ? 1 : -1;
@@ -414,9 +420,9 @@ function render(){
     y += h + rowGap;
   });
 
-  // update stats badge if you use it
   if (typeof updateStatsBadge === 'function') updateStatsBadge(chaptersDraw);
 }
+
 
 
 /* ---------- Stats badge ---------- */
