@@ -294,7 +294,7 @@ function render(){
 
   const bbox = svg.getBoundingClientRect();
   const W = Math.max(320, bbox.width);
-  const H = Math.max(200, bbox.height); // svg is styled to 90dvh in CSS
+  const H = Math.max(200, bbox.height); // svg set to ~90dvh via CSS
 
   const padX = 10, padY = 10;
   const rowGap = 8;
@@ -305,14 +305,14 @@ function render(){
   const chaptersDraw = chaptersToDraw();
   const nCh = chaptersDraw.length;
 
-  // --- Two-pass HEIGHT allocation so all rows fit within H ---
+  // --- Two-pass HEIGHT allocation so all rows fit ---
   const Hpad = Math.max(0, H - padY*2 - rowGap*Math.max(0, nCh-1));
   let leftoverH = Hpad - nCh * minRow; if (leftoverH < 0) leftoverH = 0;
 
-  const totalWeight = chaptersDraw.reduce((s,ch)=> s + ch.weight, 0) || 1;
-  const heights = chaptersDraw.map(ch => minRow + Math.floor(leftoverH * (ch.weight / totalWeight)));
+  const totWeight = chaptersDraw.reduce((s,ch)=> s + ch.weight, 0) || 1;
+  const heights = chaptersDraw.map(ch => minRow + Math.floor(leftoverH * (ch.weight / totWeight)));
 
-  // fix rounding to fill exactly
+  // rounding fix
   let sumH = heights.reduce((a,b)=> a+b, 0), diffH = Hpad - sumH, k=0;
   while (diffH !== 0 && k < heights.length*2){
     const i = k % heights.length, step = diffH > 0 ? 1 : -1;
@@ -355,6 +355,7 @@ function render(){
   // draw rows
   let y = padY;
   const chapterWidth = W - padX*2;
+  const isQuery = currentQuery.trim().length > 0;
 
   chaptersDraw.forEach((ch, ci) => {
     const h = heights[ci];
@@ -365,23 +366,46 @@ function render(){
     bg.style.stroke='var(--border)'; bg.style.strokeWidth='0.6';
     g.appendChild(bg);
 
-    // --- Two-pass WIDTH allocation with min width = row height (clamped to fit) ---
+    // --- Per-paragraph MIN widths ---
     const innerW = chapterWidth - blockGap*2;
-    const desiredMinW = Math.max(1, h - blockGap*2);
-    const nP = ch.paras.length;
-    const minW = Math.max(1, Math.min(desiredMinW, Math.floor(innerW / Math.max(1,nP)))); // clamp to fit
-    const totalParaWeight = ch.paras.reduce((s,p)=> s + p.len, 0) || 1;
+    const desiredMinW = Math.max(1, h - blockGap*2); // "min width = row height" target
 
-    let leftoverW = innerW - nP * minW; if (leftoverW < 0) leftoverW = 0;
-    const widths = ch.paras.map(p => minW + Math.floor(leftoverW * (p.len / totalParaWeight)));
+    // qualify: colored OR (search active AND match)
+    const qualify = ch.paras.map(p => (p.colors && p.colors.length>0) || (isQuery && p._match));
 
-    // rounding fix
-    let sumW = widths.reduce((a,b)=> a+b, 0), diffW = innerW - sumW, k2=0;
-    while (diffW !== 0 && k2 < widths.length*2){
-      const i = k2 % widths.length, step = diffW > 0 ? 1 : -1;
-      if (step < 0 && widths[i] <= minW) { k2++; continue; }
-      widths[i] += step; diffW -= step; k2++;
+    // base min for each paragraph: qualified gets desiredMinW, others get 1px
+    const minWs = ch.paras.map((p,i) => qualify[i] ? desiredMinW : 1);
+
+    // if sum(minWs) exceeds available width, scale down qualified mins evenly
+    let sumMin = minWs.reduce((a,b)=>a+b,0);
+    if (sumMin > innerW){
+      const nonQualSum = minWs.reduce((s,w,i)=> s + (qualify[i] ? 0 : w), 0);
+      const qualCount  = qualify.reduce((s,q)=> s + (q?1:0), 0);
+      const availForQual = Math.max(0, innerW - nonQualSum);
+      const newQualMin = qualCount ? Math.max(1, Math.floor(availForQual / qualCount)) : 1;
+      for (let i=0;i<minWs.length;i++) if (qualify[i]) minWs[i] = newQualMin;
+      sumMin = minWs.reduce((a,b)=>a+b,0);
     }
+
+    // distribute leftover proportionally by paragraph length
+    const totalParaWeight = ch.paras.reduce((s,p)=> s + p.len, 0) || 1;
+    let leftoverW = Math.max(0, innerW - sumMin);
+    const widths = ch.paras.map(p => {
+      const share = Math.floor(leftoverW * (p.len / totalParaWeight));
+      return share; // temp; add min later
+    });
+
+    // rounding fix to consume all leftover
+    let used = widths.reduce((a,b)=>a+b,0);
+    let diffW = leftoverW - used, k2=0;
+    while (diffW !== 0 && k2 < widths.length*2){
+      widths[k2 % widths.length] += (diffW > 0 ? 1 : -1);
+      diffW += (diffW > 0 ? -1 : 1);
+      k2++;
+    }
+
+    // add mins
+    for (let i=0;i<widths.length;i++) widths[i] += minWs[i];
 
     // draw paragraphs
     let x = blockGap;
@@ -392,7 +416,6 @@ function render(){
 
       const r = rect(x, blockGap, w, Math.max(1, h - blockGap*2), 6, fill || 'rgba(255,255,255,.06)');
 
-      const isQuery = currentQuery.trim().length > 0;
       const matched = !!p._match;
       if (isQuery){
         r.style.stroke = matched ? 'var(--accent)' : 'var(--border)';
@@ -422,6 +445,7 @@ function render(){
 
   if (typeof updateStatsBadge === 'function') updateStatsBadge(chaptersDraw);
 }
+
 
 
 
