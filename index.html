@@ -296,51 +296,48 @@ function render(){
   const W = Math.max(320, bbox.width);
   const H = Math.max(200, bbox.height);
 
+  // layout constants
   const padX = 10, padY = 10;
   const rowGap = 8;
   const blockGap = 2;
   const minRow = 18;
 
+  // chapters to draw (respects filter toggle + search)
   const chaptersDraw = chaptersToDraw();
   const nCh = chaptersDraw.length;
   const Hpad = Math.max(0, H - padY*2 - rowGap*Math.max(0, nCh-1));
 
-  // two-pass allocation across *visible* chapters
-  let leftover = Hpad - nCh * minRow;
-  if (leftover < 0) leftover = 0;
+  // --- two-pass height allocation (fits all rows) ---
+  let leftover = Hpad - nCh * minRow; if (leftover < 0) leftover = 0;
   const totalW = chaptersDraw.reduce((s,ch)=> s + ch.weight, 0) || 1;
   const heights = chaptersDraw.map(ch => minRow + Math.floor(leftover * (ch.weight / totalW)));
-  let sumH = heights.reduce((a,b)=> a+b, 0);
-  let diff = Hpad - sumH, k=0;
-  while (diff !== 0 && k < heights.length * 2){
-    const i = k % heights.length;
-    const delta = diff > 0 ? 1 : -1;
-    if (delta < 0 && heights[i] <= minRow){ k++; continue; }
-    heights[i] += delta; diff -= delta; k++;
+  let sumH = heights.reduce((a,b)=> a+b, 0), diff = Hpad - sumH, k=0;
+  while (diff !== 0 && k < heights.length*2){
+    const i = k % heights.length, step = diff > 0 ? 1 : -1;
+    if (step < 0 && heights[i] <= minRow) { k++; continue; }
+    heights[i] += step; diff -= step; k++;
   }
 
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
 
-  // defs for gradients
+  // defs for multi-color gradients
   const defs = elt('defs'); svg.appendChild(defs);
   function ensureGradientForParagraph(p){
     const colors = p.colors || [];
     if (colors.length === 0) return null;
     if (colors.length === 1) return colors[0].hex;
-
-    const top = colors.slice(0, 6);
+    const top = colors.slice(0,6);
     const totalCount = top.reduce((s,c)=> s + c.count, 0) || 1;
-
     const gid = `grad-${p.idx}`;
     if (!document.getElementById(gid)){
-      const lg = elt('linearGradient', { id: gid, x1: '0%', y1: '0%', x2: '100%', y2: '0%' });
+      const lg = elt('linearGradient', { id: gid, x1:'0%', y1:'0%', x2:'100%', y2:'0%' });
       let acc = 0;
-      top.forEach((c)=>{
+      top.forEach(c=>{
         const share = c.count / totalCount;
-        const start = (acc * 100).toFixed(2) + '%';
-        const end   = ((acc + share) * 100).toFixed(2) + '%';
-        lg.appendChild(elt('stop', { offset: start, 'stop-color': c.hex }));
-        lg.appendChild(elt('stop', { offset: end,   'stop-color': c.hex }));
+        const start = (acc*100).toFixed(2)+'%';
+        const end   = ((acc+share)*100).toFixed(2)+'%';
+        lg.appendChild(elt('stop',{offset:start,'stop-color':c.hex}));
+        lg.appendChild(elt('stop',{offset:end,  'stop-color':c.hex}));
         acc += share;
       });
       defs.appendChild(lg);
@@ -349,41 +346,45 @@ function render(){
   }
 
   // cover to hide tooltip on empty space
-  const cover = rect(0, 0, W, H, 0, 'transparent');
-  cover.addEventListener('pointerenter', () => tip.style.opacity = 0);
+  const cover = rect(0,0,W,H,0,'transparent');
+  cover.addEventListener('pointerenter', ()=> tip.style.opacity = 0);
   svg.appendChild(cover);
 
-  // draw
+  // draw rows
   let y = padY;
   const chapterWidth = W - padX*2;
 
   chaptersDraw.forEach((ch, ci) => {
     const h = heights[ci];
-    const g = elt('g', { transform: `translate(${padX},${y})` }); svg.appendChild(g);
+    const g = elt('g', { transform:`translate(${padX},${y})` }); svg.appendChild(g);
 
+    // row background
     const bg = rect(0,0,chapterWidth,h,8,'rgba(255,255,255,0.02)');
-    bg.style.stroke = 'var(--border)'; bg.style.strokeWidth = '0.6';
+    bg.style.stroke='var(--border)'; bg.style.strokeWidth='0.6';
     g.appendChild(bg);
 
-    const chapTotal = ch.paras.reduce((s,p)=> s+p.len, 0) || 1;
+    // --- two-pass width allocation: min width = row height ---
+    const innerW = chapterWidth - blockGap*2;
+    const minW   = Math.max(1, h - blockGap*2); // <= requested rule
+    const totalParaWeight = ch.paras.reduce((s,p)=> s + p.len, 0) || 1;
+    let leftoverW = innerW - ch.paras.length * minW; if (leftoverW < 0) leftoverW = 0;
 
-    let x = 0;
+    const widths = ch.paras.map(p => minW + Math.floor(leftoverW * (p.len / totalParaWeight)));
+    let sumW = widths.reduce((a,b)=> a+b, 0), diffW = innerW - sumW, k2=0;
+    while (diffW !== 0 && k2 < widths.length*2){
+      const i = k2 % widths.length, step = diffW > 0 ? 1 : -1;
+      if (step < 0 && widths[i] <= minW) { k2++; continue; }
+      widths[i] += step; diffW -= step; k2++;
+    }
+
+    // draw paragraphs
+    let x = blockGap;
     ch.paras.forEach((p, pi)=>{
-      const rawW = chapterWidth * (p.len / chapTotal);
-      const w = (pi === ch.paras.length - 1) ? (chapterWidth - x) : Math.max(1, Math.round(rawW));
+      const w = Math.max(1, widths[pi]);
+      const fill = (p.colors && p.colors.length >= 2) ? ensureGradientForParagraph(p)
+                   : (p.colorHex || 'rgba(255,255,255,.06)');
 
-      const fill = (p.colors && p.colors.length >= 2)
-        ? ensureGradientForParagraph(p)
-        : (p.colorHex || 'rgba(255,255,255,.06)');
-
-      const r = rect(
-        x + (pi ? blockGap : blockGap),
-        blockGap,
-        Math.max(1, w - blockGap*2),
-        Math.max(1, h - blockGap*2),
-        6,
-        fill || 'rgba(255,255,255,.06)'
-      );
+      const r = rect(x, blockGap, w, Math.max(1, h - blockGap*2), 6, fill || 'rgba(255,255,255,.06)');
 
       const isQuery = currentQuery.trim().length > 0;
       const matched = !!p._match;
@@ -393,25 +394,15 @@ function render(){
         r.style.opacity = matched ? '1' : (filterOnly ? '0.20' : '0.45');
       } else {
         const colored = p.colors && p.colors.length>0;
-        r.style.stroke = 'var(--border)';
-        r.style.strokeWidth = '0.6';
+        r.style.stroke = 'var(--border)'; r.style.strokeWidth = '0.6';
         r.style.opacity = (!filterOnly || colored) ? '1' : '0.20';
       }
 
       r.addEventListener('pointerenter', (e)=>{
-        const colorTxt = (p.colors && p.colors.length)
-          ? 'colors: ' + p.colors.map(c=>c.key).join(', ')
-          : null;
-        const pieces = [
-          `Para ${p.idx+1}`,
-          `${p.wordCount} words`,
-          colorTxt,
-          matched && isQuery ? `matches "${currentQuery.trim()}"` : null
-        ].filter(Boolean);
+        const colorTxt = (p.colors && p.colors.length) ? 'colors: ' + p.colors.map(c=>c.key).join(', ') : null;
+        const pieces = [`Para ${p.idx+1}`, `${p.wordCount} words`, colorTxt, matched && isQuery ? `matches "${currentQuery.trim()}"` : null].filter(Boolean);
         tip.textContent = pieces.join(' · ');
-        tip.style.left = e.clientX + 'px';
-        tip.style.top  = e.clientY + 'px';
-        tip.style.opacity = 1;
+        tip.style.left = e.clientX+'px'; tip.style.top = e.clientY+'px'; tip.style.opacity = 1;
       });
       r.addEventListener('pointerleave', ()=> tip.style.opacity = 0);
       r.addEventListener('click', ()=> openOverlayScrollTo(p.idx));
@@ -423,8 +414,10 @@ function render(){
     y += h + rowGap;
   });
 
-  updateStatsBadge(chaptersDraw);
+  // update stats badge if you use it
+  if (typeof updateStatsBadge === 'function') updateStatsBadge(chaptersDraw);
 }
+
 
 /* ---------- Stats badge ---------- */
 function updateStatsBadge(chaptersDraw){
