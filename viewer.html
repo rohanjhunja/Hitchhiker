@@ -805,15 +805,28 @@ function renderGalleryPreviews(data) {
     
     previewContainer.innerHTML = '';
     
+    // Filter chapters and paragraphs: keep ONLY colored paragraphs!
+    const activeChapters = [];
+    const activeChapterWeights = [];
+    
+    chapters.forEach(ch => {
+      const coloredParas = ch.filter(p => p[1] !== 0);
+      if (coloredParas.length > 0) {
+        activeChapters.push(coloredParas);
+        const chWeight = coloredParas.reduce((sum, p) => sum + p[0], 0);
+        activeChapterWeights.push(chWeight);
+      }
+    });
+    
+    const C = activeChapters.length;
+    if (C === 0) return;
+    
     // Create vector SVG
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svgEl.setAttribute('viewBox', '0 0 300 200');
     svgEl.setAttribute('width', '100%');
     svgEl.setAttribute('height', '100%');
     svgEl.style.display = 'block';
-    
-    const C = chapters.length;
-    if (C === 0) return;
     
     const padX = 6, padY = 6;
     const rowGap = 3;
@@ -822,15 +835,14 @@ function renderGalleryPreviews(data) {
     const H = 200;
     const W = 300;
     
-    // Allocate proportional row heights based on chapter length (character sum)
-    const chapterWeights = chapters.map(ch => ch.reduce((sum, p) => sum + p[0], 0));
-    const totalWeight = chapterWeights.reduce((s, w) => s + w, 0) || 1;
+    const totalWeight = activeChapterWeights.reduce((s, w) => s + w, 0) || 1;
     
+    // Allocate proportional row heights based on colored chapter length (character sum)
     const Hpad = H - padY * 2 - rowGap * (C - 1);
     let leftoverH = Hpad - C * minRow;
     if (leftoverH < 0) leftoverH = 0;
     
-    const heights = chapterWeights.map(w => minRow + Math.floor(leftoverH * (w / totalWeight)));
+    const heights = activeChapterWeights.map(w => minRow + Math.floor(leftoverH * (w / totalWeight)));
     
     // Height rounding adjustment
     let sumH = heights.reduce((a, b) => a + b, 0);
@@ -848,9 +860,9 @@ function renderGalleryPreviews(data) {
     const W_avail = W - padX * 2;
     let y = padY;
     
-    chapters.forEach((ch, chIdx) => {
+    activeChapters.forEach((ch, chIdx) => {
       const h = heights[chIdx];
-      const totalWeightCh = chapterWeights[chIdx] || 1;
+      const totalWeightCh = activeChapterWeights[chIdx] || 1;
       
       let x = padX;
       ch.forEach(p => {
@@ -865,15 +877,8 @@ function renderGalleryPreviews(data) {
           rect.setAttribute('y', y + blockGap);
           rect.setAttribute('width', w);
           rect.setAttribute('height', Math.max(0.1, h - blockGap * 2));
-          
-          if (pColor !== 0) {
-            rect.setAttribute('fill', pColor);
-            rect.setAttribute('opacity', '1.0');
-          } else {
-            rect.setAttribute('fill', 'rgba(128, 128, 128, 0.08)');
-            rect.setAttribute('opacity', '0.25');
-          }
-          
+          rect.setAttribute('fill', pColor);
+          rect.setAttribute('opacity', '1.0');
           svgEl.appendChild(rect);
         }
         x += w;
