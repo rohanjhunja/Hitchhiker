@@ -151,7 +151,7 @@
   .poster-preview {
     flex: 1; display: block; overflow: hidden;
     background: rgba(255,255,255,0.01); border: 1px solid var(--border);
-    border-radius: 0.75rem; padding: 0.25rem; margin-bottom: 1.5rem;
+    border-radius: 0.75rem; padding: 0; margin-bottom: 1.5rem;
     transition: all 0.3s ease;
   }
   .poster-card:hover .poster-preview {
@@ -821,23 +821,26 @@ function renderGalleryPreviews(data) {
     const C = activeChapters.length;
     if (C === 0) return;
     
-    // Create vector SVG
+    // Create vector SVG with 2:3 portrait viewBox
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svgEl.setAttribute('viewBox', '0 0 300 200');
+    svgEl.setAttribute('viewBox', '0 0 200 300');
     svgEl.setAttribute('width', '100%');
     svgEl.setAttribute('height', '100%');
     svgEl.style.display = 'block';
     
-    const padX = 6, padY = 6;
-    const rowGap = 3;
-    const blockGap = 0.5;
-    const minRow = 4;
-    const H = 200;
-    const W = 300;
+    // Snug edge-to-edge portrait styling
+    const padX = 0, padY = 0;
+    const H = 300;
+    const W = 200;
+    
+    // Dynamically balance gaps and row heights according to chapter count
+    const rowGap = Math.max(0.4, Math.min(2.0, 50 / C));
+    const minRow = Math.max(1.0, Math.min(4.0, 150 / C));
+    const blockGap = 0; // Cells scale vertically to fully cover the row height!
     
     const totalWeight = activeChapterWeights.reduce((s, w) => s + w, 0) || 1;
     
-    // Allocate proportional row heights based on colored chapter length (character sum)
+    // Allocate proportional row heights based on colored chapter length
     const Hpad = H - padY * 2 - rowGap * (C - 1);
     let leftoverH = Hpad - C * minRow;
     if (leftoverH < 0) leftoverH = 0;
@@ -874,9 +877,9 @@ function renderGalleryPreviews(data) {
         if (w > 0.05) {
           const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
           rect.setAttribute('x', x);
-          rect.setAttribute('y', y + blockGap);
+          rect.setAttribute('y', y);
           rect.setAttribute('width', w);
-          rect.setAttribute('height', Math.max(0.1, h - blockGap * 2));
+          rect.setAttribute('height', Math.max(0.1, h));
           rect.setAttribute('fill', pColor);
           rect.setAttribute('opacity', '1.0');
           svgEl.appendChild(rect);
