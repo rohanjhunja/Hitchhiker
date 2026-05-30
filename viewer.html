@@ -149,13 +149,13 @@
   .poster-author { font-size: 1rem; color: var(--muted); margin: 0 0 1.5rem 0; font-style: italic }
   
   .poster-preview {
-    flex: 1; display: grid; grid-template-rows: repeat(4, 1fr); gap: 4px;
+    flex: 1; display: flex; flex-direction: column; gap: 4px;
     background: rgba(255,255,255,0.01); border: 1px solid var(--border);
     border-radius: 0.75rem; padding: 0.5rem; margin-bottom: 1.5rem;
     transition: background 0.3s ease;
   }
   .poster-card:hover .poster-preview { background: rgba(255,255,255,0.03) }
-  .preview-row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px }
+  .preview-row { flex: 1; display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px }
   .preview-block {
     border-radius: 2px; background: rgba(255,255,255,0.03);
     transition: transform 0.2s ease;
@@ -186,64 +186,7 @@
           <div class="poster-meta">Science Fiction</div>
           <h3 class="poster-title">The Hitchhiker’s Guide</h3>
           <div class="poster-author">Douglas Adams</div>
-          <div class="poster-preview">
-            <div class="preview-row">
-              <span class="preview-block" style="background:#3b82f6"></span>
-              <span class="preview-block" style="background:#a855f7"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#3b82f6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#a855f7"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#3b82f6"></span>
-              <span class="preview-block" style="background:#a855f7"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block" style="background:#3b82f6"></span>
-              <span class="preview-block" style="background:#a855f7"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block" style="background:#a855f7"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#3b82f6"></span>
-              <span class="preview-block" style="background:#a855f7"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#3b82f6"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#3b82f6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#a855f7"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#3b82f6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#a855f7"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-            </div>
-          </div>
+          <div class="poster-preview" data-book="HitchhikersGuide"></div>
           <div class="poster-footer">
             <span>Explore Visual</span>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -257,64 +200,7 @@
           <div class="poster-meta">Fantasy / Classics</div>
           <h3 class="poster-title">Alice in Wonderland</h3>
           <div class="poster-author">Lewis Carroll</div>
-          <div class="poster-preview">
-            <div class="preview-row">
-              <span class="preview-block" style="background:#ec4899"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ec4899"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ec4899"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block" style="background:#ec4899"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ec4899"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ec4899"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ec4899"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ec4899"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-            </div>
-          </div>
+          <div class="poster-preview" data-book="AliceInWonderland"></div>
           <div class="poster-footer">
             <span>Explore Visual</span>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -328,64 +214,7 @@
           <div class="poster-meta">Screenplay / Drama</div>
           <h3 class="poster-title">A Death in the Gunj</h3>
           <div class="poster-author">Konkona Sensharma</div>
-          <div class="poster-preview">
-            <div class="preview-row">
-              <span class="preview-block" style="background:#4d7c0f"></span>
-              <span class="preview-block" style="background:#fb923c"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f59e0b"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#4d7c0f"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#fb923c"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f59e0b"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f59e0b"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#4d7c0f"></span>
-              <span class="preview-block" style="background:#fb923c"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f59e0b"></span>
-              <span class="preview-block" style="background:#4d7c0f"></span>
-              <span class="preview-block" style="background:#fb923c"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block" style="background:#fb923c"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f59e0b"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#4d7c0f"></span>
-              <span class="preview-block" style="background:#fb923c"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f59e0b"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#4d7c0f"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#4d7c0f"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#fb923c"></span>
-              <span class="preview-block" style="background:#f59e0b"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#4d7c0f"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#fb923c"></span>
-              <span class="preview-block" style="background:#f59e0b"></span>
-              <span class="preview-block"></span>
-            </div>
-          </div>
+          <div class="poster-preview" data-book="DeathInTheGunj"></div>
           <div class="poster-footer">
             <span>Explore Visual</span>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -399,64 +228,7 @@
           <div class="poster-meta">Adventure / Philosophy</div>
           <h3 class="poster-title">Life of Pi</h3>
           <div class="poster-author">Yann Martel</div>
-          <div class="poster-preview">
-            <div class="preview-row">
-              <span class="preview-block" style="background:#f97316"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f97316"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f97316"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block" style="background:#f97316"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f97316"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f97316"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f97316"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f97316"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block" style="background:#0ea5e9"></span>
-              <span class="preview-block"></span>
-            </div>
-          </div>
+          <div class="poster-preview" data-book="LifeOfPi"></div>
           <div class="poster-footer">
             <span>Explore Visual</span>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -470,64 +242,7 @@
           <div class="poster-meta">Historical Fiction / Mystery</div>
           <h3 class="poster-title">My Name is Red</h3>
           <div class="poster-author">Orhan Pamuk</div>
-          <div class="poster-preview">
-            <div class="preview-row">
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#111827"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#111827"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#111827"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#111827"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#111827"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#111827"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block" style="background:#111827"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#ef4444"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block" style="background:#111827"></span>
-              <span class="preview-block"></span>
-            </div>
-          </div>
+          <div class="poster-preview" data-book="MyNameIsRed"></div>
           <div class="poster-footer">
             <span>Explore Visual</span>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -541,64 +256,7 @@
           <div class="poster-meta">Victorian Romance / Drama</div>
           <h3 class="poster-title">Oscar and Lucinda</h3>
           <div class="poster-author">Peter Carey</div>
-          <div class="poster-preview">
-            <div class="preview-row">
-              <span class="preview-block" style="background:#10b981"></span>
-              <span class="preview-block" style="background:#8b5cf6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f472b6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#10b981"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#8b5cf6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f472b6"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f472b6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#10b981"></span>
-              <span class="preview-block" style="background:#8b5cf6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f472b6"></span>
-              <span class="preview-block" style="background:#10b981"></span>
-              <span class="preview-block" style="background:#8b5cf6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block" style="background:#8b5cf6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f472b6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#10b981"></span>
-              <span class="preview-block" style="background:#8b5cf6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#f472b6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#10b981"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#10b981"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#8b5cf6"></span>
-              <span class="preview-block" style="background:#f472b6"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#10b981"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#8b5cf6"></span>
-              <span class="preview-block" style="background:#f472b6"></span>
-              <span class="preview-block"></span>
-            </div>
-          </div>
+          <div class="poster-preview" data-book="OscarAndLucinda"></div>
           <div class="poster-footer">
             <span>Explore Visual</span>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -612,64 +270,7 @@
           <div class="poster-meta">Children / Classics</div>
           <h3 class="poster-title">The Wizard of Oz</h3>
           <div class="poster-author">L. Frank Baum</div>
-          <div class="poster-preview">
-            <div class="preview-row">
-              <span class="preview-block" style="background:#84cc16"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#84cc16"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#84cc16"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block" style="background:#84cc16"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#84cc16"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#84cc16"></span>
-            </div>
-            <div class="preview-row">
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#84cc16"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#84cc16"></span>
-              <span class="preview-block"></span>
-              <span class="preview-block" style="background:#eab308"></span>
-              <span class="preview-block" style="background:#e5e7eb"></span>
-              <span class="preview-block"></span>
-            </div>
-          </div>
+          <div class="poster-preview" data-book="WizardOfOz"></div>
           <div class="poster-footer">
             <span>Explore Visual</span>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -1198,9 +799,60 @@ new ResizeObserver(entries => {
   }
 }).observe(svg);
 
+function renderGalleryPreviews(data) {
+  const previews = document.querySelectorAll('.poster-preview');
+  previews.forEach(previewContainer => {
+    const bookKey = previewContainer.getAttribute('data-book');
+    const chapters = data[bookKey];
+    if (!chapters) return;
+    
+    previewContainer.innerHTML = '';
+    
+    const targetRows = 8;
+    const targetCols = 12;
+    
+    for (let r = 0; r < targetRows; r++) {
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'preview-row';
+      
+      const srcChapterIdx = Math.floor(r * chapters.length / targetRows);
+      const chapterParas = chapters[srcChapterIdx] || [];
+      
+      for (let c = 0; c < targetCols; c++) {
+        const blockSpan = document.createElement('span');
+        blockSpan.className = 'preview-block';
+        
+        if (chapterParas.length > 0) {
+          const srcParaIdx = Math.floor(c * chapterParas.length / targetCols);
+          const colorHex = chapterParas[srcParaIdx];
+          if (colorHex) {
+            blockSpan.style.background = colorHex;
+          }
+        }
+        rowDiv.appendChild(blockSpan);
+      }
+      previewContainer.appendChild(rowDiv);
+    }
+  });
+}
+
 /* ---------- Init: fetch JSON + TXT, validate, build, render ---------- */
 (async function init(){
   try{
+    if (!book) {
+      // Light-weight gallery load: fetch ONLY previews JSON!
+      const previewsUrl = isLocal
+        ? "./gallery_previews.json"
+        : "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/gallery_previews.json";
+      
+      const resp = await fetch(previewsUrl, {cache:'no-store'});
+      if (!resp.ok) throw new Error('Failed to load gallery previews');
+      const previewsData = await resp.json();
+      
+      renderGalleryPreviews(previewsData);
+      return;
+    }
+
     const [rowsResp, txtResp] = await Promise.all([
       fetch(JSON_URL, {cache:'no-store'}), fetch(TXT_URL, {cache:'no-store'})
     ]);
@@ -1216,14 +868,14 @@ new ResizeObserver(entries => {
     computeMatches("");
 
     const initialSearch = urlParams.get("search") || "";
-if (initialSearch) {
-  searchInput.value = initialSearch;
-  applySearch(initialSearch);
+    if (initialSearch) {
+      searchInput.value = initialSearch;
+      applySearch(initialSearch);
 
-    // turn on filter-only mode
-  filterOnly = true;
-  filterToggle.setAttribute('aria-pressed', 'true');
-}
+      // turn on filter-only mode
+      filterOnly = true;
+      filterToggle.setAttribute('aria-pressed', 'true');
+    }
 
     render();
   } catch(err){
