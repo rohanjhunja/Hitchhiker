@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Book Visualizer — Local & Offline</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#0f1830; --text:#e9eef9; --muted:#9fb3d2;
+    --chip:#1a2746; --border:#233357; --accent:#5ac8fa; --accent-2:#2ea0f4;
+    --success:#34c759;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f7f9fd; --panel:#ffffff; --text:#0b1220; --muted:#5a6b85; --chip:#eef3fc; --border:#dfe7f5; --accent:#2ea0f4; --accent-2:#5ac8fa }
+  }
+  *{ box-sizing:border-box }
+  html,body{ height:100%; margin:0 }
+  body{ background:var(--bg); color:var(--text); font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial; display:flex; flex-direction:column; overflow:hidden }
+
+  /* Landing Drop Zone Style */
+  .drop-overlay {
+    position:fixed; inset:0; background:rgba(11, 18, 32, 0.95); z-index:100;
+    display:flex; align-items:center; flex-direction:column; justify-content:center;
+    padding:2rem; transition:opacity 0.3s ease, visibility 0.3s ease;
+  }
+  .drop-overlay.hidden { opacity:0; visibility:hidden; pointer-events:none }
+  
+  .drop-card {
+    background:radial-gradient(1200px 700px at 30% -10%, rgba(90,200,250,.15), transparent), var(--panel);
+    border: 1px solid var(--border); border-radius: 1.5rem; padding: 3rem; max-width: 600px; width: 100%;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4); text-align: center;
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .drop-card.dragover {
+    transform: scale(1.02); border-color: var(--accent);
+    box-shadow: 0 0 30px rgba(90, 200, 250, 0.2);
+  }
+  .drop-card h2 { margin: 0 0 0.5rem 0; font-size: 2rem; font-weight: 700; color: #fff }
+  @media (prefers-color-scheme: light){
+    .drop-card h2 { color: var(--text) }
+  }
+  .drop-card p { color: var(--muted); margin: 0 0 2rem 0; font-size: 1.05rem }
+  
+  .file-inputs {
+    display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2.5rem;
+  }
+  .file-label {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--chip); border: 1px dashed var(--border); border-radius: 1rem;
+    padding: 1.2rem 1.5rem; cursor: pointer; transition: all 0.2s ease;
+    font-weight: 600; text-align: left;
+  }
+  .file-label:hover {
+    border-color: var(--accent); background: rgba(90,200,250,.05);
+  }
+  .file-label.loaded {
+    border-color: var(--success); background: rgba(52,199,89,.05);
+    border-style: solid;
+  }
+  .file-label input { display: none }
+  .file-status { font-size: 0.9rem; color: var(--muted); font-weight: normal }
+  .file-label.loaded .file-status { color: var(--success); font-weight: bold }
+
+  .visualize-btn {
+    appearance:none; border:none; background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    color:#03223a; padding:1rem 2rem; border-radius:1rem; cursor:pointer;
+    font-weight:700; font-size:1.1rem; width: 100%; transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(46, 160, 244, 0.3);
+  }
+  .visualize-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(46, 160, 244, 0.4);
+  }
+  .visualize-btn:disabled {
+    opacity: 0.5; cursor: not-allowed; box-shadow: none;
+    background: var(--border); color: var(--muted);
+  }
+
+  /* Sticky search bar */
+  .searchbar{
+    position:sticky; top:0; z-index:10; display:flex; gap:.6rem; align-items:center; padding:.6rem .8rem;
+    background:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,0)), var(--panel);
+    border-bottom:1px solid var(--border); backdrop-filter:saturate(140%) blur(8px);
+  }
+  .input{
+    flex:1; display:flex; align-items:center; gap:.5rem; background:var(--chip); border:1px solid var(--border);
+    border-radius:.7rem; padding:.5rem .7rem; color:var(--text);
+  }
+  .input input{
+    flex:1; background:transparent; border:none; outline:none; color:inherit; font:inherit;
+  }
+  .badge{ color:var(--muted); font-size:.9rem }
+  .btn{ appearance:none; border:1px solid var(--border); background:var(--panel); color:var(--text);
+        padding:.45rem .7rem; border-radius:.7rem; cursor:pointer; font-weight:600 }
+  
+  /* Toggle pill */
+  .toggle{
+    appearance:none; border:1px solid var(--border); background:var(--panel); color:var(--text);
+    padding:.45rem .7rem; border-radius:999px; cursor:pointer; font-weight:600;
+  }
+  .toggle[aria-pressed="true"]{
+    background: var(--accent); color:#03223a; border-color: transparent;
+  }
+
+  main{ padding:.8rem; flex:1; display:flex }
+  #viz{
+    width:100%;
+    height: 100%;
+    border:1px solid var(--border);
+    border-radius:1rem;
+    display:block;
+    background:radial-gradient(1200px 700px at 30% -10%, rgba(90,200,250,.08), transparent), var(--panel);
+  }
+
+  /* Overlay with full text */
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; transform:translateY(100%); transition:transform .32s ease;
+    background:var(--panel); border-top:1px solid var(--border); border-radius:1rem 1rem 0 0; max-height:80dvh;
+    box-shadow:0 -20px 40px rgba(0,0,0,.25); z-index:30; display:flex; flex-direction:column
+  }
+  .sheet.open{ transform:translateY(0) }
+  .sheet-head{
+    position:sticky; top:0; z-index:1;
+    display:flex; align-items:center; gap:.6rem; padding:.7rem .9rem; border-bottom:1px solid var(--border);
+    background: var(--panel);
+  }
+  .sheet-title{ font-weight:600 }
+  .close{ margin-left:auto; appearance:none; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:.6rem; padding:.35rem .6rem; cursor:pointer }
+  .sheet-body{ padding:.8rem .9rem; overflow:auto; line-height:1.55 }
+  .p{
+    display:inline;
+    white-space:normal;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+  }
+  .p + .p::before{ content:" "; }
+  .p.highlight{ outline:2px solid var(--accent); border-radius:.25rem; padding:.05rem .1rem; scroll-margin-top:72px; background:rgba(90,200,250,.08) }
+  mark{ background:rgba(90,200,250,.35); color:inherit; padding:0 .08em; border-radius:.2em }
+
+  /* Tooltip */
+  .tooltip{
+    position:fixed; pointer-events:none; background:rgba(0,0,0,.75); color:#fff;
+    padding:.28rem .45rem; border-radius:.35rem; font-size:.8rem; transform:translate(-50%, calc(-100% - 8px));
+    white-space:nowrap; opacity:0; transition:opacity .12s ease; z-index:50
+  }
+</style>
+</head>
+<body>
+
+  <!-- Landing Drop Zone Overlay -->
+  <div id="drop-overlay" class="drop-overlay">
+    <div id="drop-card" class="drop-card">
+      <h2>Sleek Offline Visualizer</h2>
+      <p>Drag and drop your local files here, or use the selectors below.</p>
+      
+      <div class="file-inputs">
+        <label id="label-txt" class="file-label">
+          <span>📖 Select book.txt</span>
+          <span id="status-txt" class="file-status">No file selected</span>
+          <input type="file" id="file-txt" accept=".txt">
+        </label>
+        
+        <label id="label-json" class="file-label">
+          <span>📊 Select hhgttg_word_index.json</span>
+          <span id="status-json" class="file-status">No file selected</span>
+          <input type="file" id="file-json" accept=".json">
+        </label>
+      </div>
+      
+      <button id="visualize-btn" class="visualize-btn" disabled>Visualize Local Book</button>
+    </div>
+  </div>
+
+  <!-- Sticky search bar -->
+  <div class="searchbar">
+    <div class="input">
+      <span aria-hidden="true">🔎</span>
+      <input id="search" type="text" placeholder="Search text — highlights matching paragraphs (Esc to clear)"/>
+    </div>
+    <button class="btn" id="clear">Clear</button>
+    <button class="toggle" id="filter-toggle" aria-pressed="false" title="When on: show only colored paragraphs, or only matches if searching">Show Filtered Only</button>
+    <div class="badge" id="stats">Ready</div>
+  </div>
+
+  <main>
+    <svg id="viz" role="img" aria-label="Paragraph blocks" tabindex="0"></svg>
+  </main>
+
+  <!-- Full text overlay -->
+  <div class="sheet" id="sheet" aria-modal="true" role="dialog">
+    <div class="sheet-head">
+      <div class="sheet-title" id="sheet-title">Book Text</div>
+      <button type="button" class="close" id="close-btn">Close</button>
+    </div>
+    <div class="sheet-body" id="sheet-body"></div>
+  </div>
+
+  <div class="tooltip" id="tip"></div>
+
+<script>
+/* ---------- Offline File Selection State ---------- */
+let localTxtContent = null;
+let localJsonData = null;
+
+const dropOverlay = document.getElementById('drop-overlay');
+const dropCard = document.getElementById('drop-card');
+const fileTxt = document.getElementById('file-txt');
+const fileJson = document.getElementById('file-json');
+const labelTxt = document.getElementById('label-txt');
+const labelJson = document.getElementById('label-json');
+const statusTxt = document.getElementById('status-txt');
+const statusJson = document.getElementById('status-json');
+const visualizeBtn = document.getElementById('visualize-btn');
+
+function updateBtnState() {
+  visualizeBtn.disabled = !(localTxtContent && localJsonData);
+}
+
+// Handler for TXT file
+fileTxt.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      localTxtContent = evt.target.result;
+      statusTxt.textContent = file.name;
+      labelTxt.classList.add('loaded');
+      updateBtnState();
+    };
+    reader.readAsText(file);
+  }
+});
+
+// Handler for JSON file
+fileJson.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      try {
+        localJsonData = JSON.parse(evt.target.result);
+        statusJson.textContent = file.name;
+        labelJson.classList.add('loaded');
+        updateBtnState();
+      } catch(err) {
+        alert("Invalid JSON file: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+});
+
+// Drag & Drop Handlers
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => e.preventDefault());
+
+dropCard.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropCard.classList.add('dragover');
+});
+dropCard.addEventListener('dragleave', () => {
+  dropCard.classList.remove('dragover');
+});
+dropCard.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropCard.classList.remove('dragover');
+  
+  const files = Array.from(e.dataTransfer.files);
+  files.forEach(file => {
+    if (file.name.endsWith('.txt')) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        localTxtContent = evt.target.result;
+        statusTxt.textContent = file.name;
+        labelTxt.classList.add('loaded');
+        updateBtnState();
+      };
+      reader.readAsText(file);
+    } else if (file.name.endsWith('.json')) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          localJsonData = JSON.parse(evt.target.result);
+          statusJson.textContent = file.name;
+          labelJson.classList.add('loaded');
+          updateBtnState();
+        } catch(err) {
+          alert("Invalid JSON: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+  });
+});
+
+visualizeBtn.addEventListener('click', () => {
+  if (localTxtContent && localJsonData) {
+    dropOverlay.classList.add('hidden');
+    loadBookData(localJsonData, localTxtContent);
+  }
+});
+
+/* ---------- Visualizer Rendering Code ---------- */
+const svg = document.getElementById('viz');
+const tip = document.getElementById('tip');
+const stats = document.getElementById('stats');
+const sheet = document.getElementById('sheet');
+const sheetBody = document.getElementById('sheet-body');
+const closeBtn = document.getElementById('close-btn');
+const searchInput = document.getElementById('search');
+const clearBtn = document.getElementById('clear');
+const filterToggle = document.getElementById('filter-toggle');
+
+let filterOnly = false;
+let model = null;
+let fullTextBuilt = false;
+let currentQuery = "";
+
+const COLOR_MAP = {
+  red:'#ef4444', crimson:'#dc2626', scarlet:'#f43f5e', maroon:'#7f1d1d',
+  blue:'#3b82f6', navy:'#1e3a8a', azure:'#0ea5e9', cyan:'#06b6d4', teal:'#0d9488',
+  green:'#22c55e', lime:'#84cc16', olive:'#4d7c0f',
+  yellow:'#eab308', gold:'#f59e0b', amber:'#f59e0b',
+  orange:'#fb923c', coral:'#fb7185', peach:'#fdba74',
+  purple:'#a855f7', violet:'#8b5cf6', indigo:'#6366f1', magenta:'#ec4899', pink:'#f472b6', lavender:'#c4b5fd',
+  brown:'#a16207', beige:'#f5f5dc', tan:'#d2b48c',
+  black:'#111827', white:'#e5e7eb', gray:'#6b7280', grey:'#6b7280', silver:'#9ca3af'
+};
+const CANON_KEYS = Object.keys(COLOR_MAP).map(k => k === 'grey' ? 'gray' : k);
+const COLOR_TOKEN = CANON_KEYS
+  .sort((a,b)=> b.length-a.length)
+  .map(k => k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'))
+  .join('|');
+const COLOR_REGEX = new RegExp(`\\b((?:${COLOR_TOKEN})(?:-ish)?)\\b(?:[\\-/]((?:${COLOR_TOKEN})(?:-ish)?))?`, 'gi');
+
+function normalizeColorTokenLoose(tok){
+  if(!tok) return null;
+  let t = tok.toLowerCase();
+  t = t.replace(/[^a-z]/g,'');
+  if (t.endsWith('ish') && t.length>4) t = t.slice(0,-3);
+  if (t === 'grey') t = 'gray';
+  return CANON_KEYS.includes(t) ? t : null;
+}
+function detectColorsInText(raw){
+  const counts = new Map(); let m;
+  while ((m = COLOR_REGEX.exec(raw)) !== null){
+    const a = normalizeColorTokenLoose(m[1]);
+    const b = normalizeColorTokenLoose(m[2]);
+    if (a){ counts.set(a, (counts.get(a)||0)+1); }
+    if (b){ counts.set(b, (counts.get(b)||0)+1); }
+  }
+  return Array.from(counts.entries())
+    .map(([key,count])=> ({ key, count, hex: COLOR_MAP[key] }))
+    .sort((x,y)=> y.count - x.count);
+}
+
+function elt(tag, attrs={}){ const e=document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+function rect(x,y,w,h,r,fill){ return elt('rect',{x,y,width:w,height:h,rx:r||0,ry:r||0,fill}); }
+function clearSVG(){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+
+function escapeHtml(s){ return s.replace(/[&<>]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function makeColorHighlightRegex(keys){
+  if (!keys || !keys.length) return null;
+  const escaped = keys.filter(Boolean).map(k => k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).sort((a,b)=> b.length-a.length);
+  if (!escaped.length) return null;
+  return new RegExp(`(^|[^A-Za-z])((?:${escaped.join('|')})(?:-ish)?)(?=[^A-Za-z]|$)`, 'gi');
+}
+
+function buildModel(rows, text){
+  const byPara=new Map();
+  for (const r of rows){
+    const arr = byPara.get(r.paragraph_idx) || [];
+    arr.push(r); byPara.set(r.paragraph_idx, arr);
+  }
+
+  const paras=[];
+  byPara.forEach((list, pid)=>{
+    list.sort((a,b)=> a.start_char - b.start_char);
+    const start=list[0]?.start_char ?? 0;
+    const last=list[list.length-1]; const end= last ? last.start_char + (last.word?.length||0) : start;
+    const chapter_idx = list[0]?.chapter_idx ?? 0;
+
+    const paraText = text.slice(start, end);
+    const colors = detectColorsInText(paraText);
+    const colorPrimary = colors[0]?.key || null;
+
+    paras.push({
+      idx:+pid, chapter_idx, start, end, len:end-start, wordCount:list.length,
+      colors, colorPrimary, colorHex: colors[0]?.hex || null,
+      textLower: paraText.toLowerCase()
+    });
+  });
+
+  paras.sort((a,b)=> a.idx - b.idx);
+
+  const byChapter=new Map();
+  for (const p of paras){
+    if (!byChapter.has(p.chapter_idx)) byChapter.set(p.chapter_idx, []);
+    byChapter.get(p.chapter_idx).push(p);
+  }
+  const chapters=[]; let totalWeight=0;
+  byChapter.forEach((arr, ci)=>{
+    const weight = arr.reduce((s,p)=> s+p.len, 0); totalWeight += weight;
+    chapters.push({ idx:ci, weight, paras:arr });
+  });
+  chapters.sort((a,b)=> a.idx-b.idx);
+
+  const paraTextByIdx = {};
+  const colorKeysByIdx = {};
+  for (const p of paras){
+    paraTextByIdx[p.idx] = text.slice(p.start, p.end);
+    colorKeysByIdx[p.idx] = (p.colors || []).map(c => c.key);
+  }
+
+  return { text, paras, paraTextByIdx, colorKeysByIdx, chapters, totalWeight: Math.max(1,totalWeight) };
+}
+
+function computeMatches(q){
+  const needle = q.trim().toLowerCase();
+  for (const ch of model.chapters){
+    for (const p of ch.paras){
+      p._match = needle ? p.textLower.includes(needle) : false;
+    }
+  }
+}
+
+function paragraphsForChapter(ch){
+  if (!filterOnly) return ch.paras;
+  const hasQuery = currentQuery.trim().length > 0;
+  if (hasQuery){
+    return ch.paras.filter(p => !!p._match);
+  } else {
+    return ch.paras.filter(p => p.colors && p.colors.length > 0);
+  }
+}
+
+function chaptersToDraw(){
+  const list = [];
+  for (const ch of model.chapters){
+    const pFiltered = paragraphsForChapter(ch);
+    if (pFiltered.length === 0) continue;
+    const w = pFiltered.reduce((s,p)=> s + p.len, 0);
+    list.push({ idx: ch.idx, paras: pFiltered, weight: w });
+  }
+  return list;
+}
+
+function render(){
+  if (!model) return;
+  clearSVG();
+
+  const bbox = svg.getBoundingClientRect();
+  const W = Math.max(320, bbox.width);
+  const H = Math.max(200, bbox.height);
+
+  const padX = 10, padY = 10;
+  const rowGap = 8;
+  const blockGap = 2;
+  const minRow = 18;
+
+  const chaptersDraw = chaptersToDraw();
+  const nCh = chaptersDraw.length;
+
+  const Hpad = Math.max(0, H - padY*2 - rowGap*Math.max(0, nCh-1));
+  let leftoverH = Hpad - nCh * minRow; if (leftoverH < 0) leftoverH = 0;
+
+  const totWeight = chaptersDraw.reduce((s,ch)=> s + ch.weight, 0) || 1;
+  const heights = chaptersDraw.map(ch => minRow + Math.floor(leftoverH * (ch.weight / totWeight)));
+
+  let sumH = heights.reduce((a,b)=> a+b, 0), diffH = Hpad - sumH, k=0;
+  while (diffH !== 0 && k < heights.length*2){
+    const i = k % heights.length, step = diffH > 0 ? 1 : -1;
+    if (step < 0 && heights[i] <= minRow) { k++; continue; }
+    heights[i] += step; diffH -= step; k++;
+  }
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  const defs = elt('defs'); svg.appendChild(defs);
+  function ensureGradientForParagraph(p){
+    const colors = p.colors || [];
+    if (colors.length === 0) return null;
+    if (colors.length === 1) return colors[0].hex;
+    const top = colors.slice(0,6);
+    const total = top.reduce((s,c)=> s + c.count, 0) || 1;
+    const gid = `grad-${p.idx}`;
+    if (!document.getElementById(gid)){
+      const lg = elt('linearGradient', { id: gid, x1:'0%', y1:'0%', x2:'100%', y2:'0%' });
+      let acc = 0;
+      top.forEach(c=>{
+        const share = c.count / total;
+        const a = (acc*100).toFixed(2)+'%';
+        const b = ((acc+share)*100).toFixed(2)+'%';
+        lg.appendChild(elt('stop',{offset:a,'stop-color':c.hex}));
+        lg.appendChild(elt('stop',{offset:b,'stop-color':c.hex}));
+        acc += share;
+      });
+      defs.appendChild(lg);
+    }
+    return `url(#${gid})`;
+  }
+
+  const cover = rect(0,0,W,H,0,'transparent');
+  cover.addEventListener('pointerenter', ()=> tip.style.opacity = 0);
+  svg.appendChild(cover);
+
+  let y = padY;
+  const chapterWidth = W - padX*2;
+  const isQuery = currentQuery.trim().length > 0;
+
+  chaptersDraw.forEach((ch, ci) => {
+    const h = heights[ci];
+    const g = elt('g', { transform:`translate(${padX},${y})` }); svg.appendChild(g);
+
+    const bg = rect(0,0,chapterWidth,h,8,'rgba(255,255,255,0.02)');
+    bg.style.stroke='var(--border)'; bg.style.strokeWidth='0.6';
+    g.appendChild(bg);
+
+    const innerW = chapterWidth - blockGap*2;
+    const desiredMinW = Math.max(1, h - blockGap*2);
+
+    const qualify = ch.paras.map(p => (p.colors && p.colors.length>0) || (isQuery && p._match));
+    const minWs = ch.paras.map((p,i) => qualify[i] ? desiredMinW : 1);
+
+    let sumMin = minWs.reduce((a,b)=>a+b,0);
+    if (sumMin > innerW){
+      const nonQualSum = minWs.reduce((s,w,i)=> s + (qualify[i] ? 0 : w), 0);
+      const qualCount  = qualify.reduce((s,q)=> s + (q?1:0), 0);
+      const availForQual = Math.max(0, innerW - nonQualSum);
+      const newQualMin = qualCount ? Math.max(1, Math.floor(availForQual / qualCount)) : 1;
+      for (let i=0;i<minWs.length;i++) if (qualify[i]) minWs[i] = newQualMin;
+      sumMin = minWs.reduce((a,b)=>a+b,0);
+    }
+
+    const totalParaWeight = ch.paras.reduce((s,p)=> s + p.len, 0) || 1;
+    let leftoverW = Math.max(0, innerW - sumMin);
+    const widths = ch.paras.map(p => {
+      return Math.floor(leftoverW * (p.len / totalParaWeight));
+    });
+
+    let used = widths.reduce((a,b)=>a+b,0);
+    let diffW = leftoverW - used, k2=0;
+    while (diffW !== 0 && k2 < widths.length*2){
+      widths[k2 % widths.length] += (diffW > 0 ? 1 : -1);
+      diffW += (diffW > 0 ? -1 : 1);
+      k2++;
+    }
+
+    for (let i=0;i<widths.length;i++) widths[i] += minWs[i];
+
+    let x = blockGap;
+    ch.paras.forEach((p, pi)=>{
+      const w = Math.max(1, widths[pi]);
+      const fill = (p.colors && p.colors.length >= 2) ? ensureGradientForParagraph(p)
+                   : (p.colorHex || 'rgba(255,255,255,.06)');
+
+      const r = rect(x, blockGap, w, Math.max(1, h - blockGap*2), 6, fill || 'rgba(255,255,255,.06)');
+
+      const matched = !!p._match;
+      if (isQuery){
+        r.style.stroke = matched ? 'var(--accent)' : 'var(--border)';
+        r.style.strokeWidth = matched ? '1.5' : '0.6';
+        r.style.opacity = matched ? '1' : (filterOnly ? '0.20' : '0.45');
+      } else {
+        const colored = p.colors && p.colors.length>0;
+        r.style.stroke = 'var(--border)'; r.style.strokeWidth = '0.6';
+        r.style.opacity = (!filterOnly || colored) ? '1' : '0.20';
+      }
+
+      r.addEventListener('pointerenter', (e)=>{
+        const colorTxt = (p.colors && p.colors.length) ? 'colors: ' + p.colors.map(c=>c.key).join(', ') : null;
+        const pieces = [`Para ${p.idx+1}`, `${p.wordCount} words`, colorTxt, matched && isQuery ? `matches "${currentQuery.trim()}"` : null].filter(Boolean);
+        tip.textContent = pieces.join(' · ');
+        tip.style.left = e.clientX+'px'; tip.style.top = e.clientY+'px'; tip.style.opacity = 1;
+      });
+      r.addEventListener('pointerleave', ()=> tip.style.opacity = 0);
+      r.addEventListener('click', ()=> openOverlayScrollTo(p.idx));
+
+      g.appendChild(r);
+      x += w;
+    });
+
+    y += h + rowGap;
+  });
+
+  updateStatsBadge(chaptersDraw);
+}
+
+function updateStatsBadge(chaptersDraw){
+  if (!model) return;
+  const totalCh = model.chapters.length;
+  const totalParas = model.chapters.reduce((s,ch)=> s+ch.paras.length,0);
+  const showingCh = chaptersDraw.length;
+  const showingParas = chaptersDraw.reduce((s,ch)=> s+ch.paras.length,0);
+  const mode = currentQuery.trim().length ? 'matches' : 'colored';
+  const suffix = filterOnly ? ` · showing ${showingParas}/${totalParas} ${mode}` : '';
+  stats.textContent = `Loaded: ${totalCh} ch · ${totalParas} paras${suffix}`;
+}
+
+function ensureFullText(){
+  if (fullTextBuilt || !model) return;
+  sheetBody.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for (const p of model.paras){
+    const el = document.createElement('span');
+    el.className='p';
+    el.id = 'p-' + p.idx;
+    el.textContent = model.paraTextByIdx[p.idx] || '';
+    frag.appendChild(el);
+  }
+  sheetBody.appendChild(frag);
+  fullTextBuilt = true;
+}
+
+function highlightOverlayTokens(q){
+  if (!fullTextBuilt || !model) return;
+
+  const needle = q.trim();
+  const hasQuery = needle.length > 0;
+  const literalQueryRx = hasQuery
+    ? new RegExp(`(^|[^A-Za-z])(${escapeRegExp(needle)})(?=[^A-Za-z]|$)`, 'gi')
+    : null;
+
+  for (const el of sheetBody.querySelectorAll('.p')){
+    const idx = +el.id.slice(2);
+    const raw = model.paraTextByIdx[idx] || '';
+    let html = escapeHtml(raw);
+
+    if (hasQuery){
+      html = html.replace(literalQueryRx, (m, left, token) => `${left}<mark>${escapeHtml(token)}</mark>`);
+    } else {
+      const keys = model.colorKeysByIdx[idx] || [];
+      const rx = makeColorHighlightRegex(keys);
+      if (rx){
+        html = html.replace(rx, (m, left, token) => `${left}<mark>${escapeHtml(token)}</mark>`);
+      }
+    }
+    el.innerHTML = html;
+  }
+}
+
+function openOverlayScrollTo(paragraphIdx){
+  ensureFullText();
+  highlightOverlayTokens(currentQuery);
+  sheet.classList.add('open');
+
+  const prev = sheetBody.querySelector('.p.highlight');
+  if (prev) prev.classList.remove('highlight');
+  const target = document.getElementById('p-'+paragraphIdx);
+  if (target){
+    target.classList.add('highlight');
+    setTimeout(()=> target.scrollIntoView({behavior:'smooth', block:'start'}), 40);
+  }
+}
+
+function applySearch(q){
+  currentQuery = q || "";
+  if (model) {
+    computeMatches(currentQuery);
+    render();
+  }
+  if (sheet.classList.contains('open')) closeSheet();
+}
+searchInput.addEventListener('input', (e)=> applySearch(e.target.value));
+clearBtn.addEventListener('click', ()=>{
+  searchInput.value = "";
+  applySearch("");
+  searchInput.focus();
+});
+window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape'){ searchInput.value=""; applySearch(""); }});
+
+filterToggle.addEventListener('click', ()=>{
+  filterOnly = !filterOnly;
+  filterToggle.setAttribute('aria-pressed', String(filterOnly));
+  render();
+});
+
+function closeSheet(){ sheet.classList.remove('open'); }
+closeBtn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); closeSheet(); });
+sheet.addEventListener('click', (e)=>{ if (e.target === sheet) closeSheet(); });
+document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && sheet.classList.contains('open')) closeSheet(); });
+
+sheetBody.addEventListener('dblclick', ()=>{
+  const sel = (window.getSelection && window.getSelection().toString()) || "";
+  const word = sel.trim();
+  if (word){
+    searchInput.value = word;
+    applySearch(word);
+  }
+});
+
+window.addEventListener('pointermove', (e)=>{ if (tip.style.opacity>0){ tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; } });
+let lastW = 0, lastH = 0;
+new ResizeObserver(entries => {
+  for (let entry of entries) {
+    const { width, height } = entry.contentRect;
+    if (Math.abs(width - lastW) > 1.5 || Math.abs(height - lastH) > 1.5) {
+      lastW = width;
+      lastH = height;
+      requestAnimationFrame(() => render());
+    }
+  }
+}).observe(svg);
+
+function loadBookData(rows, text) {
+  model = buildModel(rows, text);
+  fullTextBuilt = false;
+  computeMatches("");
+  render();
+}
+</script>
+</body>
+</html>
