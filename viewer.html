@@ -149,18 +149,15 @@
   .poster-author { font-size: 1rem; color: var(--muted); margin: 0 0 1.5rem 0; font-style: italic }
   
   .poster-preview {
-    flex: 1; display: flex; flex-direction: column; gap: 4px;
+    flex: 1; display: block; overflow: hidden;
     background: rgba(255,255,255,0.01); border: 1px solid var(--border);
-    border-radius: 0.75rem; padding: 0.5rem; margin-bottom: 1.5rem;
-    transition: background 0.3s ease;
+    border-radius: 0.75rem; padding: 0.25rem; margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
   }
-  .poster-card:hover .poster-preview { background: rgba(255,255,255,0.03) }
-  .preview-row { flex: 1; display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px }
-  .preview-block {
-    border-radius: 2px; background: rgba(255,255,255,0.03);
-    transition: transform 0.2s ease;
+  .poster-card:hover .poster-preview {
+    background: rgba(255,255,255,0.03);
+    box-shadow: inset 0 0 15px rgba(255,255,255,0.02);
   }
-  .poster-card:hover .preview-block { transform: scale(1.08) }
   
   .poster-footer {
     display: flex; align-items: center; justify-content: space-between;
@@ -808,31 +805,84 @@ function renderGalleryPreviews(data) {
     
     previewContainer.innerHTML = '';
     
-    const targetRows = 8;
-    const targetCols = 12;
+    // Create vector SVG
+    const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgEl.setAttribute('viewBox', '0 0 300 200');
+    svgEl.setAttribute('width', '100%');
+    svgEl.setAttribute('height', '100%');
+    svgEl.style.display = 'block';
     
-    for (let r = 0; r < targetRows; r++) {
-      const rowDiv = document.createElement('div');
-      rowDiv.className = 'preview-row';
-      
-      const srcChapterIdx = Math.floor(r * chapters.length / targetRows);
-      const chapterParas = chapters[srcChapterIdx] || [];
-      
-      for (let c = 0; c < targetCols; c++) {
-        const blockSpan = document.createElement('span');
-        blockSpan.className = 'preview-block';
-        
-        if (chapterParas.length > 0) {
-          const srcParaIdx = Math.floor(c * chapterParas.length / targetCols);
-          const colorHex = chapterParas[srcParaIdx];
-          if (colorHex) {
-            blockSpan.style.background = colorHex;
-          }
-        }
-        rowDiv.appendChild(blockSpan);
-      }
-      previewContainer.appendChild(rowDiv);
+    const C = chapters.length;
+    if (C === 0) return;
+    
+    const padX = 6, padY = 6;
+    const rowGap = 3;
+    const blockGap = 0.5;
+    const minRow = 4;
+    const H = 200;
+    const W = 300;
+    
+    // Allocate proportional row heights based on chapter length (character sum)
+    const chapterWeights = chapters.map(ch => ch.reduce((sum, p) => sum + p[0], 0));
+    const totalWeight = chapterWeights.reduce((s, w) => s + w, 0) || 1;
+    
+    const Hpad = H - padY * 2 - rowGap * (C - 1);
+    let leftoverH = Hpad - C * minRow;
+    if (leftoverH < 0) leftoverH = 0;
+    
+    const heights = chapterWeights.map(w => minRow + Math.floor(leftoverH * (w / totalWeight)));
+    
+    // Height rounding adjustment
+    let sumH = heights.reduce((a, b) => a + b, 0);
+    let diffH = Hpad - sumH;
+    let k = 0;
+    while (diffH !== 0 && k < heights.length * 2) {
+      const i = k % heights.length;
+      const step = diffH > 0 ? 1 : -1;
+      if (step < 0 && heights[i] <= minRow) { k++; continue; }
+      heights[i] += step;
+      diffH -= step;
+      k++;
     }
+    
+    const W_avail = W - padX * 2;
+    let y = padY;
+    
+    chapters.forEach((ch, chIdx) => {
+      const h = heights[chIdx];
+      const totalWeightCh = chapterWeights[chIdx] || 1;
+      
+      let x = padX;
+      ch.forEach(p => {
+        const pLen = p[0];
+        const pColor = p[1];
+        
+        const w = (pLen / totalWeightCh) * W_avail;
+        
+        if (w > 0.05) {
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', x);
+          rect.setAttribute('y', y + blockGap);
+          rect.setAttribute('width', w);
+          rect.setAttribute('height', Math.max(0.1, h - blockGap * 2));
+          
+          if (pColor !== 0) {
+            rect.setAttribute('fill', pColor);
+            rect.setAttribute('opacity', '1.0');
+          } else {
+            rect.setAttribute('fill', 'rgba(128, 128, 128, 0.08)');
+            rect.setAttribute('opacity', '0.25');
+          }
+          
+          svgEl.appendChild(rect);
+        }
+        x += w;
+      });
+      
+      y += h + rowGap;
+    });
+    
+    previewContainer.appendChild(svgEl);
   });
 }
 
