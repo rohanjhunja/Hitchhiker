@@ -311,6 +311,12 @@
 const urlParams = new URLSearchParams(window.location.search);
 const book = urlParams.get("book");
 
+/* ---------- State ---------- */
+let filterOnly = false;     // toggle state: show only filtered (color/matches) when true
+let model=null;
+let fullTextBuilt=false;
+let currentQuery = "";
+
 if (!book) {
   // Show gallery, hide searchbar and main elements
   document.querySelector('.searchbar').style.display = 'none';
@@ -366,12 +372,6 @@ const closeBtn = document.getElementById('close-btn');
 const searchInput = document.getElementById('search');
 const clearBtn = document.getElementById('clear');
 const filterToggle = document.getElementById('filter-toggle');
-
-/* ---------- State ---------- */
-let filterOnly = false;     // toggle state: show only filtered (color/matches) when true
-let model=null;
-let fullTextBuilt=false;
-let currentQuery = "";
 
 /* ---------- Color dictionary + robust detector ---------- */
 const COLOR_MAP = {
