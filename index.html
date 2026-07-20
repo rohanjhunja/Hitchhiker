@@ -13,42 +13,55 @@
     :root{ --bg:#f7f9fd; --panel:#ffffff; --text:#0b1220; --muted:#5a6b85; --chip:#eef3fc; --border:#dfe7f5; --accent:#2ea0f4; --accent-2:#5ac8fa }
   }
   *{ box-sizing:border-box }
-  html,body{ height:100% }
-  body{ margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial }
+  html{ height:100% }
+  body{
+    margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial;
+    min-height:100dvh; height:100dvh; display:flex; flex-direction:column; overflow:hidden;
+  }
+  body.gallery-mode{ height:auto; min-height:100%; overflow:auto; display:block; }
 
   /* Sticky search bar */
   .searchbar{
     position:sticky; top:0; z-index:10; display:flex; gap:.6rem; align-items:center; padding:.6rem .8rem;
     background:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,0)), var(--panel);
     border-bottom:1px solid var(--border); backdrop-filter:saturate(140%) blur(8px);
+    flex-shrink:0;
   }
   .input{
     flex:1; display:flex; align-items:center; gap:.5rem; background:var(--chip); border:1px solid var(--border);
-    border-radius:.7rem; padding:.5rem .7rem; color:var(--text);
+    border-radius:.7rem; padding:.5rem .7rem; color:var(--text); min-width:140px;
   }
   .input input{
-    flex:1; background:transparent; border:none; outline:none; color:inherit; font:inherit;
+    flex:1; background:transparent; border:none; outline:none; color:inherit; font:inherit; width:100%;
   }
-  .badge{ color:var(--muted); font-size:.9rem }
+  .badge{ color:var(--muted); font-size:.9rem; white-space:nowrap; }
   .btn{ appearance:none; border:1px solid var(--border); background:var(--panel); color:var(--text);
-        padding:.45rem .7rem; border-radius:.7rem; cursor:pointer; font-weight:600 }
+        padding:.45rem .7rem; border-radius:.7rem; cursor:pointer; font-weight:600; white-space:nowrap; }
   /* Toggle pill */
   .toggle{
     appearance:none; border:1px solid var(--border); background:var(--panel); color:var(--text);
-    padding:.45rem .7rem; border-radius:999px; cursor:pointer; font-weight:600;
+    padding:.45rem .7rem; border-radius:999px; cursor:pointer; font-weight:600; white-space:nowrap;
   }
   .toggle[aria-pressed="true"]{
     background: var(--accent); color:#03223a; border-color: transparent;
   }
 
-  main{ padding:.8rem }
+  main{ padding:.6rem; flex:1; min-height:0; display:flex; flex-direction:column; width:100% }
   #viz{
     width:100%;
-    height: 90dvh;                /* fit within 90% of the screen height */
+    height:100%;
+    flex:1;
     border:1px solid var(--border);
     border-radius:1rem;
     display:block;
     background:radial-gradient(1200px 700px at 30% -10%, rgba(90,200,250,.08), transparent), var(--panel);
+  }
+
+  @media (max-width: 640px){
+    .searchbar{ padding:.4rem .5rem; gap:.4rem; flex-wrap:wrap }
+    main{ padding:.35rem }
+    .btn, .toggle{ padding:.35rem .55rem; font-size:.85rem }
+    .badge{ font-size:.8rem }
   }
 
   /* Overlay with full text; paragraphs inline, wrapping; no horizontal scroll */
@@ -318,11 +331,13 @@ let fullTextBuilt=false;
 let currentQuery = "";
 
 if (!book) {
+  document.body.classList.add('gallery-mode');
   // Show gallery, hide searchbar and main elements
   document.querySelector('.searchbar').style.display = 'none';
   document.querySelector('main').style.display = 'none';
   document.getElementById('gallery').style.display = 'block';
 } else {
+  document.body.classList.remove('gallery-mode');
   // Hide gallery
   document.getElementById('gallery').style.display = 'none';
   // Add a "Back to Gallery" button inside searchbar
