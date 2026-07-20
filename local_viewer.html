@@ -78,26 +78,28 @@
 
   /* Sticky search bar */
   .searchbar{
-    position:sticky; top:0; z-index:10; display:flex; gap:.6rem; align-items:center; padding:.6rem .8rem;
+    position:sticky; top:0; z-index:10; display:flex; gap:.4rem; align-items:center; padding:.4rem .6rem;
     background:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,0)), var(--panel);
     border-bottom:1px solid var(--border); backdrop-filter:saturate(140%) blur(8px);
-    flex-shrink:0;
+    flex-shrink:0; flex-wrap:nowrap; overflow:hidden;
   }
   .input{
-    flex:1; display:flex; align-items:center; gap:.5rem; background:var(--chip); border:1px solid var(--border);
-    border-radius:.7rem; padding:.5rem .7rem; color:var(--text); min-width:140px;
+    flex:1; display:flex; align-items:center; gap:.4rem; background:var(--chip); border:1px solid var(--border);
+    border-radius:.7rem; padding:.4rem .6rem; color:var(--text); min-width:60px;
   }
   .input input{
-    flex:1; background:transparent; border:none; outline:none; color:inherit; font:inherit; width:100%;
+    flex:1; background:transparent; border:none; outline:none; color:inherit; font:inherit; width:100%; min-width:0;
   }
-  .badge{ color:var(--muted); font-size:.9rem; white-space:nowrap; }
+  .badge{ color:var(--muted); font-size:.8rem; white-space:nowrap; flex-shrink:0; }
   .btn{ appearance:none; border:1px solid var(--border); background:var(--panel); color:var(--text);
-        padding:.45rem .7rem; border-radius:.7rem; cursor:pointer; font-weight:600; white-space:nowrap; }
+        width:34px; height:34px; min-width:34px; padding:0; border-radius:.7rem; cursor:pointer; font-weight:600; white-space:nowrap;
+        display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1rem; }
   
   /* Toggle pill */
   .toggle{
     appearance:none; border:1px solid var(--border); background:var(--panel); color:var(--text);
-    padding:.45rem .7rem; border-radius:999px; cursor:pointer; font-weight:600; white-space:nowrap;
+    width:34px; height:34px; min-width:34px; padding:0; border-radius:999px; cursor:pointer; font-weight:600; white-space:nowrap;
+    display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1rem;
   }
   .toggle[aria-pressed="true"]{
     background: var(--accent); color:#03223a; border-color: transparent;
@@ -115,10 +117,9 @@
   }
 
   @media (max-width: 640px){
-    .searchbar{ padding:.4rem .5rem; gap:.4rem; flex-wrap:wrap }
+    .searchbar{ padding:.35rem .4rem; gap:.35rem }
     main{ padding:.35rem }
-    .btn, .toggle{ padding:.35rem .55rem; font-size:.85rem }
-    .badge{ font-size:.8rem }
+    .badge{ font-size:.75rem }
   }
 
   /* Overlay with full text */
@@ -184,10 +185,10 @@
   <div class="searchbar">
     <div class="input">
       <span aria-hidden="true">🔎</span>
-      <input id="search" type="text" placeholder="Search text — highlights matching paragraphs (Esc to clear)"/>
+      <input id="search" type="text" placeholder="Search text… (Esc to clear)"/>
     </div>
-    <button class="btn" id="clear">Clear</button>
-    <button class="toggle" id="filter-toggle" aria-pressed="false" title="When on: show only colored paragraphs, or only matches if searching">Show Filtered Only</button>
+    <button class="btn" id="clear" title="Clear search" aria-label="Clear search">✕</button>
+    <button class="toggle" id="filter-toggle" aria-pressed="false" title="Show Filtered Only (matches or colored paragraphs)" aria-label="Show Filtered Only">🎨</button>
     <div class="badge" id="stats">Ready</div>
   </div>
 
@@ -598,13 +599,9 @@ function render(){
 
 function updateStatsBadge(chaptersDraw){
   if (!model) return;
-  const totalCh = model.chapters.length;
   const totalParas = model.chapters.reduce((s,ch)=> s+ch.paras.length,0);
-  const showingCh = chaptersDraw.length;
   const showingParas = chaptersDraw.reduce((s,ch)=> s+ch.paras.length,0);
-  const mode = currentQuery.trim().length ? 'matches' : 'colored';
-  const suffix = filterOnly ? ` · showing ${showingParas}/${totalParas} ${mode}` : '';
-  stats.textContent = `Loaded: ${totalCh} ch · ${totalParas} paras${suffix}`;
+  stats.textContent = filterOnly ? `${showingParas}/${totalParas}` : `${totalParas}p`;
 }
 
 function ensureFullText(){
