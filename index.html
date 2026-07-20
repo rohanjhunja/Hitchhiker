@@ -3,7 +3,14 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Book Visualizer — Paragraph Blocks</title>
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "xpjp3vdnow");
+</script>
+<title>A Book By Its Color</title>
 <style>
   :root{
     --bg:#0b1220; --panel:#0f1830; --text:#e9eef9; --muted:#9fb3d2;
@@ -116,7 +123,7 @@
     }
   }
   .gallery-hero p {
-    font-size: 1.25rem; color: var(--muted); max-width: 600px; margin: 0 auto;
+    font-size: 1.25rem; color: var(--muted); max-width: 650px; margin: 0 auto;
     line-height: 1.5;
   }
   
@@ -126,50 +133,40 @@
   }
   
   .poster-card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 1.5rem;
+    background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 0;
     aspect-ratio: 2 / 3; display: flex; flex-direction: column; overflow: hidden;
-    position: relative; cursor: pointer; text-decoration: none; color: inherit;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative; cursor: pointer; text-decoration: none; color: #111827;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.15);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .poster-card:hover {
-    transform: translateY(-10px) scale(1.02);
-    border-color: var(--accent);
-    box-shadow: 0 20px 40px rgba(90, 200, 250, 0.15);
+    transform: translateY(-8px) scale(1.01);
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5), 0 8px 20px -6px rgba(0, 0, 0, 0.3);
   }
-  
-  .poster-card::before {
-    content: ''; position: absolute; inset: 0; opacity: 0.03;
-    transition: opacity 0.35s ease; pointer-events: none;
-  }
-  .poster-card:hover::before { opacity: 0.12 }
-  
-  .poster-hhgttg::before { background: radial-gradient(circle at 50% 50%, #0ea5e9, #a855f7) }
-  .poster-alice::before { background: radial-gradient(circle at 50% 50%, #ec4899, #60a5fa) }
-  .poster-gunj::before { background: radial-gradient(circle at 50% 50%, #f59e0b, #10b981) }
-  .poster-pi::before { background: radial-gradient(circle at 50% 50%, #f97316, #06b6d4) }
-  .poster-red::before { background: radial-gradient(circle at 50% 50%, #ef4444, #eab308) }
-  .poster-oscar::before { background: radial-gradient(circle at 50% 50%, #10b981, #8b5cf6) }
-  .poster-oz::before { background: radial-gradient(circle at 50% 50%, #84cc16, #eab308) }
 
   .poster-body {
     padding: 0.85rem; display: flex; flex-direction: column; height: 100%; z-index: 2;
   }
-  .poster-title { font-size: 1.35rem; font-weight: 800; margin: 0.6rem 0 0.2rem 0; line-height: 1.25; color: #fff }
-  @media (prefers-color-scheme: light){
-    .poster-title { color: var(--text) }
-  }
-  .poster-author { font-size: 0.95rem; color: var(--muted); margin: 0; font-style: italic }
+  .poster-title { font-size: 1.35rem; font-weight: 800; margin: 0.6rem 0 0.2rem 0; line-height: 1.25; color: #0f172a }
+  .poster-author { font-size: 0.95rem; color: #64748b; margin: 0; font-style: italic }
   
   .poster-preview {
     flex: 1; display: block; overflow: hidden;
-    background: rgba(255,255,255,0.01); border: 1px solid var(--border);
-    border-radius: 0.75rem; padding: 0; margin-bottom: 0;
+    background: #0b1220; border: 1px solid #e2e8f0;
+    border-radius: 0; padding: 0; margin-bottom: 0;
     transition: all 0.3s ease;
   }
-  .poster-card:hover .poster-preview {
-    background: rgba(255,255,255,0.03);
-    box-shadow: inset 0 0 15px rgba(255,255,255,0.02);
+
+  .request-card {
+    cursor: default;
+  }
+  .request-embed-container {
+    flex: 1; display: block; overflow: hidden;
+    background: #ffffff; border: 1px solid #e2e8f0;
+    border-radius: 0; padding: 0; width: 100%; height: 100%;
+  }
+  .request-embed-container iframe {
+    width: 100%; height: 100%; border: 0; display: block;
   }
 </style>
 </head>
@@ -178,8 +175,8 @@
   <!-- Home Page Gallery -->
   <div id="gallery" style="display: none">
     <div class="gallery-hero">
-      <h1>Literary Color Visualizer</h1>
-      <p>An interactive, data-driven exploration mapping color mentions throughout world-famous literary works and screenplays.</p>
+      <h1>A Book By Its Color</h1>
+      <p>An interactive exploration of color across world-famous books and screenplays</p>
     </div>
     <div class="gallery-grid">
       
@@ -246,6 +243,17 @@
         </div>
       </a>
       
+      <!-- Request a Book Form Card -->
+      <div class="poster-card request-card">
+        <div class="poster-body">
+          <div class="request-embed-container">
+            <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfJLTFLIsaXESa2hBjMcS5i6r0Iw_TQUKupzolA6LqpFrEr1Q/viewform?embedded=true" width="100%" height="100%" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+          </div>
+          <h3 class="poster-title">Request a Book</h3>
+          <div class="poster-author">Submit a title to be converted</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
