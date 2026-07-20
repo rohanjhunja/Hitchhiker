@@ -153,32 +153,24 @@
   .poster-oz::before { background: radial-gradient(circle at 50% 50%, #84cc16, #eab308) }
 
   .poster-body {
-    padding: 2rem; display: flex; flex-direction: column; height: 100%; z-index: 2;
+    padding: 0.85rem; display: flex; flex-direction: column; height: 100%; z-index: 2;
   }
-  .poster-meta { font-size: 0.85rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem }
-  .poster-title { font-size: 1.6rem; font-weight: 800; margin: 0 0 0.4rem 0; line-height: 1.2; color: #fff }
+  .poster-title { font-size: 1.35rem; font-weight: 800; margin: 0.6rem 0 0.2rem 0; line-height: 1.25; color: #fff }
   @media (prefers-color-scheme: light){
     .poster-title { color: var(--text) }
   }
-  .poster-author { font-size: 1rem; color: var(--muted); margin: 0 0 1.5rem 0; font-style: italic }
+  .poster-author { font-size: 0.95rem; color: var(--muted); margin: 0; font-style: italic }
   
   .poster-preview {
     flex: 1; display: block; overflow: hidden;
     background: rgba(255,255,255,0.01); border: 1px solid var(--border);
-    border-radius: 0.75rem; padding: 0; margin-bottom: 1.5rem;
+    border-radius: 0.75rem; padding: 0; margin-bottom: 0;
     transition: all 0.3s ease;
   }
   .poster-card:hover .poster-preview {
     background: rgba(255,255,255,0.03);
     box-shadow: inset 0 0 15px rgba(255,255,255,0.02);
   }
-  
-  .poster-footer {
-    display: flex; align-items: center; justify-content: space-between;
-    font-weight: 700; font-size: 1rem; color: var(--accent);
-  }
-  .poster-footer svg { transition: transform 0.25s ease }
-  .poster-card:hover .poster-footer svg { transform: translateX(5px) }
 </style>
 </head>
 <body>
@@ -194,98 +186,63 @@
       <!-- Hitchhikers Guide -->
       <a href="?book=HitchhikersGuide" class="poster-card poster-hhgttg">
         <div class="poster-body">
-          <div class="poster-meta">Science Fiction</div>
+          <div class="poster-preview" data-book="HitchhikersGuide"></div>
           <h3 class="poster-title">The Hitchhiker’s Guide</h3>
           <div class="poster-author">Douglas Adams</div>
-          <div class="poster-preview" data-book="HitchhikersGuide"></div>
-          <div class="poster-footer">
-            <span>Explore Visual</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </div>
         </div>
       </a>
       
       <!-- Alice in Wonderland -->
       <a href="?book=AliceInWonderland" class="poster-card poster-alice">
         <div class="poster-body">
-          <div class="poster-meta">Fantasy / Classics</div>
+          <div class="poster-preview" data-book="AliceInWonderland"></div>
           <h3 class="poster-title">Alice in Wonderland</h3>
           <div class="poster-author">Lewis Carroll</div>
-          <div class="poster-preview" data-book="AliceInWonderland"></div>
-          <div class="poster-footer">
-            <span>Explore Visual</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </div>
         </div>
       </a>
       
       <!-- A Death In The Gunj -->
       <a href="?book=DeathInTheGunj" class="poster-card poster-gunj">
         <div class="poster-body">
-          <div class="poster-meta">Screenplay / Drama</div>
+          <div class="poster-preview" data-book="DeathInTheGunj"></div>
           <h3 class="poster-title">A Death in the Gunj</h3>
           <div class="poster-author">Konkona Sensharma</div>
-          <div class="poster-preview" data-book="DeathInTheGunj"></div>
-          <div class="poster-footer">
-            <span>Explore Visual</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </div>
         </div>
       </a>
       
       <!-- Life of Pi -->
       <a href="?book=LifeOfPi" class="poster-card poster-pi">
         <div class="poster-body">
-          <div class="poster-meta">Adventure / Philosophy</div>
+          <div class="poster-preview" data-book="LifeOfPi"></div>
           <h3 class="poster-title">Life of Pi</h3>
           <div class="poster-author">Yann Martel</div>
-          <div class="poster-preview" data-book="LifeOfPi"></div>
-          <div class="poster-footer">
-            <span>Explore Visual</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </div>
         </div>
       </a>
       
       <!-- My Name Is Red -->
       <a href="?book=MyNameIsRed" class="poster-card poster-red">
         <div class="poster-body">
-          <div class="poster-meta">Historical Fiction / Mystery</div>
+          <div class="poster-preview" data-book="MyNameIsRed"></div>
           <h3 class="poster-title">My Name is Red</h3>
           <div class="poster-author">Orhan Pamuk</div>
-          <div class="poster-preview" data-book="MyNameIsRed"></div>
-          <div class="poster-footer">
-            <span>Explore Visual</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </div>
         </div>
       </a>
       
       <!-- Oscar and Lucinda -->
       <a href="?book=OscarAndLucinda" class="poster-card poster-oscar">
         <div class="poster-body">
-          <div class="poster-meta">Victorian Romance / Drama</div>
+          <div class="poster-preview" data-book="OscarAndLucinda"></div>
           <h3 class="poster-title">Oscar and Lucinda</h3>
           <div class="poster-author">Peter Carey</div>
-          <div class="poster-preview" data-book="OscarAndLucinda"></div>
-          <div class="poster-footer">
-            <span>Explore Visual</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </div>
         </div>
       </a>
       
       <!-- Wizard of Oz -->
       <a href="?book=WizardOfOz" class="poster-card poster-oz">
         <div class="poster-body">
-          <div class="poster-meta">Children / Classics</div>
+          <div class="poster-preview" data-book="WizardOfOz"></div>
           <h3 class="poster-title">The Wizard of Oz</h3>
           <div class="poster-author">L. Frank Baum</div>
-          <div class="poster-preview" data-book="WizardOfOz"></div>
-          <div class="poster-footer">
-            <span>Explore Visual</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </div>
         </div>
       </a>
       
@@ -302,7 +259,6 @@
     </div>
     <button class="btn" id="clear" title="Clear search" aria-label="Clear search">✕</button>
     <button class="toggle" id="filter-toggle" aria-pressed="false" title="Show Filtered Only (matches or colored paragraphs)" aria-label="Show Filtered Only">🎨</button>
-    <div class="badge" id="stats">Loading…</div>
   </div>
 
   <main>
@@ -695,6 +651,7 @@ function render(){
 
 /* ---------- Stats badge ---------- */
 function updateStatsBadge(chaptersDraw){
+  if (!stats || !model) return;
   const totalParas = model.chapters.reduce((s,ch)=> s+ch.paras.length,0);
   const showingParas = chaptersDraw.reduce((s,ch)=> s+ch.paras.length,0);
   stats.textContent = filterOnly ? `${showingParas}/${totalParas}` : `${totalParas}p`;
@@ -937,7 +894,7 @@ function renderGalleryPreviews(data) {
     if (!ok) throw new Error('Unexpected JSON shape');
 
     model = buildModel(rows, text);
-    stats.textContent = `Loaded: ${model.chapters.length} ch · ${model.chapters.reduce((s,ch)=>s+ch.paras.length,0)} paras`;
+    if (stats) stats.textContent = `Loaded: ${model.chapters.length} ch · ${model.chapters.reduce((s,ch)=>s+ch.paras.length,0)} paras`;
     computeMatches("");
 
     const initialSearch = urlParams.get("search") || "";
@@ -953,7 +910,7 @@ function renderGalleryPreviews(data) {
     render();
   } catch(err){
     console.error(err);
-    stats.textContent = 'Load error';
+    if (stats) stats.textContent = 'Load error';
     alert('Failed to load sources: ' + err.message);
   }
 })();

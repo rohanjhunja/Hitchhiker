@@ -189,7 +189,6 @@
     </div>
     <button class="btn" id="clear" title="Clear search" aria-label="Clear search">✕</button>
     <button class="toggle" id="filter-toggle" aria-pressed="false" title="Show Filtered Only (matches or colored paragraphs)" aria-label="Show Filtered Only">🎨</button>
-    <div class="badge" id="stats">Ready</div>
   </div>
 
   <main>
@@ -598,7 +597,7 @@ function render(){
 }
 
 function updateStatsBadge(chaptersDraw){
-  if (!model) return;
+  if (!stats || !model) return;
   const totalParas = model.chapters.reduce((s,ch)=> s+ch.paras.length,0);
   const showingParas = chaptersDraw.reduce((s,ch)=> s+ch.paras.length,0);
   stats.textContent = filterOnly ? `${showingParas}/${totalParas}` : `${totalParas}p`;
