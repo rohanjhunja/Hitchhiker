@@ -22,7 +22,7 @@
   }
   *{ box-sizing:border-box }
   html,body{ height:100%; margin:0 }
-  body{ background:var(--bg); color:var(--text); font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial; display:flex; flex-direction:column; overflow:hidden }
+  body{ background:var(--bg); color:var(--text); font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial; min-height:100dvh; height:auto; overflow-y:auto; overflow-x:hidden }
 
   /* Landing Drop Zone Style */
   .drop-overlay {
@@ -85,7 +85,7 @@
 
   /* Sticky search bar */
   .searchbar{
-    position:sticky; top:0; z-index:10; display:flex; gap:.4rem; align-items:center; padding:.4rem .6rem;
+    position:sticky; top:0; z-index:20; display:flex; gap:.4rem; align-items:center; padding:.4rem .6rem;
     background:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,0)), var(--panel);
     border-bottom:1px solid var(--border); backdrop-filter:saturate(140%) blur(8px);
     flex-shrink:0; flex-wrap:nowrap; overflow:hidden;
@@ -112,11 +112,10 @@
     background: var(--accent); color:#03223a; border-color: transparent;
   }
 
-  main{ padding:.6rem; flex:1; min-height:0; display:flex; flex-direction:column; width:100% }
+  main{ padding:.6rem; width:100% }
   #viz{
     width:100%;
-    height:100%;
-    flex:1;
+    height:auto;
     border:1px solid var(--border);
     border-radius:1rem;
     display:block;
@@ -485,30 +484,50 @@ function render(){
 
   const bbox = svg.getBoundingClientRect();
   const W = Math.max(320, bbox.width);
-  const H = Math.max(200, bbox.height);
 
+  const searchbarEl = document.querySelector('.searchbar');
+  const searchbarH = searchbarEl ? searchbarEl.getBoundingClientRect().height : 50;
+  const viewportH = window.innerHeight;
   const padX = 10, padY = 10;
   const rowGap = 8;
   const blockGap = 2;
-  const minRow = 18;
+
+  const minViewportAvailableH = Math.max(200, viewportH - searchbarH - 24);
 
   const chaptersDraw = chaptersToDraw();
   const nCh = chaptersDraw.length;
+  if (nCh === 0) {
+    svg.setAttribute('viewBox', `0 0 ${W} ${minViewportAvailableH}`);
+    svg.setAttribute('height', minViewportAvailableH);
+    svg.style.height = minViewportAvailableH + 'px';
+    return;
+  }
 
+  const minRow = 20;
+  const baseRowTarget = 28;
+  const minNeededH = padY * 2 + nCh * minRow + Math.max(0, nCh - 1) * rowGap;
+  const targetNeededH = padY * 2 + nCh * baseRowTarget + Math.max(0, nCh - 1) * rowGap;
+
+  const H = Math.max(minViewportAvailableH, minNeededH, targetNeededH);
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
+  svg.style.height = H + 'px';
+
+  // --- Two-pass HEIGHT allocation across chapters ---
   const Hpad = Math.max(0, H - padY*2 - rowGap*Math.max(0, nCh-1));
   let leftoverH = Hpad - nCh * minRow; if (leftoverH < 0) leftoverH = 0;
 
   const totWeight = chaptersDraw.reduce((s,ch)=> s + ch.weight, 0) || 1;
   const heights = chaptersDraw.map(ch => minRow + Math.floor(leftoverH * (ch.weight / totWeight)));
 
+  // rounding fix
   let sumH = heights.reduce((a,b)=> a+b, 0), diffH = Hpad - sumH, k=0;
   while (diffH !== 0 && k < heights.length*2){
     const i = k % heights.length, step = diffH > 0 ? 1 : -1;
     if (step < 0 && heights[i] <= minRow) { k++; continue; }
     heights[i] += step; diffH -= step; k++;
   }
-
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
 
   const defs = elt('defs'); svg.appendChild(defs);
   function ensureGradientForParagraph(p){
@@ -720,17 +739,18 @@ sheetBody.addEventListener('dblclick', ()=>{
 });
 
 window.addEventListener('pointermove', (e)=>{ if (tip.style.opacity>0){ tip.style.left=e.clientX+'px'; tip.style.top=e.clientY+'px'; } });
-let lastW = 0, lastH = 0;
+let lastW = 0, lastWinH = 0;
 new ResizeObserver(entries => {
   for (let entry of entries) {
-    const { width, height } = entry.contentRect;
-    if (Math.abs(width - lastW) > 1.5 || Math.abs(height - lastH) > 1.5) {
+    const { width } = entry.contentRect;
+    const winH = window.innerHeight;
+    if (Math.abs(width - lastW) > 1.5 || Math.abs(winH - lastWinH) > 1.5) {
       lastW = width;
-      lastH = height;
+      lastWinH = winH;
       requestAnimationFrame(() => render());
     }
   }
-}).observe(svg);
+}).observe(document.querySelector('main'));
 
 function loadBookData(rows, text) {
   model = buildModel(rows, text);
