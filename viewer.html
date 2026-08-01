@@ -99,10 +99,15 @@
 
   /* Tooltip */
   .tooltip{
-    position:fixed; pointer-events:none; background:rgba(0,0,0,.75); color:#fff;
-    padding:.28rem .45rem; border-radius:.35rem; font-size:.8rem; transform:translate(-50%, calc(-100% - 8px));
-    white-space:nowrap; opacity:0; transition:opacity .12s ease; z-index:50
+    position:fixed; pointer-events:none; background:rgba(11,18,32,0.94); color:#e9eef9;
+    padding:.45rem .65rem; border-radius:.5rem; font-size:.8rem; transform:translate(-50%, calc(-100% - 10px));
+    white-space:normal; max-width:280px; text-align:center; opacity:0; transition:opacity .15s ease; z-index:50;
+    box-shadow:0 6px 18px rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.12); backdrop-filter:blur(6px);
+    line-height:1.35;
   }
+  .tooltip .tip-header{ font-weight:600; opacity:0.85; margin-bottom:0.25rem; font-size:0.75rem; letter-spacing:0.02em; }
+  .tooltip .tip-excerpt{ color:#ffffff; font-style:italic; word-break:break-word; }
+  .tooltip .tip-excerpt strong{ font-weight:700; color:#ffffff; font-style:normal; text-decoration:underline; }
 
   /* Gallery Styles */
   .gallery-hero {
@@ -127,8 +132,8 @@
     line-height: 1.5;
   }
   .gallery-hero .hero-subcaption {
-    font-size: 0.8rem; color: var(--muted); opacity: 0.7; max-width: 580px; margin: 0.6rem auto 0 auto;
-    letter-spacing: 0.02em;
+    font-size: 0.85rem; color: var(--muted); opacity: 0.85; max-width: 580px; margin: 1.8rem auto 0 auto;
+    letter-spacing: 0.02em; display: flex; flex-direction: column; gap: 0.4rem; align-items: center;
   }
   
   .gallery-grid {
@@ -137,7 +142,7 @@
   }
   
   .poster-card {
-    background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 0;
+    background: #ffffff; border: 1px solid #000000; border-radius: 0;
     aspect-ratio: 2 / 3; display: flex; flex-direction: column; overflow: hidden;
     position: relative; cursor: pointer; text-decoration: none; color: #111827;
     box-shadow: 0 6px 20px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.15);
@@ -159,7 +164,7 @@
   
   .poster-preview {
     flex: 1; display: block; overflow: hidden;
-    background: #ffffff; border: 1px solid #e2e8f0;
+    background: #ffffff; border: none;
     border-radius: 0; padding: 0; margin-bottom: 0;
     transition: all 0.3s ease;
   }
@@ -207,8 +212,11 @@
   <div id="gallery" style="display: none">
     <div class="gallery-hero">
       <h1>A Book By Its Color</h1>
-      <p>Each visualisation shows colors described in world-famous books and screenplays. Each row is a chapter and swatches are sized by dominance.</p>
-      <div class="hero-subcaption">Tap to explore color references</div>
+      <p>A series visualising every color described in world-famous books and screenplays.</p>
+      <div class="hero-subcaption">
+        <div>Each row is a chapter and swatches are sized by dominance.</div>
+        <div>Tap to explore color references</div>
+      </div>
     </div>
     <div class="gallery-grid">
       
@@ -345,6 +353,7 @@ let filterOnly = false;     // toggle state: show only filtered (color/matches) 
 let model=null;
 let fullTextBuilt=false;
 let currentQuery = "";
+let hoverTimer = null;
 
 if (!book) {
   document.body.classList.add('gallery-mode');
@@ -527,6 +536,52 @@ function buildModel(rows, text){
   return { text, paras, paraTextByIdx, colorKeysByIdx, chapters, totalWeight: Math.max(1,totalWeight) };
 }
 
+/* ---------- Excerpt extractor (~15 words around target) ---------- */
+function getParagraphExcerpt(text, colorWord, searchQuery) {
+  if (!text) return '';
+  
+  const words = text.trim().split(/\s+/);
+  if (words.length === 0) return '';
+
+  let targetIdx = -1;
+  let matchTerm = '';
+
+  const q = (searchQuery || '').trim().toLowerCase();
+  if (q.length > 0) {
+    matchTerm = q;
+    targetIdx = words.findIndex(w => w.toLowerCase().includes(q));
+  } else if (colorWord) {
+    const c = colorWord.trim().toLowerCase();
+    matchTerm = c;
+    targetIdx = words.findIndex(w => w.toLowerCase().includes(c));
+  }
+
+  let startIdx = 0;
+  let endIdx = Math.min(words.length, 15);
+
+  if (targetIdx !== -1) {
+    startIdx = Math.max(0, targetIdx - 7);
+    endIdx = Math.min(words.length, startIdx + 15);
+    if (endIdx - startIdx < 15) {
+      startIdx = Math.max(0, endIdx - 15);
+    }
+  }
+
+  const slice = words.slice(startIdx, endIdx);
+  let excerpt = slice.join(' ');
+
+  if (startIdx > 0) excerpt = '...' + excerpt;
+  if (endIdx < words.length) excerpt = excerpt + '...';
+
+  if (matchTerm) {
+    const escaped = matchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'gi');
+    excerpt = excerpt.replace(regex, '<strong>$1</strong>');
+  }
+
+  return excerpt;
+}
+
 /* ---------- Search match flags ---------- */
 function computeMatches(q){
   const needle = q.trim().toLowerCase();
@@ -642,7 +697,10 @@ function render(){
 
   // hide tooltip on empty space
   const cover = rect(0,0,W,H,0,'transparent');
-  cover.addEventListener('pointerenter', ()=> tip.style.opacity = 0);
+  cover.addEventListener('pointerenter', ()=> {
+    if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+    tip.style.opacity = 0;
+  });
   svg.appendChild(cover);
 
   // draw rows
@@ -721,12 +779,30 @@ function render(){
       }
 
       r.addEventListener('pointerenter', (e)=>{
-        const colorTxt = (p.colors && p.colors.length) ? 'colors: ' + p.colors.map(c=>c.key).join(', ') : null;
-        const pieces = [`Para ${p.idx+1}`, `${p.wordCount} words`, colorTxt, matched && isQuery ? `matches "${currentQuery.trim()}"` : null].filter(Boolean);
-        tip.textContent = pieces.join(' · ');
-        tip.style.left = e.clientX+'px'; tip.style.top = e.clientY+'px'; tip.style.opacity = 1;
+        if (hoverTimer) clearTimeout(hoverTimer);
+        const clientX = e.clientX, clientY = e.clientY;
+        hoverTimer = setTimeout(() => {
+          const colorWord = (p.colors && p.colors.length) ? p.colors[0].key : null;
+          const colorTxt = (p.colors && p.colors.length) ? 'colors: ' + p.colors.map(c=>c.key).join(', ') : null;
+          const isMatched = matched && isQuery;
+          const pieces = [`Para ${p.idx+1}`, `${p.wordCount} words`, colorTxt, isMatched ? `matches "${currentQuery.trim()}"` : null].filter(Boolean);
+          
+          const fullText = (model && model.paraTextByIdx) ? model.paraTextByIdx[p.idx] : '';
+          const excerpt = getParagraphExcerpt(fullText, colorWord, isMatched ? currentQuery.trim() : null);
+          
+          let html = `<div class="tip-header">${pieces.join(' · ')}</div>`;
+          if (excerpt) {
+            html += `<div class="tip-excerpt">"${excerpt}"</div>`;
+          }
+          
+          tip.innerHTML = html;
+          tip.style.left = clientX+'px'; tip.style.top = clientY+'px'; tip.style.opacity = 1;
+        }, 150);
       });
-      r.addEventListener('pointerleave', ()=> tip.style.opacity = 0);
+      r.addEventListener('pointerleave', ()=> {
+        if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+        tip.style.opacity = 0;
+      });
       r.addEventListener('click', ()=> openOverlayScrollTo(p.idx));
 
       g.appendChild(r);
