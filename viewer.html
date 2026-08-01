@@ -55,6 +55,33 @@
     background: var(--accent); color:#03223a; border-color: transparent;
   }
 
+  /* Solid Icon styling with fallback support */
+  .icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    line-height: 1;
+  }
+  .icon-wrapper .icon-solid {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+  .icon-wrapper .icon-fallback {
+    display: none;
+  }
+  html.no-svg .icon-wrapper .icon-solid,
+  body.no-svg .icon-wrapper .icon-solid {
+    display: none !important;
+  }
+  html.no-svg .icon-wrapper .icon-fallback,
+  body.no-svg .icon-wrapper .icon-fallback {
+    display: inline !important;
+  }
+
   main{ padding:.6rem; width:100% }
   #viz{
     width:100%;
@@ -156,9 +183,19 @@
   .poster-body {
     padding: 0.85rem; display: flex; flex-direction: column; height: 100%; z-index: 2;
   }
+  .poster-meta {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    margin-top: 0.6rem;
+  }
+  .poster-text {
+    flex: 1;
+    min-width: 0;
+  }
   .poster-title {
     font-family: Helvetica, Arial, sans-serif;
-    font-size: 1.35rem; font-weight: 800; margin: 0.6rem 0 0.2rem 0; line-height: 1.25; color: #0f172a
+    font-size: 1.35rem; font-weight: 800; margin: 0 0 0.2rem 0; line-height: 1.25; color: #0f172a
   }
   .poster-author { font-size: 0.95rem; color: #64748b; margin: 0; font-style: italic }
   
@@ -167,6 +204,39 @@
     background: #ffffff; border: none;
     border-radius: 0; padding: 0; margin-bottom: 0;
     transition: all 0.3s ease;
+  }
+
+  .poster-print-btn {
+    flex-shrink: 0;
+    align-self: stretch;
+    aspect-ratio: 1 / 1;
+    border: none;
+    background: transparent;
+    padding: 0;
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, color 0.2s ease;
+  }
+  .poster-card:hover .poster-print-btn {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .poster-print-btn:hover {
+    color: #0f172a;
+  }
+  .poster-print-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .request-card {
@@ -224,8 +294,15 @@
       <a href="?book=HitchhikersGuide" class="poster-card poster-hhgttg">
         <div class="poster-body">
           <div class="poster-preview" data-book="HitchhikersGuide"></div>
-          <h3 class="poster-title">The Hitchhiker’s Guide</h3>
-          <div class="poster-author">Douglas Adams</div>
+          <div class="poster-meta">
+            <div class="poster-text">
+              <h3 class="poster-title">The Hitchhiker’s Guide</h3>
+              <div class="poster-author">Douglas Adams</div>
+            </div>
+            <button class="poster-print-btn" title="Download Poster SVG" aria-label="Download Poster SVG">
+              <svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </button>
+          </div>
         </div>
       </a>
       
@@ -233,8 +310,15 @@
       <a href="?book=AliceInWonderland" class="poster-card poster-alice">
         <div class="poster-body">
           <div class="poster-preview" data-book="AliceInWonderland"></div>
-          <h3 class="poster-title">Alice in Wonderland</h3>
-          <div class="poster-author">Lewis Carroll</div>
+          <div class="poster-meta">
+            <div class="poster-text">
+              <h3 class="poster-title">Alice in Wonderland</h3>
+              <div class="poster-author">Lewis Carroll</div>
+            </div>
+            <button class="poster-print-btn" title="Download Poster SVG" aria-label="Download Poster SVG">
+              <svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </button>
+          </div>
         </div>
       </a>
       
@@ -242,8 +326,15 @@
       <a href="?book=DeathInTheGunj" class="poster-card poster-gunj">
         <div class="poster-body">
           <div class="poster-preview" data-book="DeathInTheGunj"></div>
-          <h3 class="poster-title">A Death in the Gunj</h3>
-          <div class="poster-author">Konkona Sensharma</div>
+          <div class="poster-meta">
+            <div class="poster-text">
+              <h3 class="poster-title">A Death in the Gunj</h3>
+              <div class="poster-author">Konkona Sensharma</div>
+            </div>
+            <button class="poster-print-btn" title="Download Poster SVG" aria-label="Download Poster SVG">
+              <svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </button>
+          </div>
         </div>
       </a>
 
@@ -251,8 +342,15 @@
       <a href="?book=Dune" class="poster-card poster-dune">
         <div class="poster-body">
           <div class="poster-preview" data-book="Dune"></div>
-          <h3 class="poster-title">Dune</h3>
-          <div class="poster-author">Frank Herbert</div>
+          <div class="poster-meta">
+            <div class="poster-text">
+              <h3 class="poster-title">Dune</h3>
+              <div class="poster-author">Frank Herbert</div>
+            </div>
+            <button class="poster-print-btn" title="Download Poster SVG" aria-label="Download Poster SVG">
+              <svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </button>
+          </div>
         </div>
       </a>
       
@@ -260,8 +358,15 @@
       <a href="?book=LifeOfPi" class="poster-card poster-pi">
         <div class="poster-body">
           <div class="poster-preview" data-book="LifeOfPi"></div>
-          <h3 class="poster-title">Life of Pi</h3>
-          <div class="poster-author">Yann Martel</div>
+          <div class="poster-meta">
+            <div class="poster-text">
+              <h3 class="poster-title">Life of Pi</h3>
+              <div class="poster-author">Yann Martel</div>
+            </div>
+            <button class="poster-print-btn" title="Download Poster SVG" aria-label="Download Poster SVG">
+              <svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </button>
+          </div>
         </div>
       </a>
       
@@ -269,8 +374,15 @@
       <a href="?book=MyNameIsRed" class="poster-card poster-red">
         <div class="poster-body">
           <div class="poster-preview" data-book="MyNameIsRed"></div>
-          <h3 class="poster-title">My Name is Red</h3>
-          <div class="poster-author">Orhan Pamuk</div>
+          <div class="poster-meta">
+            <div class="poster-text">
+              <h3 class="poster-title">My Name is Red</h3>
+              <div class="poster-author">Orhan Pamuk</div>
+            </div>
+            <button class="poster-print-btn" title="Download Poster SVG" aria-label="Download Poster SVG">
+              <svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </button>
+          </div>
         </div>
       </a>
       
@@ -278,8 +390,15 @@
       <a href="?book=OscarAndLucinda" class="poster-card poster-oscar">
         <div class="poster-body">
           <div class="poster-preview" data-book="OscarAndLucinda"></div>
-          <h3 class="poster-title">Oscar and Lucinda</h3>
-          <div class="poster-author">Peter Carey</div>
+          <div class="poster-meta">
+            <div class="poster-text">
+              <h3 class="poster-title">Oscar and Lucinda</h3>
+              <div class="poster-author">Peter Carey</div>
+            </div>
+            <button class="poster-print-btn" title="Download Poster SVG" aria-label="Download Poster SVG">
+              <svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </button>
+          </div>
         </div>
       </a>
       
@@ -287,8 +406,15 @@
       <a href="?book=WizardOfOz" class="poster-card poster-oz">
         <div class="poster-body">
           <div class="poster-preview" data-book="WizardOfOz"></div>
-          <h3 class="poster-title">The Wizard of Oz</h3>
-          <div class="poster-author">L. Frank Baum</div>
+          <div class="poster-meta">
+            <div class="poster-text">
+              <h3 class="poster-title">The Wizard of Oz</h3>
+              <div class="poster-author">L. Frank Baum</div>
+            </div>
+            <button class="poster-print-btn" title="Download Poster SVG" aria-label="Download Poster SVG">
+              <svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </button>
+          </div>
         </div>
       </a>
       
@@ -321,11 +447,24 @@
   <!-- Sticky search bar -->
   <div class="searchbar">
     <div class="input">
-      <span aria-hidden="true">🔎</span>
+      <span class="icon-wrapper" aria-hidden="true">
+        <svg class="icon-solid" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 2a8 8 0 0 1 6.32 12.906l4.387 4.387a1 1 0 0 1-1.414 1.414l-4.387-4.387A8 8 0 1 1 10 2zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12z"/></svg>
+        <span class="icon-fallback">🔎</span>
+      </span>
       <input id="search" type="text" placeholder="Search text… (Esc to clear)"/>
     </div>
-    <button class="btn" id="clear" title="Clear search" aria-label="Clear search">✕</button>
-    <button class="toggle" id="filter-toggle" aria-pressed="false" title="Show Filtered Only (matches or colored paragraphs)" aria-label="Show Filtered Only">🎨</button>
+    <button class="btn" id="clear" title="Clear search" aria-label="Clear search">
+      <span class="icon-wrapper" aria-hidden="true">
+        <svg class="icon-solid" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.3 5.71a1 1 0 0 0-1.42 0L12 10.59 7.12 5.71a1 1 0 0 0-1.42 1.42L10.59 12l-4.89 4.88a1 1 0 1 0 1.42 1.42L12 13.41l4.88 4.89a1 1 0 0 0 1.42-1.42L13.41 12l4.89-4.88a1 1 0 0 0 0-1.41z"/></svg>
+        <span class="icon-fallback">✕</span>
+      </span>
+    </button>
+    <button class="toggle" id="filter-toggle" aria-pressed="false" title="Show Filtered Only (matches or colored paragraphs)" aria-label="Show Filtered Only">
+      <span class="icon-wrapper" aria-hidden="true">
+        <svg class="icon-solid" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.49 2 2 6.49 2 12c0 5.51 4.49 10 10 10 1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.17-.64-1.58-.39-.41-.61-.95-.61-1.52 0-1.24 1.01-2.25 2.25-2.25H18c3.31 0 6-2.69 6-6 0-5.51-4.49-10-10-10zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 8 6.5 8s1.5.67 1.5 1.5S7.33 11 6.5 11zm3-4c-.83 0-1.5-.67-1.5-1.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5S18.33 11 17.5 11z"/></svg>
+        <span class="icon-fallback">🎨</span>
+      </span>
+    </button>
   </div>
 
   <main>
@@ -375,7 +514,7 @@ if (!book) {
   galleryBtn.style.textDecoration = "none";
   galleryBtn.title = "Back to Gallery";
   galleryBtn.setAttribute("aria-label", "Back to Gallery");
-  galleryBtn.innerHTML = "🏠";
+  galleryBtn.innerHTML = `<span class="icon-wrapper" aria-hidden="true"><svg class="icon-solid" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span class="icon-fallback">🏠</span></span>`;
   searchBar.insertBefore(galleryBtn, searchBar.firstChild);
   
   // Set filter toggle active by default for colors-only representation if requested
@@ -1035,6 +1174,78 @@ function renderGalleryPreviews(data) {
     previewContainer.appendChild(svgEl);
   });
 }
+
+function escapeXml(str) {
+  return (str || '').replace(/[&<>'"]/g, c => {
+    switch (c) {
+      case '&': return '&amp;';
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case "'": return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
+function downloadPosterSvg(card) {
+  const previewContainer = card.querySelector('.poster-preview');
+  const titleEl = card.querySelector('.poster-title');
+  const authorEl = card.querySelector('.poster-author');
+
+  if (!previewContainer || !titleEl || !authorEl) return;
+
+  const previewSvg = previewContainer.querySelector('svg');
+  if (!previewSvg) return;
+
+  const title = titleEl.textContent.trim();
+  const author = authorEl.textContent.trim();
+  const bookKey = previewContainer.getAttribute('data-book') || 'poster';
+
+  const rectsContent = previewSvg.innerHTML;
+
+  const svgWidth = 800;
+  const svgHeight = 1200;
+  const padding = 40;
+  const contentWidth = svgWidth - padding * 2;
+  const previewHeight = 970;
+
+  const scaleX = contentWidth / 200;
+  const scaleY = previewHeight / 300;
+
+  const safeTitle = escapeXml(title);
+  const safeAuthor = escapeXml(author);
+
+  const fullSvgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="${svgWidth}" height="${svgHeight}">
+  <rect width="${svgWidth}" height="${svgHeight}" fill="#ffffff"/>
+  <g transform="translate(${padding}, ${padding}) scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})">
+    ${rectsContent}
+  </g>
+  <text x="${padding}" y="1065" font-family="Helvetica, Arial, sans-serif" font-size="44" font-weight="800" fill="#0f172a">${safeTitle}</text>
+  <text x="${padding}" y="1110" font-family="Helvetica, Arial, sans-serif" font-size="28" font-style="italic" fill="#64748b">${safeAuthor}</text>
+</svg>`;
+
+  const blob = new Blob([fullSvgContent], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${bookKey}_poster.svg`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener('click', (e) => {
+  const printBtn = e.target.closest('.poster-print-btn');
+  if (printBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    const card = printBtn.closest('.poster-card');
+    if (card) downloadPosterSvg(card);
+  }
+});
 
 /* ---------- Init: fetch JSON + TXT, validate, build, render ---------- */
 (async function init(){
