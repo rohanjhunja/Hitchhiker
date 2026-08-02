@@ -10,6 +10,9 @@
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "xpjp3vdnow");
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geom:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
 <title>A Book By Its Color</title>
 <style>
   :root{
@@ -22,7 +25,10 @@
   *{ box-sizing:border-box }
   html{ height:100% }
   body{
-    margin:0; background:var(--bg); color:var(--text); font:15px/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    margin:0; background:var(--bg); color:var(--text);
+    font-family: "Geom", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size:15px;
+    line-height:1.45;
     min-height:100dvh; height:auto; overflow-y:auto; overflow-x:hidden;
   }
   body.gallery-mode{ height:auto; min-height:100%; overflow:auto; display:block; }
@@ -112,7 +118,10 @@
   }
   .sheet-title{ font-weight:600 }
   .close{ margin-left:auto; appearance:none; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:.6rem; padding:.35rem .6rem; cursor:pointer }
-  .sheet-body{ padding:.8rem .9rem; overflow:auto; line-height:1.55 }
+  .sheet-body{
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    padding:.8rem .9rem; overflow:auto; line-height:1.55;
+  }
   /* Each paragraph is inline so they appear continuous; wrap naturally; no horizontal scrolling */
   .p{
     display:inline;
@@ -133,7 +142,10 @@
     line-height:1.35;
   }
   .tooltip .tip-header{ font-weight:600; opacity:0.85; margin-bottom:0.25rem; font-size:0.75rem; letter-spacing:0.02em; }
-  .tooltip .tip-excerpt{ color:#ffffff; font-style:italic; word-break:break-word; }
+  .tooltip .tip-excerpt{
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    color:#ffffff; font-style:italic; word-break:break-word;
+  }
   .tooltip .tip-excerpt strong{ font-weight:700; color:#ffffff; font-style:normal; text-decoration:underline; }
 
   /* Gallery Styles */
@@ -142,7 +154,7 @@
     background: radial-gradient(800px 300px at 50% 0%, rgba(90,200,250,.08), transparent);
   }
   .gallery-hero h1 {
-    font-family: Helvetica, Arial, sans-serif;
+    font-family: "Geom", Helvetica, Arial, sans-serif;
     font-size: 5rem; line-height: 1.2; font-weight: 800; margin: 0 0 1rem 0;
     background: linear-gradient(135deg, #fff 30%, var(--muted) 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -155,10 +167,28 @@
     }
   }
   .gallery-hero p {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 1rem; color: var(--muted); max-width: 580px; margin: 0 auto;
     line-height: 1.5;
   }
+  .read-more-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--muted);
+    text-decoration: underline;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    opacity: 0.85;
+    transition: opacity 0.2s ease, color 0.2s ease;
+  }
+  .read-more-btn:hover {
+    opacity: 1;
+    color: var(--text);
+  }
   .gallery-hero .hero-subcaption {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 0.85rem; color: var(--muted); opacity: 0.85; max-width: 580px; margin: 1.8rem auto 0 auto;
     letter-spacing: 0.02em; display: flex; flex-direction: column; gap: 0.4rem; align-items: center;
   }
@@ -179,7 +209,7 @@
     transform: translateY(-8px) scale(1.01);
     box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5), 0 8px 20px -6px rgba(0, 0, 0, 0.3);
   }
-
+ 
   .poster-body {
     padding: 0.85rem; display: flex; flex-direction: column; height: 100%; z-index: 2;
   }
@@ -194,7 +224,7 @@
     min-width: 0;
   }
   .poster-title {
-    font-family: Helvetica, Arial, sans-serif;
+    font-family: "Geom", Helvetica, Arial, sans-serif;
     font-size: 1.35rem; font-weight: 800; margin: 0 0 0.2rem 0; line-height: 1.25; color: #0f172a
   }
   .poster-author { font-size: 0.95rem; color: #64748b; margin: 0; font-style: italic }
@@ -282,11 +312,8 @@
   <div id="gallery" style="display: none">
     <div class="gallery-hero">
       <h1>A Book By Its Color</h1>
-      <p>A series visualising every color described in world-famous books and screenplays.</p>
-      <div class="hero-subcaption">
-        <div>Each row is a chapter and swatches are sized by dominance.</div>
-        <div>Tap to explore color references</div>
-      </div>
+      <p>A series visualising every color described in world-famous books and screenplays.<span id="caption-dots">... </span><button id="read-more-btn" class="read-more-btn">Read more</button><span id="caption-more" style="display: none;"> The posters here represent where colour words are found across the text. Each row is a chapter, sized by the length of text relative to the whole book/script. You'll find iconic color references like the 'Heart of Gold' in the Hitchhiker's Guide to the Galaxy, the 'White Rabbit' and 'Red Roses' in Alice in Wonderland and sand described all across Dune.</span></p>
+      <div class="hero-subcaption">Tap posters for colour references</div>
     </div>
     <div class="gallery-grid">
       
@@ -1222,8 +1249,8 @@ function downloadPosterSvg(card) {
   <g transform="translate(${padding}, ${padding}) scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})">
     ${rectsContent}
   </g>
-  <text x="${padding}" y="1065" font-family="Helvetica, Arial, sans-serif" font-size="44" font-weight="800" fill="#0f172a">${safeTitle}</text>
-  <text x="${padding}" y="1110" font-family="Helvetica, Arial, sans-serif" font-size="28" font-style="italic" fill="#64748b">${safeAuthor}</text>
+  <text x="${padding}" y="1065" font-family="Geom, Helvetica, Arial, sans-serif" font-size="44" font-weight="800" fill="#0f172a">${safeTitle}</text>
+  <text x="${padding}" y="1110" font-family="Geom, Helvetica, Arial, sans-serif" font-size="28" font-style="italic" fill="#64748b">${safeAuthor}</text>
 </svg>`;
 
   const blob = new Blob([fullSvgContent], { type: 'image/svg+xml;charset=utf-8' });
@@ -1244,6 +1271,24 @@ document.addEventListener('click', (e) => {
     e.stopPropagation();
     const card = printBtn.closest('.poster-card');
     if (card) downloadPosterSvg(card);
+  }
+  
+  const readMoreBtn = e.target.closest('#read-more-btn');
+  if (readMoreBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    const dots = document.getElementById('caption-dots');
+    const moreText = document.getElementById('caption-more');
+    if (dots) dots.style.display = 'none';
+    readMoreBtn.style.display = 'none';
+    if (moreText) {
+      moreText.style.display = 'inline';
+      moreText.style.opacity = '0';
+      moreText.style.transition = 'opacity 0.4s ease';
+      requestAnimationFrame(() => {
+        moreText.style.opacity = '1';
+      });
+    }
   }
 });
 
