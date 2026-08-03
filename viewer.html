@@ -304,6 +304,166 @@
   .toggle-btn[aria-pressed="true"] {
     background: var(--accent); color: #03223a;
   }
+
+  /* Tutorial Overlay styling */
+  #tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    overflow: hidden;
+    pointer-events: auto;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  #tutorial-overlay.active {
+    opacity: 1;
+  }
+  #tutorial-spotlight {
+    position: fixed;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    box-shadow: 0 0 0 9999px rgba(11, 18, 32, 0.4), 0 0 15px var(--accent);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    z-index: 10000;
+  }
+  #tutorial-tooltip {
+    position: fixed;
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    backdrop-filter: blur(12px);
+    pointer-events: auto;
+  }
+  #tutorial-tooltip::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    left: var(--arrow-left, 50%);
+    transform: translateX(-50%);
+    transition: left 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  #tutorial-tooltip.arrow-top::before {
+    top: -8px;
+    border-width: 0 8px 8px 8px;
+    border-color: transparent transparent var(--panel) transparent;
+    filter: drop-shadow(0 -1px 0px var(--border));
+  }
+  #tutorial-tooltip.arrow-bottom::before {
+    bottom: -8px;
+    border-width: 8px 8px 0 8px;
+    border-color: var(--panel) transparent transparent transparent;
+    filter: drop-shadow(0 1px 0px var(--border));
+  }
+  @media (prefers-color-scheme: light) {
+    #tutorial-tooltip {
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+  }
+  .tutorial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+  .tutorial-title {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .tutorial-close {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    padding: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: color 0.2s, background-color 0.2s;
+  }
+  .tutorial-close:hover {
+    color: var(--text);
+    background-color: var(--chip);
+  }
+  .tutorial-body {
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .tutorial-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+  }
+  .tutorial-nav {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .tutorial-btn {
+    background: var(--chip);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .tutorial-btn:hover {
+    background: var(--border);
+    border-color: var(--muted);
+  }
+  .tutorial-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .tutorial-dots {
+    display: flex;
+    gap: 0.35rem;
+  }
+  .tutorial-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background-color 0.2s;
+  }
+  .tutorial-dot.active {
+    background: var(--accent);
+  }
+  .tutorial-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 0.25rem;
+    opacity: 0.8;
+  }
 </style>
 </head>
 <body>
@@ -445,6 +605,22 @@
         </div>
       </a>
       
+      <!-- The Namesake -->
+      <a href="?book=Namesake" class="poster-card poster-namesake">
+        <div class="poster-body">
+          <div class="poster-preview" data-book="Namesake"></div>
+          <div class="poster-meta">
+            <div class="poster-text">
+              <h3 class="poster-title">The Namesake</h3>
+              <div class="poster-author">Jhumpa Lahiri</div>
+            </div>
+            <button class="poster-print-btn" title="Download Poster SVG" aria-label="Download Poster SVG">
+              <svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </button>
+          </div>
+        </div>
+      </a>
+      
       <!-- Request a Book Form Card -->
       <div class="poster-card request-card">
         <div class="poster-body">
@@ -503,6 +679,26 @@
   </div>
 
   <div class="tooltip" id="tip"></div>
+
+  <!-- Tutorial Overlay -->
+  <div id="tutorial-overlay" style="display: none;">
+    <div id="tutorial-spotlight"></div>
+    <div id="tutorial-tooltip">
+      <div class="tutorial-header">
+        <span class="tutorial-title">Quick Tour</span>
+        <button type="button" class="tutorial-close" id="tutorial-close" aria-label="Close tutorial">✕</button>
+      </div>
+      <div class="tutorial-body" id="tutorial-body-text"></div>
+      <div class="tutorial-footer">
+        <div class="tutorial-dots" id="tutorial-dots"></div>
+        <div class="tutorial-nav">
+          <button type="button" class="tutorial-btn" id="tutorial-prev" title="Previous step">←</button>
+          <button type="button" class="tutorial-btn" id="tutorial-next" title="Next step">→</button>
+        </div>
+      </div>
+      <div class="tutorial-hint">Click anywhere to continue</div>
+    </div>
+  </div>
 
 <script>
 /* ---------- Config: data sources ---------- */
@@ -939,6 +1135,11 @@ function render(){
         r.style.opacity = (!filterOnly || colored) ? '1' : '0.20';
       }
 
+      if (p.colors && p.colors.length > 0) {
+        r.classList.add('colored-tile');
+      }
+      r.setAttribute('data-idx', p.idx);
+
       r.addEventListener('pointerenter', (e)=>{
         if (hoverTimer) clearTimeout(hoverTimer);
         const clientX = e.clientX, clientY = e.clientY;
@@ -1329,12 +1530,257 @@ document.addEventListener('click', (e) => {
     }
 
     render();
+    startTutorialIfFirstTime();
   } catch(err){
     console.error(err);
     if (stats) stats.textContent = 'Load error';
     alert('Failed to load sources: ' + err.message);
   }
 })();
+
+/* ---------- Tutorial Overlay ---------- */
+let currentTutorialStep = 0;
+const tutorialSteps = [
+  {
+    title: "Paragraph Tiles",
+    text: "Each tile is a paragraph in the text. Click to read the text.",
+    getTarget: () => findMiddleTopTile()
+  },
+  {
+    title: "Filter Toggle",
+    text: "Toggle to view all paragraphs or just the ones with colour references.",
+    getTarget: () => document.getElementById('filter-toggle')
+  },
+  {
+    title: "Search Bar",
+    text: "Type to find paragraphs with particular characters or words.",
+    getTarget: () => document.querySelector('.searchbar .input')
+  }
+];
+
+function findMiddleTopTile() {
+  const tiles = Array.from(document.querySelectorAll('.colored-tile'));
+  if (tiles.length === 0) {
+    return document.querySelector('#viz rect');
+  }
+  
+  const svgEl = document.getElementById('viz');
+  const svgRect = svgEl.getBoundingClientRect();
+  const targetX = svgRect.left + svgRect.width / 2;
+  const targetY = svgRect.top + svgRect.height / 3;
+  
+  let bestTile = null;
+  let minDist = Infinity;
+  
+  tiles.forEach(tile => {
+    const r = tile.getBoundingClientRect();
+    const tileX = r.left + r.width / 2;
+    const tileY = r.top + r.height / 2;
+    
+    // Only check tiles in top half of SVG view
+    if (tileY < svgRect.top + svgRect.height / 2) {
+      const dist = Math.hypot(tileX - targetX, tileY - targetY);
+      if (dist < minDist) {
+        minDist = dist;
+        bestTile = tile;
+      }
+    }
+  });
+  
+  return bestTile || tiles[0];
+}
+
+function startTutorialIfFirstTime() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const book = urlParams.get("book");
+  if (!book) return;
+
+  setTimeout(() => {
+    initTutorial();
+  }, 500);
+}
+
+function initTutorial() {
+  const overlay = document.getElementById('tutorial-overlay');
+  if (!overlay) return;
+  
+  currentTutorialStep = 0;
+  overlay.style.display = 'block';
+  overlay.offsetHeight; // trigger reflow
+  overlay.classList.add('active');
+  
+  updateTutorial();
+  
+  window.addEventListener('resize', updateTutorialPositions);
+  window.addEventListener('scroll', updateTutorialPositions, true);
+}
+
+function updateTutorialPositions() {
+  if (document.getElementById('tutorial-overlay').classList.contains('active')) {
+    updateTutorial();
+  }
+}
+
+function updateTutorial() {
+  const step = tutorialSteps[currentTutorialStep];
+  const spotlight = document.getElementById('tutorial-spotlight');
+  const bodyText = document.getElementById('tutorial-body-text');
+  
+  bodyText.textContent = step.text;
+  
+  const dotsContainer = document.getElementById('tutorial-dots');
+  dotsContainer.innerHTML = '';
+  tutorialSteps.forEach((_, idx) => {
+    const dot = document.createElement('div');
+    dot.className = `tutorial-dot${idx === currentTutorialStep ? ' active' : ''}`;
+    dotsContainer.appendChild(dot);
+  });
+  
+  document.getElementById('tutorial-prev').disabled = (currentTutorialStep === 0);
+  
+  const target = step.getTarget();
+  let rect;
+  if (target) {
+    rect = target.getBoundingClientRect();
+    spotlight.style.display = 'block';
+    spotlight.style.top = `${rect.top - 4}px`;
+    spotlight.style.left = `${rect.left - 4}px`;
+    spotlight.style.width = `${rect.width + 8}px`;
+    spotlight.style.height = `${rect.height + 8}px`;
+  } else {
+    spotlight.style.display = 'none';
+    rect = {
+      top: window.innerHeight / 2,
+      bottom: window.innerHeight / 2,
+      left: window.innerWidth / 2,
+      right: window.innerWidth / 2,
+      width: 0,
+      height: 0
+    };
+  }
+  
+  // Tile tip is step 0: force tooltip to show on top of the tile
+  positionTooltip(rect, currentTutorialStep === 0);
+}
+
+function positionTooltip(targetRect, forceTop) {
+  const tooltip = document.getElementById('tutorial-tooltip');
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const viewportW = window.innerWidth;
+  const viewportH = window.innerHeight;
+  
+  let top;
+  let isAbove = false;
+  
+  if (forceTop) {
+    top = targetRect.top - tooltipRect.height - 12;
+    isAbove = true;
+  } else {
+    top = targetRect.bottom + 12;
+    if (top + tooltipRect.height > viewportH - 16) {
+      top = targetRect.top - tooltipRect.height - 12;
+      isAbove = true;
+    }
+  }
+  
+  let left = targetRect.left + (targetRect.width - tooltipRect.width) / 2;
+  
+  if (left < 16) left = 16;
+  if (left + tooltipRect.width > viewportW - 16) {
+    left = viewportW - tooltipRect.width - 16;
+  }
+  
+  if (top < 16) top = 16;
+  if (top + tooltipRect.height > viewportH - 16) {
+    top = viewportH - tooltipRect.height - 16;
+  }
+  
+  // Calculate horizontal offset for the triangular arrow pointing to the center of the target
+  const targetCenter = targetRect.left + targetRect.width / 2;
+  let arrowLeft = targetCenter - left;
+  
+  // Clamp arrowLeft to prevent it from clipping the corners of the card
+  const minArrowPadding = 20;
+  if (arrowLeft < minArrowPadding) arrowLeft = minArrowPadding;
+  if (arrowLeft > tooltipRect.width - minArrowPadding) {
+    arrowLeft = tooltipRect.width - minArrowPadding;
+  }
+  
+  tooltip.style.setProperty('--arrow-left', `${arrowLeft}px`);
+  
+  if (isAbove) {
+    tooltip.classList.remove('arrow-top');
+    tooltip.classList.add('arrow-bottom');
+  } else {
+    tooltip.classList.remove('arrow-bottom');
+    tooltip.classList.add('arrow-top');
+  }
+  
+  tooltip.style.top = `${top}px`;
+  tooltip.style.left = `${left}px`;
+}
+
+function endTutorial() {
+  const overlay = document.getElementById('tutorial-overlay');
+  if (!overlay) return;
+  
+  overlay.classList.remove('active');
+  localStorage.setItem('hitchhikers_tutorial_seen', 'true');
+  
+  setTimeout(() => {
+    overlay.style.display = 'none';
+  }, 300);
+  
+  window.removeEventListener('resize', updateTutorialPositions);
+  window.removeEventListener('scroll', updateTutorialPositions, true);
+}
+
+function nextStep() {
+  if (currentTutorialStep < tutorialSteps.length - 1) {
+    currentTutorialStep++;
+    updateTutorial();
+  } else {
+    endTutorial();
+  }
+}
+
+function prevStep() {
+  if (currentTutorialStep > 0) {
+    currentTutorialStep--;
+    updateTutorial();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const overlay = document.getElementById('tutorial-overlay');
+  if (overlay) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target.closest('#tutorial-close')) {
+        endTutorial();
+      } else if (e.target.closest('#tutorial-prev')) {
+        e.stopPropagation();
+        prevStep();
+      } else if (e.target.closest('#tutorial-next')) {
+        e.stopPropagation();
+        nextStep();
+      } else {
+        if (currentTutorialStep === 0) {
+          overlay.style.pointerEvents = 'none';
+          const el = document.elementFromPoint(e.clientX, e.clientY);
+          overlay.style.pointerEvents = 'auto';
+          
+          if (el && el.tagName === 'rect' && el.closest('#viz') && el.hasAttribute('data-idx')) {
+            const idx = parseInt(el.getAttribute('data-idx'));
+            openOverlayScrollTo(idx);
+            nextStep();
+            return;
+          }
+        }
+        nextStep();
+      }
+    });
+  }
+});
 </script>
 </body>
 </html>
