@@ -1,28 +1,4 @@
 Book V
-    Chapter 1. Minas Tirith
-    Chapter 2. The Passing of the Grey Company
-    Chapter 3. The Muster of Rohan
-    Chapter 4. The Siege of Gondor
-    Chapter 5. The Ride of the Rohirrim
-    Chapter 6. The Battle of the Pelennor Fields
-    Chapter 7. The Pyre of Denethor
-    Chapter 8. The Houses of Healing
-    Chapter 9. The Last Debate
-    Chapter 10. The Black Gate Opens
-Book VI
-    Chapter 1. The Tower of Cirith Ungol
-    Chapter 2. The Land of Shadow
-    Chapter 3. Mount Doom
-    Chapter 4. The Field of Cormallen
-    Chapter 5. The Steward and the King
-    Chapter 6. Many Partings
-    Chapter 7. Homeward Bound
-    Chapter 8. The Scouring of the Shire
-    Chapter 9. The Grey Havens
- 
- 
- 
-Book V
 
  
 Chapter 1
