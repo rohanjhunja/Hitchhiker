@@ -40,9 +40,10 @@ CANON_KEYS = [k if k != 'grey' else 'gray' for k in COLOR_MAP.keys()]
 TOKENS = sorted(list(set(CANON_KEYS)), key=lambda x: -len(x))
 ESCAPED_TOKENS = [re.escape(k) for k in TOKENS]
 TOKEN_PAT = '|'.join(ESCAPED_TOKENS)
+SUFFIX_PAT = r'(?:-ish|ish|-ened|ened|-dened|dened|-ening|ening|-dening|dening|-ness|ness|-dness|dness|-ed|ed|-ded|ded|-ing|ing|-ding|ding|-en|en|-den|den|-y|y)?'
 
 COLOR_REGEX = re.compile(
-    rf'(?:^|[^A-Za-z])((?:{TOKEN_PAT})(?:-ish|ish)?)(?=[^A-Za-z]|$)(?:[\-/]((?:{TOKEN_PAT})(?:-ish|ish)?)(?=[^A-Za-z]|$))?',
+    rf'(?:^|[^A-Za-z])((?:{TOKEN_PAT}){SUFFIX_PAT})(?=[^A-Za-z]|$)(?:[\-/]((?:{TOKEN_PAT}){SUFFIX_PAT})(?=[^A-Za-z]|$))?',
     re.IGNORECASE
 )
 
@@ -51,11 +52,17 @@ def normalize_color_token(tok):
         return None
     t = tok.lower()
     t = re.sub(r'[^a-z]', '', t)
-    if t.endswith('ish') and len(t) > 4:
-        t = t[:-3]
-    if t == 'grey':
-        t = 'gray'
-    return t if t in CANON_KEYS else None
+    if t in CANON_KEYS:
+        return 'gray' if t == 'grey' else t
+    suffixes = ['ening', 'ened', 'dening', 'dened', 'ness', 'dness', 'ish', 'ing', 'ding', 'ed', 'ded', 'en', 'den', 'y']
+    for suf in suffixes:
+        if t.endswith(suf):
+            cand = t[:-len(suf)]
+            if cand == 'grey':
+                cand = 'gray'
+            if cand in CANON_KEYS:
+                return cand
+    return None
 
 def clean_text(text):
     lines = text.splitlines()

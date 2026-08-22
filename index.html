@@ -738,15 +738,22 @@ const COLOR_TOKEN = Array.from(new Set(CANON_KEYS))
   .map(k => k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'))
   .join('|');
 
-const COLOR_REGEX = new RegExp(`(^|[^A-Za-z])((?:${COLOR_TOKEN})(?:-ish|ish)?)(?=[^A-Za-z]|$)(?:[\\-/]((?:${COLOR_TOKEN})(?:-ish|ish)?)(?=[^A-Za-z]|$))?`, 'gi');
+const COLOR_SUFFIX = '(?:-ish|ish|-ened|ened|-dened|dened|-ening|ening|-dening|dening|-ness|ness|-dness|dness|-ed|ed|-ded|ded|-ing|ing|-ding|ding|-en|en|-den|den|-y|y)?';
+const COLOR_REGEX = new RegExp(`(^|[^A-Za-z])((?:${COLOR_TOKEN})${COLOR_SUFFIX})(?=[^A-Za-z]|$)(?:[\\-/]((?:${COLOR_TOKEN})${COLOR_SUFFIX}))?`, 'gi');
 
 function normalizeColorTokenLoose(tok){
   if(!tok) return null;
-  let t = tok.toLowerCase();
-  t = t.replace(/[^a-z]/g,'');
-  if (t.endsWith('ish') && t.length>4) t = t.slice(0,-3);
-  if (t === 'grey') t = 'gray';
-  return CANON_KEYS.includes(t) ? t : null;
+  let t = tok.toLowerCase().replace(/[^a-z]/g,'');
+  if (CANON_KEYS.includes(t)) return t === 'grey' ? 'gray' : t;
+  const suffixes = ['ening', 'ened', 'dening', 'dened', 'ness', 'dness', 'ish', 'ing', 'ding', 'ed', 'ded', 'en', 'den', 'y'];
+  for (const suf of suffixes) {
+    if (t.endsWith(suf)) {
+      let cand = t.slice(0, -suf.length);
+      if (cand === 'grey') cand = 'gray';
+      if (CANON_KEYS.includes(cand)) return cand;
+    }
+  }
+  return null;
 }
 function detectColorsInText(raw){
   const counts = new Map(); let m;
