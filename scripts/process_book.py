@@ -181,15 +181,23 @@ def detect_screenplay_paragraphs(text):
 # --- Standard Prose Parsing Helpers ---
 def detect_prose_chapters(text):
     pattern = re.compile(
-        r'^\s*(BOOK\s+[I|V|X|L|C|D|M]+\b|Book\s+\d+|CHAPTER\b.*|Chapter\b.*|PREFACE TO FIRST EDITION|PREFACE TO SECOND EDITION|FOOTNOTES:|^\s*=\s*=\s*=\s*=\s*=\s*=$)\s*$',
+        r'^\s*(_?\s*(?:BOOK|Book|CHAPTER|Chapter)\b.*_?|PREFACE TO FIRST EDITION|PREFACE TO SECOND EDITION|FOOTNOTES:|^\s*=\s*=\s*=\s*=\s*=\s*=$)\s*$',
         re.MULTILINE
     )
-    starts = []
-    for m in pattern.finditer(text):
-        line_num = text[:m.start()].count('\n') + 1
-        if line_num >= 45 or '==' in m.group(0):
-            starts.append(m.start())
+    raw_starts = [m.start() for m in pattern.finditer(text)]
+    if not raw_starts:
+        return [(0, len(text), 0)]
 
+    toc_cutoff = 0
+    if len(raw_starts) >= 3:
+        close_count = sum(1 for i in range(min(5, len(raw_starts)-1)) if raw_starts[i+1] - raw_starts[i] < 200)
+        if close_count >= 2:
+            for i in range(len(raw_starts)-1):
+                if raw_starts[i+1] - raw_starts[i] > 300:
+                    toc_cutoff = raw_starts[i+1]
+                    break
+
+    starts = [s for s in raw_starts if s >= toc_cutoff]
     starts.sort()
     if not starts:
         return [(0, len(text), 0)]
