@@ -340,17 +340,18 @@ def update_gallery_previews(repo_root, book_name, text, words):
     print(f"Updated {previews_path} for '{book_name}' ({len(book_preview)} chapters).")
 
 def update_index_html(repo_root, book_name, title, author):
-    index_path = repo_root / "index.html"
-    if not index_path.exists():
-        return
+    for filename in ["index.html", "viewer.html"]:
+        index_path = repo_root / filename
+        if not index_path.exists():
+            continue
 
-    html = index_path.read_text(encoding='utf-8')
-    if f'data-book="{book_name}"' in html:
-        print(f"Poster card for '{book_name}' already exists in index.html.")
-        return
+        html = index_path.read_text(encoding='utf-8')
+        if f'data-book="{book_name}"' in html:
+            print(f"Poster card for '{book_name}' already exists in {filename}.")
+            continue
 
-    css_class = "poster-" + book_name.lower()
-    card_html = f'''      <!-- {title} -->
+        css_class = "poster-" + book_name.lower()
+        card_html = f'''      <!-- {title} -->
       <a href="?book={book_name}" class="poster-card {css_class}">
         <div class="poster-body">
           <div class="poster-preview" data-book="{book_name}"></div>
@@ -368,10 +369,10 @@ def update_index_html(repo_root, book_name, title, author):
       
       <!-- Request a Book Form Card -->'''
 
-    if '<!-- Request a Book Form Card -->' in html:
-        new_html = html.replace('<!-- Request a Book Form Card -->', card_html, 1)
-        index_path.write_text(new_html, encoding='utf-8')
-        print(f"Added poster card for '{title}' to index.html.")
+        if '<!-- Request a Book Form Card -->' in html:
+            new_html = html.replace('<!-- Request a Book Form Card -->', card_html, 1)
+            index_path.write_text(new_html, encoding='utf-8')
+            print(f"Added poster card for '{title}' to {filename}.")
 
 def verify_indices(book_dir, text, rows):
     mismatches = 0
