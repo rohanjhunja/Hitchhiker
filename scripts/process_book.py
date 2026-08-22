@@ -350,7 +350,7 @@ def update_index_html(repo_root, book_name, title, author):
             print(f"Poster card for '{book_name}' already exists in {filename}.")
             continue
 
-        css_class = "poster-" + book_name.lower()
+        css_class = "poster-" + re.sub(r'[^a-z0-9]+', '-', book_name.lower()).strip('-')
         card_html = f'''      <!-- {title} -->
       <a href="?book={book_name}" class="poster-card {css_class}">
         <div class="poster-body">
