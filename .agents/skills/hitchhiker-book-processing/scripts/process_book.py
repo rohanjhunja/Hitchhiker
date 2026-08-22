@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Automated Book Processing Pipeline for Hitchhikers Repository.
+Unified Automated Book & Screenplay Processing Pipeline for Hitchhikers Repository.
+Supports both standard prose (novels, classics) and screenplays (INT./EXT. script formats).
 Cleans raw text, builds word index (CSV/JSON), updates gallery_previews.json,
 and registers poster cards in index.html deterministically.
 """
@@ -69,7 +70,116 @@ def clean_text(text):
     clean_lines = lines[start_i:end_i]
     return '\n'.join(clean_lines) + '\n'
 
-def detect_chapters(text):
+def is_screenplay_format(text):
+    scene_pattern = re.compile(r'^(?:INT/EXT\.|EXT/INT\.|INT\.|EXT\.)(?:\s|$)', re.MULTILINE | re.IGNORECASE)
+    return len(scene_pattern.findall(text)) >= 5
+
+# --- Screenplay Parsing Helpers ---
+def get_clean_location(header):
+    s = re.sub(r'^(?:INT/EXT\.|EXT/INT\.|INT\.|EXT\.)(?:\s*)', '', header, flags=re.IGNORECASE)
+    s = re.sub(r'\s+\d+(?:\s+\d+)*\s*$', '', s)
+    time_words = ['DAY', 'NIGHT', 'DUSK', 'AFTERNOON', 'EVENING', 'DAWN', 'MORNING', 'MIDNIGHT']
+    for tw in time_words:
+        s = re.sub(rf'(?:\.|\s+)?\b{tw}\b.*$', '', s, flags=re.IGNORECASE)
+        s = re.sub(rf'(?:\.|\s+)?\b{tw}\d+.*$', '', s, flags=re.IGNORECASE)
+    s = re.sub(r'[\.\s\d]+$', '', s)
+    return s.split('-')[0].strip().upper()
+
+def is_character_name(stripped):
+    if not stripped or not stripped.isupper():
+        return False
+    if any(stripped.startswith(p) for p in ["INT.", "EXT.", "INT/EXT.", "EXT/INT.", "CUT TO", "FADE "]):
+        return False
+    if stripped in ["ON BLACK", "THE END", "Super:", "FADE IN:", "FADE OUT."]:
+        return False
+    return len(stripped) <= 40
+
+def detect_screenplay_chapters(text):
+    scene_pattern = re.compile(r'^(?:INT/EXT\.|EXT/INT\.|INT\.|EXT\.)(?:\s|$).*$', re.MULTILINE | re.IGNORECASE)
+    scene_matches = list(scene_pattern.finditer(text))
+    
+    if not scene_matches:
+        return [(0, len(text), 0)]
+
+    scenes = [{"start": m.start(), "header": m.group(0).strip(), "location": get_clean_location(m.group(0).strip())} for m in scene_matches]
+    N = max(3, len(scenes) // 15)
+
+    scene_to_chapter = {}
+    current_chapter = 0
+    current_chapter_scenes = []
+
+    for idx, scene in enumerate(scenes):
+        current_chapter_scenes.append(scene)
+        scene_to_chapter[idx] = current_chapter
+        if len(current_chapter_scenes) >= N:
+            if idx + 1 < len(scenes) and scenes[idx + 1]["location"] == scene["location"]:
+                continue
+            current_chapter += 1
+            current_chapter_scenes = []
+
+    spans = []
+    for idx, scene in enumerate(scenes):
+        start = scene["start"]
+        end = scenes[idx + 1]["start"] if idx + 1 < len(scenes) else len(text)
+        spans.append((start, end, scene_to_chapter[idx]))
+    return spans
+
+def detect_screenplay_paragraphs(text):
+    lines = []
+    last = 0
+    for m in re.finditer(r'(.*)\r?\n', text):
+        lines.append((last, m.end(), m.group(1)))
+        last = m.end()
+    if last < len(text):
+        lines.append((last, len(text), text[last:]))
+
+    paragraphs = []
+    current_para_start = None
+    current_para_end = None
+    state = "INTRO"
+
+    for start, end, content in lines:
+        stripped = content.strip()
+        if not stripped:
+            continue
+        is_header = bool(re.match(r'^(?:INT/EXT\.|EXT/INT\.|INT\.|EXT\.)(?:\s|$)', stripped, re.IGNORECASE))
+        is_transition = bool(re.match(r'^(?:CUT TO:|FADE IN:|FADE OUT\.|ON BLACK)$', stripped, re.IGNORECASE))
+
+        if state == "INTRO":
+            if is_header:
+                state = "ACTION"
+                if current_para_start is not None:
+                    paragraphs.append((current_para_start, current_para_end))
+                current_para_start = start
+                current_para_end = end
+            else:
+                paragraphs.append((start, end))
+            continue
+
+        if is_header or is_transition:
+            if current_para_start is not None:
+                paragraphs.append((current_para_start, current_para_end))
+            paragraphs.append((start, end))
+            current_para_start = None
+            current_para_end = None
+            state = "ACTION"
+        elif is_character_name(stripped):
+            if current_para_start is not None:
+                paragraphs.append((current_para_start, current_para_end))
+            current_para_start = start
+            current_para_end = end
+            state = "DIALOGUE"
+        else:
+            if current_para_start is None:
+                current_para_start = start
+            current_para_end = end
+
+    if current_para_start is not None:
+        paragraphs.append((current_para_start, current_para_end))
+    return paragraphs
+
+# --- Standard Prose Parsing Helpers ---
+def detect_prose_chapters(text):
     pattern = re.compile(
         r'^\s*(BOOK\s+[I|V|X|L|C|D|M]+\b|Book\s+\d+|CHAPTER\b.*|Chapter\b.*|PREFACE TO FIRST EDITION|PREFACE TO SECOND EDITION|FOOTNOTES:|^\s*=\s*=\s*=\s*=\s*=\s*=$)\s*$',
         re.MULTILINE
@@ -95,7 +205,7 @@ def detect_chapters(text):
         spans.append((s, e, i))
     return spans
 
-def detect_paragraphs(text):
+def detect_prose_paragraphs(text):
     para_split = re.compile(r'(?:\r?\n){2,}')
     spans = []
     last = 0
@@ -119,8 +229,15 @@ def build_index(text, keep_hyphens=False):
     else:
         word_pattern = re.compile(r"[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?")
 
-    chapter_spans = detect_chapters(text)
-    para_spans = detect_paragraphs(text)
+    screenplay = is_screenplay_format(text)
+    if screenplay:
+        print("Format detected: Screenplay (Scene/Dialogue parsing mode)")
+        chapter_spans = detect_screenplay_chapters(text)
+        para_spans = detect_screenplay_paragraphs(text)
+    else:
+        print("Format detected: Standard Prose / Novel")
+        chapter_spans = detect_prose_chapters(text)
+        para_spans = detect_prose_paragraphs(text)
 
     rows = []
     wid = 0
@@ -247,8 +364,6 @@ def update_index_html(repo_root, book_name, title, author):
         new_html = html.replace('<!-- Request a Book Form Card -->', card_html, 1)
         index_path.write_text(new_html, encoding='utf-8')
         print(f"Added poster card for '{title}' to index.html.")
-    else:
-        print("Warning: Could not find insert point in index.html")
 
 def verify_indices(book_dir, text, rows):
     mismatches = 0
@@ -293,7 +408,6 @@ def process_book(book_dir_path, title=None, author=None):
     print(f"Indexed {len(rows)} words.\nCSV : {csv_path}\nJSON: {json_path}")
 
     verify_indices(book_dir, text, rows)
-
     update_gallery_previews(repo_root, book_name, text, rows)
 
     if title and author:
@@ -301,7 +415,7 @@ def process_book(book_dir_path, title=None, author=None):
 
 def main():
     ap = argparse.ArgumentParser(description="Automate text cleaning, word indexing, gallery preview generation, and index registration.")
-    ap.add_argument("book_dir", help="Directory of the book (e.g. Odyssey, Dune, LOTR)")
+    ap.add_argument("book_dir", help="Directory of the book or screenplay")
     ap.add_argument("--title", help="Display title of the book for index.html card")
     ap.add_argument("--author", help="Author name of the book for index.html card")
     args = ap.parse_args()
