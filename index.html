@@ -1463,15 +1463,13 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
         filteredCh = ch.filter(p => {
           const pLen = p[0];
           const pColor = p[1];
-          const actualW = (pLen / chTotalWeightRaw) * W_avail;
+          const share = pLen / chTotalWeightRaw;
 
-          // Saliency / Sensitivity Criteria:
-          const isRareInBook = (globalColorCounts.get(pColor) || 0) <= 3;
-          const isUniqueInChapter = (chColorCounts.get(pColor) || 0) === 1;
-          const isSpecificHue = !GENERIC_COLORS.has(pColor);
-          const isWideEnough = actualW >= 0.10 * h;
+          // Severe Minimalism Criteria:
+          const isRareInBook = (globalColorCounts.get(pColor) || 0) <= 2;
+          const isSignificantShare = share >= 0.15;
 
-          return isRareInBook || isUniqueInChapter || isSpecificHue || isWideEnough;
+          return isRareInBook || isSignificantShare;
         });
       }
 
