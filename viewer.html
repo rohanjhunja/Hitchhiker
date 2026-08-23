@@ -1464,9 +1464,51 @@ new ResizeObserver(entries => {
   }
 }).observe(document.querySelector('main'));
 
-let cachedPreviewsData = null;
-
 const GENERIC_COLORS = new Set(['#111827', '#282828', '#e5e7eb', '#fffff0', '#f8f9fa', '#6b7280', '#a16207', '#36454f']);
+
+function clusterColorBlocks(tiles, totalWeightCh) {
+  if (!tiles || tiles.length <= 1) return tiles;
+
+  let result = tiles.map(t => ({ ...t }));
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    for (let i = 0; i < result.length; i++) {
+      let targetIdx = -1;
+      let minGap = Infinity;
+
+      for (let j = 0; j < result.length; j++) {
+        if (i === j) continue;
+        if (result[i].color === result[j].color) {
+          const gap = Math.abs(i - j);
+          if (gap <= 3 && gap < minGap) {
+            // Max 50% row share cap per cluster to prevent single-block collapse
+            if ((result[i].len + result[j].len) <= totalWeightCh * 0.50) {
+              targetIdx = j;
+              minGap = gap;
+            }
+          }
+        }
+      }
+
+      if (targetIdx !== -1) {
+        // Merge smaller weight towards larger weight
+        if (result[i].len >= result[targetIdx].len) {
+          result[i].len += result[targetIdx].len;
+          result.splice(targetIdx, 1);
+        } else {
+          result[targetIdx].len += result[i].len;
+          result.splice(i, 1);
+        }
+        changed = true;
+        break;
+      }
+    }
+  }
+
+  return result;
+}
 
 function getVariationParams() {
   const params = new URLSearchParams(window.location.search);
@@ -1658,6 +1700,11 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
         tiles = filteredCh.map(p => ({ len: p[0], color: p[1] }));
       }
       
+      const rawChTotalWeight = tiles.reduce((sum, item) => sum + item.len, 0) || 1;
+      if (minimalism === 'on') {
+        tiles = clusterColorBlocks(tiles, rawChTotalWeight);
+      }
+
       const totalWeightCh = tiles.reduce((sum, item) => sum + item.len, 0) || 1;
       const tileCount = tiles.length;
       
