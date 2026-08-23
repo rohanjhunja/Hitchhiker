@@ -1510,10 +1510,14 @@ function clusterColorBlocks(tiles, totalWeightCh) {
   return result;
 }
 
-function combineChaptersToMetaRows(activeChapters, targetCount = 12) {
-  if (!activeChapters || activeChapters.length <= targetCount) return activeChapters;
+function combineChaptersToMetaRows(activeChapters) {
+  if (!activeChapters || activeChapters.length < 30) return activeChapters;
 
   const C = activeChapters.length;
+  // Generalized proportional scaling based on C (preferring less reduction)
+  const mergeFactor = Math.max(2, Math.floor(C / 16));
+  const targetCount = Math.ceil(C / mergeFactor);
+
   const combined = [];
   const chunkSize = C / targetCount;
 
@@ -1623,9 +1627,9 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
       }
     });
     
-    // Combine rows into 12 meta-rows ONLY when rows are 2x or more in magnitude (C >= 30)
+    // Combine rows ONLY when rows are 2x or more in magnitude (C >= 30) using generalized scaling
     if (minimalism === 'on' && activeChapters.length >= 30) {
-      activeChapters = combineChaptersToMetaRows(activeChapters, 12);
+      activeChapters = combineChaptersToMetaRows(activeChapters);
     }
 
     const activeChapterWeights = activeChapters.map(ch => ch.reduce((sum, p) => sum + p[0], 0));
