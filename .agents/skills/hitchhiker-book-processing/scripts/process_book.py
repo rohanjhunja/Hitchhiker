@@ -221,7 +221,7 @@ def detect_prose_chapters(text):
     return spans
 
 def detect_prose_paragraphs(text):
-    para_split = re.compile(r'(?:\r?\n){2,}')
+    para_split = re.compile(r'(?:\r?\n){2,}|(?:\r?\n)(?=\s{2,}\S)')
     spans = []
     last = 0
     for m in para_split.finditer(text):
@@ -284,43 +284,48 @@ def write_json(rows, out_json):
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False, indent=2)
 
-SUBJECT_PRONOUNS_PAT = r'\b(?:he|she|it|they|we|you|i|who|which|that)\b'
-MOTION_ADVERBS_PAT = r'\b(?:up|from|into|out|off|above|over|away|back|again|high|slowly|swiftly|gradually|early|late|quietly|silently|straight|heavily|at\s+once)\b'
-NOUN_MODIFIERS_PAT = r'\b(?:a|an|the|this|that|red|pink|wild|sweet|fresh|yellow|white|guelder|pretty|lovely|single|plucked|dead|withered)\b'
+DETERMINERS_PREP_PAT = r'\b(?:a|an|the|this|that|these|those|my|his|her|its|their|your|our|some|any|each|every|no|all|many|few|much|more|most|of|in|with|into|like|as|under|upon|over|through|pale|deep|dark|light|bright|soft|vivid|rich|dull|warm|cool|pure|faint|heavy|fine|coarse|dry|wet|wild|sweet|red|blue|green|yellow|white|bed\s+of)\s*$'
+ACTION_AUXILIARY_PAT = r'\b(?:will|would|shall|should|can|could|may|might|must|to|do|did|does)\s*$'
+LINKING_VERBS_PAT = r'\b(?:is|are|was|were|be|been|being|became|turned|grew|looked|felt|seemed)\s*$'
+SUBJECT_PRONOUNS_PAT = r'\b(?:he|she|it|they|we|you|i|who)\s*$'
+PHRASAL_PARTICLES_PAT = r'^\s*(?:up|off|out|away|down|over|back|again)\b'
 
 def is_verb_context(token, left_ctx, right_ctx):
     token_lower = token.lower()
     left_str = left_ctx.lower().strip()
     right_str = right_ctx.lower().strip()
 
-    if token_lower not in ['rose', 'tan', 'dust', 'rust', 'sand', 'ash', 'brown', 'black', 'silver']:
+    # 1. Determiners, possessives, prepositions of containment/association, or color modifiers -> ALWAYS COLOR/NOUN
+    if re.search(DETERMINERS_PREP_PAT, left_str):
         return False
 
-    if re.search(r'(?:-colored|-coloured|-tinted|-pink|-red|-velvet|-silk|-satin|-hue|-shade|pink|colored|coloured|tinted|shade|hue)$', right_str):
-        return False
-    if re.search(r'^(?:pale|deep|dark|light|bright|soft)\s*$', left_str):
-        return False
-
-    if re.search(NOUN_MODIFIERS_PAT + r'\s*$', left_str):
+    # 2. Compound adjectives or compound noun contexts -> ALWAYS COLOR/NOUN
+    if re.search(r'^(?:-colored|-coloured|-tinted|-pink|-red|-velvet|-silk|-satin|-hue|-shade|colored|coloured|tinted|shade|hue|petals|hips|water|garden|bush|tree|skin|eyes|hair|cloak|coat|dress|wall|sky|sand|sword|ring|leaves|stone|sea|ocean|desert)\b', right_str):
         return False
 
-    if re.search(r'\b(?:and|also|both|then|so|all)\s*$', left_str):
+    # 3. Linking verbs (was tan, turned pale, grew dark, looked silver) -> COLOR/ADJECTIVE
+    if re.search(LINKING_VERBS_PAT, left_str):
+        return False
+
+    # 4. Action auxiliary verbs (will rust, to dust, did brown, would tan) -> VERB
+    if re.search(ACTION_AUXILIARY_PAT, left_str):
         return True
 
-    if re.search(SUBJECT_PRONOUNS_PAT + r'\s*$', left_str):
+    # 5. Phrasal verb particles on right context (black out, rose up, dusted off, rusted away) -> VERB
+    if re.search(PHRASAL_PARTICLES_PAT, right_str):
         return True
 
-    if re.search(r'^\s*' + MOTION_ADVERBS_PAT, right_str):
-        return True
+    # 6. Subject pronouns performing active verb functions -> VERB
+    if re.search(SUBJECT_PRONOUNS_PAT, left_str):
+        if token_lower in ['rose', 'dust', 'rust', 'tan', 'brown']:
+            return True
 
-    if re.search(r'^\s*to\s+(?:his|her|their|my|your|its|[a-z]+\b)', right_str):
-        return True
-
-    if re.search(r'^\s*[,;.]', right_str):
-        return True
-
-    if re.search(r'^\s*and\s+[a-z]+', right_str):
-        return True
+    # 7. Specific past-tense noun subjects performing action 'rose' (sun rose, smoke rose, tide rose)
+    if token_lower == 'rose':
+        if re.search(r'\b(?:sun|smoke|wind|crowd|voice|tide|dust|figure|curtain|flame|fire|heat)\s*$', left_str):
+            return True
+        if re.search(r'^\s*(?:from|into|onto|upon|above|to)\b', right_str):
+            return True
 
     return False
 
@@ -329,7 +334,7 @@ def update_gallery_previews(repo_root, book_name, text, words):
     for r in words:
         by_para[r['paragraph_idx']].append(r)
 
-    paras = []
+    paras_segments = []
     for pid in sorted(by_para.keys()):
         list_w = sorted(by_para[pid], key=lambda x: x['start_char'])
         start = list_w[0]['start_char']
@@ -347,47 +352,44 @@ def update_gallery_previews(repo_root, book_name, text, words):
             end -= 1
 
         para_text = text[start:end]
-        counts = defaultdict(int)
+        para_len = max(1, end - start)
+
+        matches = []
         for m in COLOR_REGEX.finditer(para_text):
-            tok_a = m.group(1)
-            tok_b = m.group(2)
-            a = normalize_color_token(tok_a)
-            b = normalize_color_token(tok_b)
-            
-            if a:
-                m_start = m.start(1)
-                m_end = m.end(1)
-                left_c = para_text[max(0, m_start-40):m_start]
-                right_c = para_text[m_end:min(len(para_text), m_end+40)]
-                if not is_verb_context(a, left_c, right_c):
-                    counts[a] += 1
-            if b:
-                m_start = m.start(2)
-                m_end = m.end(2)
-                left_c = para_text[max(0, m_start-40):m_start]
-                right_c = para_text[m_end:min(len(para_text), m_end+40)]
-                if not is_verb_context(b, left_c, right_c):
-                    counts[b] += 1
+            for g_idx in (1, 2):
+                tok = m.group(g_idx)
+                norm = normalize_color_token(tok)
+                if norm:
+                    m_start = m.start(g_idx)
+                    m_end = m.end(g_idx)
+                    left_c = para_text[max(0, m_start-40):m_start]
+                    right_c = para_text[m_end:min(len(para_text), m_end+40)]
+                    if not is_verb_context(norm, left_c, right_c):
+                        matches.append({'start': m_start, 'end': m_end, 'hex': COLOR_MAP[norm]})
 
-        sorted_colors = sorted(counts.items(), key=lambda x: x[1], reverse=True)
-        color_hex = COLOR_MAP[sorted_colors[0][0]] if sorted_colors else 0
-        para_len = end - start
-
-        paras.append({
-            'idx': pid,
-            'chapter_idx': c_idx,
-            'len': para_len,
-            'colorHex': color_hex
-        })
+        N = len(matches)
+        if N == 1:
+            paras_segments.append({'chapter_idx': c_idx, 'len': para_len, 'hex': matches[0]['hex']})
+        elif N > 1:
+            for i, match in enumerate(matches):
+                seg_start = 0 if i == 0 else (matches[i-1]['end'] + match['start']) // 2
+                seg_end = para_len if i == N - 1 else (match['end'] + matches[i+1]['start']) // 2
+                seg_len = max(1, seg_end - seg_start)
+                paras_segments.append({'chapter_idx': c_idx, 'len': seg_len, 'hex': match['hex']})
 
     by_chapter = defaultdict(list)
-    for p in paras:
-        by_chapter[p['chapter_idx']].append(p)
+    for seg in paras_segments:
+        by_chapter[seg['chapter_idx']].append(seg)
 
     book_preview = []
     for ci in sorted(by_chapter.keys()):
-        ch_list = [[p['len'], p['colorHex']] for p in by_chapter[ci]]
-        book_preview.append(ch_list)
+        ch_merged = []
+        for seg in by_chapter[ci]:
+            if ch_merged and ch_merged[-1][1] == seg['hex']:
+                ch_merged[-1][0] += seg['len']
+            else:
+                ch_merged.append([seg['len'], seg['hex']])
+        book_preview.append(ch_merged)
 
     previews_path = repo_root / "gallery_previews.json"
     if previews_path.exists():
