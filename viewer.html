@@ -1510,6 +1510,29 @@ function clusterColorBlocks(tiles, totalWeightCh) {
   return result;
 }
 
+function combineChaptersToMetaRows(activeChapters, targetCount = 12) {
+  if (!activeChapters || activeChapters.length <= targetCount) return activeChapters;
+
+  const C = activeChapters.length;
+  const combined = [];
+  const chunkSize = C / targetCount;
+
+  for (let k = 0; k < targetCount; k++) {
+    const start = Math.floor(k * chunkSize);
+    const end = (k === targetCount - 1) ? C : Math.floor((k + 1) * chunkSize);
+    
+    const metaRowParas = [];
+    for (let i = start; i < end; i++) {
+      metaRowParas.push(...activeChapters[i]);
+    }
+    if (metaRowParas.length > 0) {
+      combined.push(metaRowParas);
+    }
+  }
+
+  return combined;
+}
+
 function getVariationParams() {
   const params = new URLSearchParams(window.location.search);
   let minimalism = params.get("minimalism");
@@ -1592,17 +1615,20 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
     });
 
     // Filter chapters and paragraphs: keep ONLY colored paragraphs!
-    const activeChapters = [];
-    const activeChapterWeights = [];
-    
+    let activeChapters = [];
     chapters.forEach(ch => {
       const coloredParas = ch.filter(p => p[1] !== 0);
       if (coloredParas.length > 0) {
         activeChapters.push(coloredParas);
-        const chWeight = coloredParas.reduce((sum, p) => sum + p[0], 0);
-        activeChapterWeights.push(chWeight);
       }
     });
+    
+    // Combine rows into 12 meta-rows ONLY when rows are 2x or more in magnitude (C >= 30)
+    if (minimalism === 'on' && activeChapters.length >= 30) {
+      activeChapters = combineChaptersToMetaRows(activeChapters, 12);
+    }
+
+    const activeChapterWeights = activeChapters.map(ch => ch.reduce((sum, p) => sum + p[0], 0));
     
     const C = activeChapters.length;
     if (C === 0) return;
@@ -1665,12 +1691,20 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
       const h = heights[chIdx];
       const chTotalWeightRaw = ch.reduce((sum, p) => sum + p[0], 0) || 1;
 
+      // Calculate maximum color share in this row to check for dominance (>= 50%)
+      const colorShares = ch.map(p => p[0] / chTotalWeightRaw);
+      const maxShare = Math.max(...colorShares);
+      const hasDominantColor = maxShare >= 0.50;
+
       // Density-Proportional Minimalism Threshold (scales inversely with row height h)
       const shareThreshold = Math.max(0.08, Math.min(0.30, 0.15 * (15 / Math.max(1, h))));
 
       let filteredCh = ch;
       if (minimalism === 'on') {
         filteredCh = ch.filter(p => {
+          // If row has no dominant color (<50%), retain visual variety by NOT removing strips!
+          if (!hasDominantColor) return true;
+
           const pLen = p[0];
           const pColor = p[1];
           const share = pLen / chTotalWeightRaw;
