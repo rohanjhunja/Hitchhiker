@@ -1689,54 +1689,50 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
     
     activeChapters.forEach((ch, chIdx) => {
       const h = heights[chIdx];
-      const chTotalWeightRaw = ch.reduce((sum, p) => sum + p[0], 0) || 1;
+      
+      // Step 1: Post-combination color aggregation (join adjacent same-color paragraphs in row)
+      let rawTiles = [];
+      ch.forEach(p => {
+        const pLen = p[0];
+        const pColor = p[1];
+        if (rawTiles.length > 0 && rawTiles[rawTiles.length - 1].color === pColor) {
+          rawTiles[rawTiles.length - 1].len += pLen;
+        } else {
+          rawTiles.push({ len: pLen, color: pColor });
+        }
+      });
 
-      // Calculate maximum color share in this row to check for dominance (>= 50%)
-      const colorShares = ch.map(p => p[0] / chTotalWeightRaw);
-      const maxShare = Math.max(...colorShares);
+      const rowTotalWeightRaw = rawTiles.reduce((sum, t) => sum + t.len, 0) || 1;
+
+      // Step 2: Calculate maximum color share on aggregated tiles to check for dominance (>= 50%)
+      const tileShares = rawTiles.map(t => t.len / rowTotalWeightRaw);
+      const maxShare = Math.max(...tileShares);
       const hasDominantColor = maxShare >= 0.50;
 
       // Density-Proportional Minimalism Threshold (scales inversely with row height h)
       const shareThreshold = Math.max(0.08, Math.min(0.30, 0.15 * (15 / Math.max(1, h))));
 
-      let filteredCh = ch;
+      // Step 3: Dominance-conditional strip filtering on aggregated tiles
+      let filteredTiles = rawTiles;
       if (minimalism === 'on') {
-        filteredCh = ch.filter(p => {
+        filteredTiles = rawTiles.filter(t => {
           // If row has no dominant color (<50%), retain visual variety by NOT removing strips!
           if (!hasDominantColor) return true;
 
-          const pLen = p[0];
-          const pColor = p[1];
-          const share = pLen / chTotalWeightRaw;
-
-          const isRareInBook = (globalColorCounts.get(pColor) || 0) <= 2;
+          const share = t.len / rowTotalWeightRaw;
+          const isRareInBook = (globalColorCounts.get(t.color) || 0) <= 2;
           const isSignificantShare = share >= shareThreshold;
 
           return isRareInBook || isSignificantShare;
         });
       }
 
-      if (filteredCh.length === 0) filteredCh = ch;
+      if (filteredTiles.length === 0) filteredTiles = rawTiles;
 
-      // Determine paragraph list (join same color tiles if rounding is enabled)
-      let tiles = [];
-      if (rounding !== 'off') {
-        filteredCh.forEach(p => {
-          const pLen = p[0];
-          const pColor = p[1];
-          if (tiles.length > 0 && tiles[tiles.length - 1].color === pColor) {
-            tiles[tiles.length - 1].len += pLen;
-          } else {
-            tiles.push({ len: pLen, color: pColor });
-          }
-        });
-      } else {
-        tiles = filteredCh.map(p => ({ len: p[0], color: p[1] }));
-      }
-      
-      const rawChTotalWeight = tiles.reduce((sum, item) => sum + item.len, 0) || 1;
+      // Step 4: Proximity clustering on filtered tiles
+      let tiles = filteredTiles;
       if (minimalism === 'on') {
-        tiles = clusterColorBlocks(tiles, rawChTotalWeight);
+        tiles = clusterColorBlocks(tiles, rowTotalWeightRaw);
       }
 
       const totalWeightCh = tiles.reduce((sum, item) => sum + item.len, 0) || 1;
