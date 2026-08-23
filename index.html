@@ -591,6 +591,12 @@
       <a href="#" class="var-opt" data-param="rounding" data-value="full">Full</a>
       <a href="#" class="var-opt" data-param="rounding" data-value="rounded">Rounded</a>
       <a href="#" class="var-opt" data-param="rounding" data-value="off">Off</a>
+      <span class="variation-sep">·</span>
+      <span class="variation-label">Minimum Width:</span>
+      <a href="#" class="var-opt" data-param="minwidth" data-value="height">Height</a>
+      <a href="#" class="var-opt" data-param="minwidth" data-value="20">20%</a>
+      <a href="#" class="var-opt" data-param="minwidth" data-value="10">10%</a>
+      <a href="#" class="var-opt" data-param="minwidth" data-value="off">Off</a>
     </div>
 
     <!-- Attribution Footer -->
@@ -1292,11 +1298,13 @@ function getVariationParams() {
   let strips = params.get("strips");
   if (strips !== "on" && strips !== "off") strips = "on";
   let rounding = params.get("rounding");
-  if (rounding !== "full" && rounding !== "rounded" && rounding !== "off") rounding = "off";
-  return { strips, rounding };
+  if (rounding !== "full" && rounding !== "rounded" && rounding !== "off") rounding = "rounded";
+  let minwidth = params.get("minwidth");
+  if (minwidth !== "height" && minwidth !== "20" && minwidth !== "10" && minwidth !== "off") minwidth = "20";
+  return { strips, rounding, minwidth };
 }
 
-function updateVariationUI(strips, rounding) {
+function updateVariationUI(strips, rounding, minwidth) {
   const container = document.getElementById('gallery-variations');
   if (!container) return;
   
@@ -1304,7 +1312,7 @@ function updateVariationUI(strips, rounding) {
   links.forEach(link => {
     const param = link.getAttribute('data-param');
     const val = link.getAttribute('data-value');
-    if ((param === 'strips' && val === strips) || (param === 'rounding' && val === rounding)) {
+    if ((param === 'strips' && val === strips) || (param === 'rounding' && val === rounding) || (param === 'minwidth' && val === minwidth)) {
       link.classList.add('active');
     } else {
       link.classList.remove('active');
@@ -1312,7 +1320,7 @@ function updateVariationUI(strips, rounding) {
   });
 }
 
-function updateNavigationLinks(strips, rounding) {
+function updateNavigationLinks(strips, rounding, minwidth) {
   const cards = document.querySelectorAll('.poster-card');
   cards.forEach(card => {
     const rawHref = card.getAttribute('href');
@@ -1320,6 +1328,7 @@ function updateNavigationLinks(strips, rounding) {
     const url = new URL(rawHref, window.location.href);
     url.searchParams.set('strips', strips);
     url.searchParams.set('rounding', rounding);
+    url.searchParams.set('minwidth', minwidth);
     card.setAttribute('href', '?' + url.searchParams.toString());
   });
 
@@ -1327,14 +1336,15 @@ function updateNavigationLinks(strips, rounding) {
   if (galleryBtn) {
     const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:";
     const basePath = isLocal ? "./index.html" : "./";
-    galleryBtn.href = `${basePath}?strips=${strips}&rounding=${rounding}`;
+    galleryBtn.href = `${basePath}?strips=${strips}&rounding=${rounding}&minwidth=${minwidth}`;
   }
 }
 
-function renderGalleryPreviews(data, stripsOpt, roundingOpt) {
-  const { strips: defaultStrips, rounding: defaultRounding } = getVariationParams();
+function renderGalleryPreviews(data, stripsOpt, roundingOpt, minwidthOpt) {
+  const { strips: defaultStrips, rounding: defaultRounding, minwidth: defaultMinwidth } = getVariationParams();
   const strips = stripsOpt || defaultStrips;
   const rounding = roundingOpt || defaultRounding;
+  const minwidth = minwidthOpt || defaultMinwidth;
 
   const previews = document.querySelectorAll('.poster-preview');
   previews.forEach(previewContainer => {
@@ -1438,21 +1448,45 @@ function renderGalleryPreviews(data, stripsOpt, roundingOpt) {
       const totalWeightCh = tiles.reduce((sum, item) => sum + item.len, 0) || 1;
       const tileCount = tiles.length;
       
-      // Minimum width calculation: default minTileW is row height h, scaled down if total min width > W_avail
-      const minTileW = (tileCount * h > W_avail) ? (W_avail / tileCount) : h;
-      const leftoverW = Math.max(0, W_avail - tileCount * minTileW);
+      // Enforce height-based min-width if rounding is 'full' (for pill geometry)
+      const effectiveMinMode = (rounding === 'full') ? 'height' : minwidth;
+      
+      let tileWidths = [];
+      if (effectiveMinMode === 'height') {
+        const minTileW = (tileCount * h > W_avail) ? (W_avail / tileCount) : h;
+        const leftoverW = Math.max(0, W_avail - tileCount * minTileW);
+        tileWidths = tiles.map(item => minTileW + leftoverW * (item.len / totalWeightCh));
+      } else if (effectiveMinMode === '20' || effectiveMinMode === '10') {
+        const factor = (effectiveMinMode === '20') ? 0.20 : 0.10;
+        const baseMinH = factor * h;
+        const baseMinW = tiles.map(item => {
+          const actualW = (item.len / totalWeightCh) * W_avail;
+          return Math.max(baseMinH, 0.50 * actualW);
+        });
+        
+        const sumMinW = baseMinW.reduce((a, b) => a + b, 0);
+        if (sumMinW > W_avail) {
+          const scale = W_avail / sumMinW;
+          tileWidths = baseMinW.map(w => w * scale);
+        } else {
+          const leftoverW = W_avail - sumMinW;
+          tileWidths = tiles.map((item, idx) => baseMinW[idx] + leftoverW * (item.len / totalWeightCh));
+        }
+      } else {
+        tileWidths = tiles.map(item => (item.len / totalWeightCh) * W_avail);
+      }
       
       // Corner radius calculation
       let rx = 0;
       if (rounding === 'full') {
         rx = h / 2; // Pill shape / fully rounded edges
       } else if (rounding === 'rounded') {
-        rx = H * 0.01; // 1% of preview height (300 * 0.01 = 3)
+        rx = H * 0.01; // 3px rounded corners
       }
       
       let x = padX;
-      tiles.forEach(item => {
-        const w = minTileW + leftoverW * (item.len / totalWeightCh);
+      tiles.forEach((item, idx) => {
+        const w = tileWidths[idx];
         
         if (w > 0.01) {
           const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -1548,23 +1582,26 @@ document.addEventListener('click', (e) => {
     const param = varOpt.getAttribute('data-param');
     const val = varOpt.getAttribute('data-value');
     
-    const { strips: currentStrips, rounding: currentRounding } = getVariationParams();
+    const { strips: currentStrips, rounding: currentRounding, minwidth: currentMinwidth } = getVariationParams();
     let newStrips = currentStrips;
     let newRounding = currentRounding;
+    let newMinwidth = currentMinwidth;
     
     if (param === 'strips') newStrips = val;
     if (param === 'rounding') newRounding = val;
+    if (param === 'minwidth') newMinwidth = val;
     
     const currentUrl = new URL(window.location.href);
     currentUrl.searchParams.set('strips', newStrips);
     currentUrl.searchParams.set('rounding', newRounding);
+    currentUrl.searchParams.set('minwidth', newMinwidth);
     window.history.replaceState({}, '', currentUrl.toString());
     
-    updateVariationUI(newStrips, newRounding);
-    updateNavigationLinks(newStrips, newRounding);
+    updateVariationUI(newStrips, newRounding, newMinwidth);
+    updateNavigationLinks(newStrips, newRounding, newMinwidth);
     
     if (cachedPreviewsData) {
-      renderGalleryPreviews(cachedPreviewsData, newStrips, newRounding);
+      renderGalleryPreviews(cachedPreviewsData, newStrips, newRounding, newMinwidth);
     }
   }
 
@@ -1598,9 +1635,9 @@ document.addEventListener('click', (e) => {
 /* ---------- Init: fetch JSON + TXT, validate, build, render ---------- */
 (async function init(){
   try{
-    const { strips, rounding } = getVariationParams();
-    updateVariationUI(strips, rounding);
-    updateNavigationLinks(strips, rounding);
+    const { strips, rounding, minwidth } = getVariationParams();
+    updateVariationUI(strips, rounding, minwidth);
+    updateNavigationLinks(strips, rounding, minwidth);
 
     if (!book) {
       // Light-weight gallery load: fetch ONLY previews JSON!
@@ -1612,7 +1649,7 @@ document.addEventListener('click', (e) => {
       if (!resp.ok) throw new Error('Failed to load gallery previews');
       cachedPreviewsData = await resp.json();
       
-      renderGalleryPreviews(cachedPreviewsData, strips, rounding);
+      renderGalleryPreviews(cachedPreviewsData, strips, rounding, minwidth);
       return;
     }
 

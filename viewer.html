@@ -729,6 +729,24 @@
 
     </div>
 
+    <!-- Preview Variation Options -->
+    <div class="gallery-variations" id="gallery-variations">
+      <span class="variation-label">Text-Strips:</span>
+      <a href="#" class="var-opt" data-param="strips" data-value="on">On</a>
+      <a href="#" class="var-opt" data-param="strips" data-value="off">Off</a>
+      <span class="variation-sep">·</span>
+      <span class="variation-label">Rounding:</span>
+      <a href="#" class="var-opt" data-param="rounding" data-value="full">Full</a>
+      <a href="#" class="var-opt" data-param="rounding" data-value="rounded">Rounded</a>
+      <a href="#" class="var-opt" data-param="rounding" data-value="off">Off</a>
+      <span class="variation-sep">·</span>
+      <span class="variation-label">Minimum Width:</span>
+      <a href="#" class="var-opt" data-param="minwidth" data-value="height">Height</a>
+      <a href="#" class="var-opt" data-param="minwidth" data-value="20">20%</a>
+      <a href="#" class="var-opt" data-param="minwidth" data-value="10">10%</a>
+      <a href="#" class="var-opt" data-param="minwidth" data-value="off">Off</a>
+    </div>
+
     <!-- Attribution Footer -->
     <footer class="gallery-footer">
       <span>created at <a href="https://studiojambhli.com" target="_blank" rel="noopener">studio jambhli</a></span>
@@ -1442,7 +1460,61 @@ new ResizeObserver(entries => {
   }
 }).observe(document.querySelector('main'));
 
-function renderGalleryPreviews(data) {
+let cachedPreviewsData = null;
+
+function getVariationParams() {
+  const params = new URLSearchParams(window.location.search);
+  let strips = params.get("strips");
+  if (strips !== "on" && strips !== "off") strips = "on";
+  let rounding = params.get("rounding");
+  if (rounding !== "full" && rounding !== "rounded" && rounding !== "off") rounding = "rounded";
+  let minwidth = params.get("minwidth");
+  if (minwidth !== "height" && minwidth !== "20" && minwidth !== "10" && minwidth !== "off") minwidth = "20";
+  return { strips, rounding, minwidth };
+}
+
+function updateVariationUI(strips, rounding, minwidth) {
+  const container = document.getElementById('gallery-variations');
+  if (!container) return;
+  
+  const links = container.querySelectorAll('.var-opt');
+  links.forEach(link => {
+    const param = link.getAttribute('data-param');
+    const val = link.getAttribute('data-value');
+    if ((param === 'strips' && val === strips) || (param === 'rounding' && val === rounding) || (param === 'minwidth' && val === minwidth)) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+}
+
+function updateNavigationLinks(strips, rounding, minwidth) {
+  const cards = document.querySelectorAll('.poster-card');
+  cards.forEach(card => {
+    const rawHref = card.getAttribute('href');
+    if (!rawHref) return;
+    const url = new URL(rawHref, window.location.href);
+    url.searchParams.set('strips', strips);
+    url.searchParams.set('rounding', rounding);
+    url.searchParams.set('minwidth', minwidth);
+    card.setAttribute('href', '?' + url.searchParams.toString());
+  });
+
+  const galleryBtn = document.querySelector('.searchbar a.btn');
+  if (galleryBtn) {
+    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:";
+    const basePath = isLocal ? "./index.html" : "./";
+    galleryBtn.href = `${basePath}?strips=${strips}&rounding=${rounding}&minwidth=${minwidth}`;
+  }
+}
+
+function renderGalleryPreviews(data, stripsOpt, roundingOpt, minwidthOpt) {
+  const { strips: defaultStrips, rounding: defaultRounding, minwidth: defaultMinwidth } = getVariationParams();
+  const strips = stripsOpt || defaultStrips;
+  const rounding = roundingOpt || defaultRounding;
+  const minwidth = minwidthOpt || defaultMinwidth;
+
   const previews = document.querySelectorAll('.poster-preview');
   previews.forEach(previewContainer => {
     const bookKey = previewContainer.getAttribute('data-book');
@@ -1483,28 +1555,39 @@ function renderGalleryPreviews(data) {
     // Dynamically balance gaps and row heights according to chapter count
     const rowGap = Math.max(0.4, Math.min(2.0, 50 / C));
     const minRow = Math.max(1.0, Math.min(4.0, 150 / C));
-    const blockGap = 0; // Cells scale vertically to fully cover the row height!
     
     const totalWeight = activeChapterWeights.reduce((s, w) => s + w, 0) || 1;
-    
-    // Allocate proportional row heights based on colored chapter length
     const Hpad = H - padY * 2 - rowGap * (C - 1);
-    let leftoverH = Hpad - C * minRow;
-    if (leftoverH < 0) leftoverH = 0;
     
-    const heights = activeChapterWeights.map(w => minRow + Math.floor(leftoverH * (w / totalWeight)));
-    
-    // Height rounding adjustment
-    let sumH = heights.reduce((a, b) => a + b, 0);
-    let diffH = Hpad - sumH;
-    let k = 0;
-    while (diffH !== 0 && k < heights.length * 2) {
-      const i = k % heights.length;
-      const step = diffH > 0 ? 1 : -1;
-      if (step < 0 && heights[i] <= minRow) { k++; continue; }
-      heights[i] += step;
-      diffH -= step;
-      k++;
+    let heights = [];
+    if (strips === 'on') {
+      const baseH = Math.floor(Hpad / C);
+      heights = Array(C).fill(baseH);
+      let sumH = heights.reduce((a, b) => a + b, 0);
+      let diffH = Hpad - sumH;
+      let k = 0;
+      while (diffH > 0 && k < heights.length) {
+        heights[k]++;
+        diffH--;
+        k++;
+      }
+    } else {
+      let leftoverH = Hpad - C * minRow;
+      if (leftoverH < 0) leftoverH = 0;
+      
+      heights = activeChapterWeights.map(w => minRow + Math.floor(leftoverH * (w / totalWeight)));
+      
+      let sumH = heights.reduce((a, b) => a + b, 0);
+      let diffH = Hpad - sumH;
+      let k = 0;
+      while (diffH !== 0 && k < heights.length * 2) {
+        const i = k % heights.length;
+        const step = diffH > 0 ? 1 : -1;
+        if (step < 0 && heights[i] <= minRow) { k++; continue; }
+        heights[i] += step;
+        diffH -= step;
+        k++;
+      }
     }
     
     const W_avail = W - padX * 2;
@@ -1514,25 +1597,62 @@ function renderGalleryPreviews(data) {
       const h = heights[chIdx];
       
       let tiles = [];
-      ch.forEach(p => {
-        const pLen = p[0];
-        const pColor = p[1];
-        if (tiles.length > 0 && tiles[tiles.length - 1].color === pColor) {
-          tiles[tiles.length - 1].len += pLen;
-        } else {
-          tiles.push({ len: pLen, color: pColor });
-        }
-      });
+      if (rounding !== 'off') {
+        ch.forEach(p => {
+          const pLen = p[0];
+          const pColor = p[1];
+          if (tiles.length > 0 && tiles[tiles.length - 1].color === pColor) {
+            tiles[tiles.length - 1].len += pLen;
+          } else {
+            tiles.push({ len: pLen, color: pColor });
+          }
+        });
+      } else {
+        tiles = ch.map(p => ({ len: p[0], color: p[1] }));
+      }
       
       const totalWeightCh = tiles.reduce((sum, item) => sum + item.len, 0) || 1;
       const tileCount = tiles.length;
       
-      const minTileW = (tileCount * h > W_avail) ? (W_avail / tileCount) : h;
-      const leftoverW = Math.max(0, W_avail - tileCount * minTileW);
+      // Enforce height-based min-width if rounding is 'full' (for pill geometry)
+      const effectiveMinMode = (rounding === 'full') ? 'height' : minwidth;
+      
+      let tileWidths = [];
+      if (effectiveMinMode === 'height') {
+        const minTileW = (tileCount * h > W_avail) ? (W_avail / tileCount) : h;
+        const leftoverW = Math.max(0, W_avail - tileCount * minTileW);
+        tileWidths = tiles.map(item => minTileW + leftoverW * (item.len / totalWeightCh));
+      } else if (effectiveMinMode === '20' || effectiveMinMode === '10') {
+        const factor = (effectiveMinMode === '20') ? 0.20 : 0.10;
+        const baseMinH = factor * h;
+        const baseMinW = tiles.map(item => {
+          const actualW = (item.len / totalWeightCh) * W_avail;
+          return Math.max(baseMinH, 0.50 * actualW);
+        });
+        
+        const sumMinW = baseMinW.reduce((a, b) => a + b, 0);
+        if (sumMinW > W_avail) {
+          const scale = W_avail / sumMinW;
+          tileWidths = baseMinW.map(w => w * scale);
+        } else {
+          const leftoverW = W_avail - sumMinW;
+          tileWidths = tiles.map((item, idx) => baseMinW[idx] + leftoverW * (item.len / totalWeightCh));
+        }
+      } else {
+        tileWidths = tiles.map(item => (item.len / totalWeightCh) * W_avail);
+      }
+      
+      // Corner radius calculation
+      let rx = 0;
+      if (rounding === 'full') {
+        rx = h / 2;
+      } else if (rounding === 'rounded') {
+        rx = H * 0.01;
+      }
       
       let x = padX;
-      tiles.forEach(item => {
-        const w = minTileW + leftoverW * (item.len / totalWeightCh);
+      tiles.forEach((item, idx) => {
+        const w = tileWidths[idx];
         
         if (w > 0.01) {
           const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -1540,6 +1660,10 @@ function renderGalleryPreviews(data) {
           rect.setAttribute('y', y.toFixed(2));
           rect.setAttribute('width', Math.max(0.1, w).toFixed(2));
           rect.setAttribute('height', Math.max(0.1, h).toFixed(2));
+          if (rx > 0) {
+            rect.setAttribute('rx', rx.toFixed(2));
+            rect.setAttribute('ry', rx.toFixed(2));
+          }
           rect.setAttribute('fill', item.color);
           rect.setAttribute('opacity', '1.0');
           svgEl.appendChild(rect);
@@ -1617,6 +1741,36 @@ function downloadPosterSvg(card) {
 }
 
 document.addEventListener('click', (e) => {
+  const varOpt = e.target.closest('.var-opt');
+  if (varOpt) {
+    e.preventDefault();
+    e.stopPropagation();
+    const param = varOpt.getAttribute('data-param');
+    const val = varOpt.getAttribute('data-value');
+    
+    const { strips: currentStrips, rounding: currentRounding, minwidth: currentMinwidth } = getVariationParams();
+    let newStrips = currentStrips;
+    let newRounding = currentRounding;
+    let newMinwidth = currentMinwidth;
+    
+    if (param === 'strips') newStrips = val;
+    if (param === 'rounding') newRounding = val;
+    if (param === 'minwidth') newMinwidth = val;
+    
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('strips', newStrips);
+    currentUrl.searchParams.set('rounding', newRounding);
+    currentUrl.searchParams.set('minwidth', newMinwidth);
+    window.history.replaceState({}, '', currentUrl.toString());
+    
+    updateVariationUI(newStrips, newRounding, newMinwidth);
+    updateNavigationLinks(newStrips, newRounding, newMinwidth);
+    
+    if (cachedPreviewsData) {
+      renderGalleryPreviews(cachedPreviewsData, newStrips, newRounding, newMinwidth);
+    }
+  }
+
   const printBtn = e.target.closest('.poster-print-btn');
   if (printBtn) {
     e.preventDefault();
@@ -1647,6 +1801,10 @@ document.addEventListener('click', (e) => {
 /* ---------- Init: fetch JSON + TXT, validate, build, render ---------- */
 (async function init(){
   try{
+    const { strips, rounding, minwidth } = getVariationParams();
+    updateVariationUI(strips, rounding, minwidth);
+    updateNavigationLinks(strips, rounding, minwidth);
+
     if (!book) {
       // Light-weight gallery load: fetch ONLY previews JSON!
       const previewsUrl = isLocal
@@ -1655,9 +1813,9 @@ document.addEventListener('click', (e) => {
       
       const resp = await fetch(previewsUrl, {cache:'no-store'});
       if (!resp.ok) throw new Error('Failed to load gallery previews');
-      const previewsData = await resp.json();
+      cachedPreviewsData = await resp.json();
       
-      renderGalleryPreviews(previewsData);
+      renderGalleryPreviews(cachedPreviewsData, strips, rounding, minwidth);
       return;
     }
 
