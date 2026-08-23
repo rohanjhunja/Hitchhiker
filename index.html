@@ -1438,13 +1438,8 @@ function renderGalleryPreviews(data, stripsOpt, roundingOpt) {
       const totalWeightCh = tiles.reduce((sum, item) => sum + item.len, 0) || 1;
       const tileCount = tiles.length;
       
-      // Minimum width calculation when rounding is enabled
-      let minTileW = 0;
-      if (rounding !== 'off') {
-        // Minimum width equal to row height h (scaled down if total min width > W_avail)
-        minTileW = (tileCount * h > W_avail) ? (W_avail / tileCount) : h;
-      }
-      
+      // Minimum width calculation: default minTileW is row height h, scaled down if total min width > W_avail
+      const minTileW = (tileCount * h > W_avail) ? (W_avail / tileCount) : h;
       const leftoverW = Math.max(0, W_avail - tileCount * minTileW);
       
       // Corner radius calculation

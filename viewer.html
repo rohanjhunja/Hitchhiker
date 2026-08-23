@@ -1512,22 +1512,35 @@ function renderGalleryPreviews(data) {
     
     activeChapters.forEach((ch, chIdx) => {
       const h = heights[chIdx];
-      const totalWeightCh = activeChapterWeights[chIdx] || 1;
       
-      let x = padX;
+      let tiles = [];
       ch.forEach(p => {
         const pLen = p[0];
         const pColor = p[1];
+        if (tiles.length > 0 && tiles[tiles.length - 1].color === pColor) {
+          tiles[tiles.length - 1].len += pLen;
+        } else {
+          tiles.push({ len: pLen, color: pColor });
+        }
+      });
+      
+      const totalWeightCh = tiles.reduce((sum, item) => sum + item.len, 0) || 1;
+      const tileCount = tiles.length;
+      
+      const minTileW = (tileCount * h > W_avail) ? (W_avail / tileCount) : h;
+      const leftoverW = Math.max(0, W_avail - tileCount * minTileW);
+      
+      let x = padX;
+      tiles.forEach(item => {
+        const w = minTileW + leftoverW * (item.len / totalWeightCh);
         
-        const w = (pLen / totalWeightCh) * W_avail;
-        
-        if (w > 0.05) {
+        if (w > 0.01) {
           const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          rect.setAttribute('x', x);
-          rect.setAttribute('y', y);
-          rect.setAttribute('width', w);
-          rect.setAttribute('height', Math.max(0.1, h));
-          rect.setAttribute('fill', pColor);
+          rect.setAttribute('x', x.toFixed(2));
+          rect.setAttribute('y', y.toFixed(2));
+          rect.setAttribute('width', Math.max(0.1, w).toFixed(2));
+          rect.setAttribute('height', Math.max(0.1, h).toFixed(2));
+          rect.setAttribute('fill', item.color);
           rect.setAttribute('opacity', '1.0');
           svgEl.appendChild(rect);
         }
