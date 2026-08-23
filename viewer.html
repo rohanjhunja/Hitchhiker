@@ -925,16 +925,12 @@ function isVerbContext(token, leftStr, rightStr) {
   const l = leftStr.trim();
   const r = rightStr.trim();
   if (NOUN_MODIFIERS_PAT.test(l)) return false;
+  if (/(?:^|\s)(?:and|also|both|then|so|all)$/i.test(l)) return true;
   if (SUBJECT_PRONOUNS_PAT.test(l)) return true;
-  if (PREPOSITIONS_ADVERBS_PAT.test(r)) return true;
-  if (/^\s*to\s+(?:his|her|their|my|your|its)\s+feet\b/i.test(r)) return true;
-  if (/^\s*to\s+(?:speak|leave|go|meet|greet|walk|say|find|see|answer|address)\b/i.test(r)) return true;
-  if (VERB_CONJUNCTIONS_PAT.test(r)) return true;
-  if (/(?:the|his|her|their|its|my|your|our)\s+(?:sun|tide|voice|wind|smoke|flames|crowd|water|prices|temperature|king|queen|man|woman|ulex|penelope|telemachus|alcinous)$/i.test(l)) {
-    if (/^(?:[.,;:?!]|\s*(?:up|from|into|out|off|above|over|away|back|again|high)|\s+to\b|\s+and\b|\s+from\b|\s+with\b)/i.test(r)) {
-      return true;
-    }
-  }
+  if (MOTION_ADVERBS_PAT.test(r)) return true;
+  if (/^\s*to\s+(?:his|her|their|my|your|its|[a-z]+\b)/i.test(r)) return true;
+  if (/^\s*[,;.]/.test(r)) return true;
+  if (/^\s*and\s+[a-z]+/i.test(r)) return true;
   return false;
 }
 

@@ -285,8 +285,7 @@ def write_json(rows, out_json):
         json.dump(rows, f, ensure_ascii=False, indent=2)
 
 SUBJECT_PRONOUNS_PAT = r'\b(?:he|she|it|they|we|you|i|who|which|that)\b'
-PREPOSITIONS_ADVERBS_PAT = r'\b(?:up|from|into|out|off|above|over|away|back|again|high|slowly|swiftly|gradually|early|late|quietly|silently|straight|heavily)\b'
-VERB_CONJUNCTIONS_PAT = r'\b(?:and|then)\s+(?:left|walked|stood|went|said|looked|spoke|turned|sat|began|continued|took|made|found|saw|came|placed|bound|dressed)\b'
+MOTION_ADVERBS_PAT = r'\b(?:up|from|into|out|off|above|over|away|back|again|high|slowly|swiftly|gradually|early|late|quietly|silently|straight|heavily|at\s+once)\b'
 NOUN_MODIFIERS_PAT = r'\b(?:a|an|the|this|that|red|pink|wild|sweet|fresh|yellow|white|guelder|pretty|lovely|single|plucked|dead|withered)\b'
 
 def is_verb_context(token, left_ctx, right_ctx):
@@ -305,24 +304,23 @@ def is_verb_context(token, left_ctx, right_ctx):
     if re.search(NOUN_MODIFIERS_PAT + r'\s*$', left_str):
         return False
 
+    if re.search(r'\b(?:and|also|both|then|so|all)\s*$', left_str):
+        return True
+
     if re.search(SUBJECT_PRONOUNS_PAT + r'\s*$', left_str):
         return True
 
-    if re.search(r'^\s*' + PREPOSITIONS_ADVERBS_PAT, right_str):
+    if re.search(r'^\s*' + MOTION_ADVERBS_PAT, right_str):
         return True
 
-    if re.search(r'^\s*to\s+(?:his|her|their|my|your|its)\s+feet\b', right_str):
+    if re.search(r'^\s*to\s+(?:his|her|their|my|your|its|[a-z]+\b)', right_str):
         return True
 
-    if re.search(r'^\s*to\s+(?:speak|leave|go|meet|greet|walk|say|find|see|answer|address)\b', right_str):
+    if re.search(r'^\s*[,;.]', right_str):
         return True
 
-    if re.search(r'^\s*' + VERB_CONJUNCTIONS_PAT, right_str):
+    if re.search(r'^\s*and\s+[a-z]+', right_str):
         return True
-
-    if re.search(r'\b(?:the|his|her|their|its|my|your|our)\s+(?:sun|tide|voice|wind|smoke|flames|crowd|water|prices|temperature|king|queen|man|woman|ulex|penelope|telemachus|alcinous)\s*$', left_str):
-        if re.search(r'^(?:[.,;:?!]|' + PREPOSITIONS_ADVERBS_PAT + r'|\s+to\b|\s+and\b|\s+from\b|\s+with\b)', right_str):
-            return True
 
     return False
 
