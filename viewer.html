@@ -731,6 +731,10 @@
 
     <!-- Preview Variation Options -->
     <div class="gallery-variations" id="gallery-variations">
+      <span class="variation-label">Minimalism:</span>
+      <a href="#" class="var-opt" data-param="minimalism" data-value="on">On</a>
+      <a href="#" class="var-opt" data-param="minimalism" data-value="off">Off</a>
+      <span class="variation-sep">·</span>
       <span class="variation-label">Text-Strips:</span>
       <a href="#" class="var-opt" data-param="strips" data-value="on">On</a>
       <a href="#" class="var-opt" data-param="strips" data-value="off">Off</a>
@@ -1462,18 +1466,22 @@ new ResizeObserver(entries => {
 
 let cachedPreviewsData = null;
 
+const GENERIC_COLORS = new Set(['#111827', '#282828', '#e5e7eb', '#fffff0', '#f8f9fa', '#6b7280', '#a16207', '#36454f']);
+
 function getVariationParams() {
   const params = new URLSearchParams(window.location.search);
+  let minimalism = params.get("minimalism");
+  if (minimalism !== "on" && minimalism !== "off") minimalism = "on";
   let strips = params.get("strips");
   if (strips !== "on" && strips !== "off") strips = "on";
   let rounding = params.get("rounding");
   if (rounding !== "full" && rounding !== "rounded" && rounding !== "off") rounding = "rounded";
   let minwidth = params.get("minwidth");
   if (minwidth !== "height" && minwidth !== "20" && minwidth !== "10" && minwidth !== "off") minwidth = "20";
-  return { strips, rounding, minwidth };
+  return { minimalism, strips, rounding, minwidth };
 }
 
-function updateVariationUI(strips, rounding, minwidth) {
+function updateVariationUI(minimalism, strips, rounding, minwidth) {
   const container = document.getElementById('gallery-variations');
   if (!container) return;
   
@@ -1481,7 +1489,12 @@ function updateVariationUI(strips, rounding, minwidth) {
   links.forEach(link => {
     const param = link.getAttribute('data-param');
     const val = link.getAttribute('data-value');
-    if ((param === 'strips' && val === strips) || (param === 'rounding' && val === rounding) || (param === 'minwidth' && val === minwidth)) {
+    if (
+      (param === 'minimalism' && val === minimalism) ||
+      (param === 'strips' && val === strips) ||
+      (param === 'rounding' && val === rounding) ||
+      (param === 'minwidth' && val === minwidth)
+    ) {
       link.classList.add('active');
     } else {
       link.classList.remove('active');
@@ -1489,12 +1502,13 @@ function updateVariationUI(strips, rounding, minwidth) {
   });
 }
 
-function updateNavigationLinks(strips, rounding, minwidth) {
+function updateNavigationLinks(minimalism, strips, rounding, minwidth) {
   const cards = document.querySelectorAll('.poster-card');
   cards.forEach(card => {
     const rawHref = card.getAttribute('href');
     if (!rawHref) return;
     const url = new URL(rawHref, window.location.href);
+    url.searchParams.set('minimalism', minimalism);
     url.searchParams.set('strips', strips);
     url.searchParams.set('rounding', rounding);
     url.searchParams.set('minwidth', minwidth);
@@ -1505,12 +1519,13 @@ function updateNavigationLinks(strips, rounding, minwidth) {
   if (galleryBtn) {
     const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:";
     const basePath = isLocal ? "./index.html" : "./";
-    galleryBtn.href = `${basePath}?strips=${strips}&rounding=${rounding}&minwidth=${minwidth}`;
+    galleryBtn.href = `${basePath}?minimalism=${minimalism}&strips=${strips}&rounding=${rounding}&minwidth=${minwidth}`;
   }
 }
 
-function renderGalleryPreviews(data, stripsOpt, roundingOpt, minwidthOpt) {
-  const { strips: defaultStrips, rounding: defaultRounding, minwidth: defaultMinwidth } = getVariationParams();
+function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minwidthOpt) {
+  const { minimalism: defaultMin, strips: defaultStrips, rounding: defaultRounding, minwidth: defaultMinwidth } = getVariationParams();
+  const minimalism = minimalismOpt || defaultMin;
   const strips = stripsOpt || defaultStrips;
   const rounding = roundingOpt || defaultRounding;
   const minwidth = minwidthOpt || defaultMinwidth;
@@ -1523,6 +1538,17 @@ function renderGalleryPreviews(data, stripsOpt, roundingOpt, minwidthOpt) {
     
     previewContainer.innerHTML = '';
     
+    // Pass 1: Global color occurrence count across entire book for saliency detection
+    const globalColorCounts = new Map();
+    chapters.forEach(ch => {
+      ch.forEach(p => {
+        const c = p[1];
+        if (c !== 0) {
+          globalColorCounts.set(c, (globalColorCounts.get(c) || 0) + 1);
+        }
+      });
+    });
+
     // Filter chapters and paragraphs: keep ONLY colored paragraphs!
     const activeChapters = [];
     const activeChapterWeights = [];
@@ -1596,9 +1622,34 @@ function renderGalleryPreviews(data, stripsOpt, roundingOpt, minwidthOpt) {
     activeChapters.forEach((ch, chIdx) => {
       const h = heights[chIdx];
       
+      // Chapter color frequency for chapter uniqueness saliency check
+      const chColorCounts = new Map();
+      ch.forEach(p => chColorCounts.set(p[1], (chColorCounts.get(p[1]) || 0) + 1));
+      const chTotalWeightRaw = ch.reduce((sum, p) => sum + p[0], 0) || 1;
+
+      let filteredCh = ch;
+      if (minimalism === 'on') {
+        filteredCh = ch.filter(p => {
+          const pLen = p[0];
+          const pColor = p[1];
+          const actualW = (pLen / chTotalWeightRaw) * W_avail;
+
+          // Saliency / Sensitivity Criteria:
+          const isRareInBook = (globalColorCounts.get(pColor) || 0) <= 3;
+          const isUniqueInChapter = (chColorCounts.get(pColor) || 0) === 1;
+          const isSpecificHue = !GENERIC_COLORS.has(pColor);
+          const isWideEnough = actualW >= 0.10 * h;
+
+          return isRareInBook || isUniqueInChapter || isSpecificHue || isWideEnough;
+        });
+      }
+
+      if (filteredCh.length === 0) filteredCh = ch;
+
+      // Determine paragraph list (join same color tiles if rounding is enabled)
       let tiles = [];
       if (rounding !== 'off') {
-        ch.forEach(p => {
+        filteredCh.forEach(p => {
           const pLen = p[0];
           const pColor = p[1];
           if (tiles.length > 0 && tiles[tiles.length - 1].color === pColor) {
@@ -1608,7 +1659,7 @@ function renderGalleryPreviews(data, stripsOpt, roundingOpt, minwidthOpt) {
           }
         });
       } else {
-        tiles = ch.map(p => ({ len: p[0], color: p[1] }));
+        tiles = filteredCh.map(p => ({ len: p[0], color: p[1] }));
       }
       
       const totalWeightCh = tiles.reduce((sum, item) => sum + item.len, 0) || 1;
@@ -1748,26 +1799,29 @@ document.addEventListener('click', (e) => {
     const param = varOpt.getAttribute('data-param');
     const val = varOpt.getAttribute('data-value');
     
-    const { strips: currentStrips, rounding: currentRounding, minwidth: currentMinwidth } = getVariationParams();
+    const { minimalism: currentMin, strips: currentStrips, rounding: currentRounding, minwidth: currentMinwidth } = getVariationParams();
+    let newMin = currentMin;
     let newStrips = currentStrips;
     let newRounding = currentRounding;
     let newMinwidth = currentMinwidth;
     
+    if (param === 'minimalism') newMin = val;
     if (param === 'strips') newStrips = val;
     if (param === 'rounding') newRounding = val;
     if (param === 'minwidth') newMinwidth = val;
     
     const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('minimalism', newMin);
     currentUrl.searchParams.set('strips', newStrips);
     currentUrl.searchParams.set('rounding', newRounding);
     currentUrl.searchParams.set('minwidth', newMinwidth);
     window.history.replaceState({}, '', currentUrl.toString());
     
-    updateVariationUI(newStrips, newRounding, newMinwidth);
-    updateNavigationLinks(newStrips, newRounding, newMinwidth);
+    updateVariationUI(newMin, newStrips, newRounding, newMinwidth);
+    updateNavigationLinks(newMin, newStrips, newRounding, newMinwidth);
     
     if (cachedPreviewsData) {
-      renderGalleryPreviews(cachedPreviewsData, newStrips, newRounding, newMinwidth);
+      renderGalleryPreviews(cachedPreviewsData, newMin, newStrips, newRounding, newMinwidth);
     }
   }
 
@@ -1801,9 +1855,9 @@ document.addEventListener('click', (e) => {
 /* ---------- Init: fetch JSON + TXT, validate, build, render ---------- */
 (async function init(){
   try{
-    const { strips, rounding, minwidth } = getVariationParams();
-    updateVariationUI(strips, rounding, minwidth);
-    updateNavigationLinks(strips, rounding, minwidth);
+    const { minimalism, strips, rounding, minwidth } = getVariationParams();
+    updateVariationUI(minimalism, strips, rounding, minwidth);
+    updateNavigationLinks(minimalism, strips, rounding, minwidth);
 
     if (!book) {
       // Light-weight gallery load: fetch ONLY previews JSON!
@@ -1815,7 +1869,7 @@ document.addEventListener('click', (e) => {
       if (!resp.ok) throw new Error('Failed to load gallery previews');
       cachedPreviewsData = await resp.json();
       
-      renderGalleryPreviews(cachedPreviewsData, strips, rounding, minwidth);
+      renderGalleryPreviews(cachedPreviewsData, minimalism, strips, rounding, minwidth);
       return;
     }
 
