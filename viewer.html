@@ -911,13 +911,56 @@ function normalizeColorTokenLoose(tok){
   }
   return null;
 }
+function isVerbContext(token, leftStr, rightStr) {
+  const tok = token.toLowerCase();
+  if (!['rose', 'tan', 'dust', 'rust', 'sand', 'ash', 'brown', 'black', 'silver'].includes(tok)) {
+    return false;
+  }
+  if (/(?:-colored|-coloured|-tinted|-pink|-red|-velvet|-silk|-satin|-hue|-shade|pink|colored|coloured|tinted|shade|hue)$/i.test(rightStr)) {
+    return false;
+  }
+  if (/^(?:pale|deep|dark|light|bright|soft)\s*$/i.test(leftStr)) {
+    return false;
+  }
+  const l = leftStr.trim();
+  const r = rightStr.trim();
+  if (NOUN_MODIFIERS_PAT.test(l)) return false;
+  if (SUBJECT_PRONOUNS_PAT.test(l)) return true;
+  if (PREPOSITIONS_ADVERBS_PAT.test(r)) return true;
+  if (/^\s*to\s+(?:his|her|their|my|your|its)\s+feet\b/i.test(r)) return true;
+  if (/^\s*to\s+(?:speak|leave|go|meet|greet|walk|say|find|see|answer|address)\b/i.test(r)) return true;
+  if (VERB_CONJUNCTIONS_PAT.test(r)) return true;
+  if (/(?:the|his|her|their|its|my|your|our)\s+(?:sun|tide|voice|wind|smoke|flames|crowd|water|prices|temperature|king|queen|man|woman|ulex|penelope|telemachus|alcinous)$/i.test(l)) {
+    if (/^(?:[.,;:?!]|\s*(?:up|from|into|out|off|above|over|away|back|again|high)|\s+to\b|\s+and\b|\s+from\b|\s+with\b)/i.test(r)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function detectColorsInText(raw){
   const counts = new Map(); let m;
   while ((m = COLOR_REGEX.exec(raw)) !== null){
     const a = normalizeColorTokenLoose(m[2]);
     const b = normalizeColorTokenLoose(m[3]);
-    if (a){ counts.set(a, (counts.get(a)||0)+1); }
-    if (b){ counts.set(b, (counts.get(b)||0)+1); }
+    if (a){
+      const mStart = m.index;
+      const mEnd = m.index + m[0].length;
+      const leftC = raw.slice(Math.max(0, mStart - 40), mStart);
+      const rightC = raw.slice(mEnd, Math.min(raw.length, mEnd + 40));
+      if (!isVerbContext(a, leftC, rightC)) {
+        counts.set(a, (counts.get(a)||0)+1);
+      }
+    }
+    if (b){
+      const mStart = m.index;
+      const mEnd = m.index + m[0].length;
+      const leftC = raw.slice(Math.max(0, mStart - 40), mStart);
+      const rightC = raw.slice(mEnd, Math.min(raw.length, mEnd + 40));
+      if (!isVerbContext(b, leftC, rightC)) {
+        counts.set(b, (counts.get(b)||0)+1);
+      }
+    }
   }
   return Array.from(counts.entries())
     .map(([key,count])=> ({ key, count, hex: COLOR_MAP[key] }))

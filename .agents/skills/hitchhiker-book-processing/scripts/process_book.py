@@ -188,15 +188,23 @@ def detect_screenplay_paragraphs(text):
 # --- Standard Prose Parsing Helpers ---
 def detect_prose_chapters(text):
     pattern = re.compile(
-        r'^\s*(BOOK\s+[I|V|X|L|C|D|M]+\b|Book\s+\d+|CHAPTER\b.*|Chapter\b.*|PREFACE TO FIRST EDITION|PREFACE TO SECOND EDITION|FOOTNOTES:|^\s*=\s*=\s*=\s*=\s*=\s*=$)\s*$',
+        r'^\s*(_?\s*(?:BOOK|Book|CHAPTER|Chapter)\b.*_?|PREFACE TO FIRST EDITION|PREFACE TO SECOND EDITION|FOOTNOTES:|^\s*=\s*=\s*=\s*=\s*=\s*=$)\s*$',
         re.MULTILINE
     )
-    starts = []
-    for m in pattern.finditer(text):
-        line_num = text[:m.start()].count('\n') + 1
-        if line_num >= 45 or '==' in m.group(0):
-            starts.append(m.start())
+    raw_starts = [m.start() for m in pattern.finditer(text)]
+    if not raw_starts:
+        return [(0, len(text), 0)]
 
+    toc_cutoff = 0
+    if len(raw_starts) >= 3:
+        close_count = sum(1 for i in range(min(5, len(raw_starts)-1)) if raw_starts[i+1] - raw_starts[i] < 200)
+        if close_count >= 2:
+            for i in range(len(raw_starts)-1):
+                if raw_starts[i+1] - raw_starts[i] > 300:
+                    toc_cutoff = raw_starts[i+1]
+                    break
+
+    starts = [s for s in raw_starts if s >= toc_cutoff]
     starts.sort()
     if not starts:
         return [(0, len(text), 0)]
@@ -276,6 +284,48 @@ def write_json(rows, out_json):
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False, indent=2)
 
+SUBJECT_PRONOUNS_PAT = r'\b(?:he|she|it|they|we|you|i|who|which|that)\b'
+PREPOSITIONS_ADVERBS_PAT = r'\b(?:up|from|into|out|off|above|over|away|back|again|high|slowly|swiftly|gradually|early|late|quietly|silently|straight|heavily)\b'
+VERB_CONJUNCTIONS_PAT = r'\b(?:and|then)\s+(?:left|walked|stood|went|said|looked|spoke|turned|sat|began|continued|took|made|found|saw|came|placed|bound|dressed)\b'
+NOUN_MODIFIERS_PAT = r'\b(?:a|an|the|this|that|red|pink|wild|sweet|fresh|yellow|white|guelder|pretty|lovely|single|plucked|dead|withered)\b'
+
+def is_verb_context(token, left_ctx, right_ctx):
+    token_lower = token.lower()
+    left_str = left_ctx.lower().strip()
+    right_str = right_ctx.lower().strip()
+
+    if token_lower not in ['rose', 'tan', 'dust', 'rust', 'sand', 'ash', 'brown', 'black', 'silver']:
+        return False
+
+    if re.search(r'(?:-colored|-coloured|-tinted|-pink|-red|-velvet|-silk|-satin|-hue|-shade|pink|colored|coloured|tinted|shade|hue)$', right_str):
+        return False
+    if re.search(r'^(?:pale|deep|dark|light|bright|soft)\s*$', left_str):
+        return False
+
+    if re.search(NOUN_MODIFIERS_PAT + r'\s*$', left_str):
+        return False
+
+    if re.search(SUBJECT_PRONOUNS_PAT + r'\s*$', left_str):
+        return True
+
+    if re.search(r'^\s*' + PREPOSITIONS_ADVERBS_PAT, right_str):
+        return True
+
+    if re.search(r'^\s*to\s+(?:his|her|their|my|your|its)\s+feet\b', right_str):
+        return True
+
+    if re.search(r'^\s*to\s+(?:speak|leave|go|meet|greet|walk|say|find|see|answer|address)\b', right_str):
+        return True
+
+    if re.search(r'^\s*' + VERB_CONJUNCTIONS_PAT, right_str):
+        return True
+
+    if re.search(r'\b(?:the|his|her|their|its|my|your|our)\s+(?:sun|tide|voice|wind|smoke|flames|crowd|water|prices|temperature|king|queen|man|woman|ulex|penelope|telemachus|alcinous)\s*$', left_str):
+        if re.search(r'^(?:[.,;:?!]|' + PREPOSITIONS_ADVERBS_PAT + r'|\s+to\b|\s+and\b|\s+from\b|\s+with\b)', right_str):
+            return True
+
+    return False
+
 def update_gallery_previews(repo_root, book_name, text, words):
     by_para = defaultdict(list)
     for r in words:
@@ -301,12 +351,25 @@ def update_gallery_previews(repo_root, book_name, text, words):
         para_text = text[start:end]
         counts = defaultdict(int)
         for m in COLOR_REGEX.finditer(para_text):
-            a = normalize_color_token(m.group(1))
-            b = normalize_color_token(m.group(2))
+            tok_a = m.group(1)
+            tok_b = m.group(2)
+            a = normalize_color_token(tok_a)
+            b = normalize_color_token(tok_b)
+            
             if a:
-                counts[a] += 1
+                m_start = m.start(1)
+                m_end = m.end(1)
+                left_c = para_text[max(0, m_start-40):m_start]
+                right_c = para_text[m_end:min(len(para_text), m_end+40)]
+                if not is_verb_context(a, left_c, right_c):
+                    counts[a] += 1
             if b:
-                counts[b] += 1
+                m_start = m.start(2)
+                m_end = m.end(2)
+                left_c = para_text[max(0, m_start-40):m_start]
+                right_c = para_text[m_end:min(len(para_text), m_end+40)]
+                if not is_verb_context(b, left_c, right_c):
+                    counts[b] += 1
 
         sorted_colors = sorted(counts.items(), key=lambda x: x[1], reverse=True)
         color_hex = COLOR_MAP[sorted_colors[0][0]] if sorted_colors else 0
@@ -339,17 +402,18 @@ def update_gallery_previews(repo_root, book_name, text, words):
     print(f"Updated {previews_path} for '{book_name}' ({len(book_preview)} chapters).")
 
 def update_index_html(repo_root, book_name, title, author):
-    index_path = repo_root / "index.html"
-    if not index_path.exists():
-        return
+    for filename in ["index.html", "viewer.html"]:
+        index_path = repo_root / filename
+        if not index_path.exists():
+            continue
 
-    html = index_path.read_text(encoding='utf-8')
-    if f'data-book="{book_name}"' in html:
-        print(f"Poster card for '{book_name}' already exists in index.html.")
-        return
+        html = index_path.read_text(encoding='utf-8')
+        if f'data-book="{book_name}"' in html:
+            print(f"Poster card for '{book_name}' already exists in {filename}.")
+            continue
 
-    css_class = "poster-" + book_name.lower()
-    card_html = f'''      <!-- {title} -->
+        css_class = "poster-" + re.sub(r'[^a-z0-9]+', '-', book_name.lower()).strip('-')
+        card_html = f'''      <!-- {title} -->
       <a href="?book={book_name}" class="poster-card {css_class}">
         <div class="poster-body">
           <div class="poster-preview" data-book="{book_name}"></div>
@@ -367,10 +431,10 @@ def update_index_html(repo_root, book_name, title, author):
       
       <!-- Request a Book Form Card -->'''
 
-    if '<!-- Request a Book Form Card -->' in html:
-        new_html = html.replace('<!-- Request a Book Form Card -->', card_html, 1)
-        index_path.write_text(new_html, encoding='utf-8')
-        print(f"Added poster card for '{title}' to index.html.")
+        if '<!-- Request a Book Form Card -->' in html:
+            new_html = html.replace('<!-- Request a Book Form Card -->', card_html, 1)
+            index_path.write_text(new_html, encoding='utf-8')
+            print(f"Added poster card for '{title}' to {filename}.")
 
 def verify_indices(book_dir, text, rows):
     mismatches = 0
