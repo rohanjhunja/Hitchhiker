@@ -284,47 +284,89 @@ def write_json(rows, out_json):
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False, indent=2)
 
-DETERMINERS_PREP_PAT = r'\b(?:a|an|the|this|that|these|those|my|his|her|its|their|your|our|some|any|each|every|no|all|many|few|much|more|most|of|in|with|into|like|as|under|upon|over|through|pale|deep|dark|light|bright|soft|vivid|rich|dull|warm|cool|pure|faint|heavy|fine|coarse|dry|wet|wild|sweet|red|blue|green|yellow|white|bed\s+of)\s*$'
+DETERMINERS_PREP_PAT = r'\b(?:a|an|my|his|her|its|their|your|our|some|any|each|every|no|many|few|much|more|most|pale|deep|dark|light|bright|soft|vivid|rich|dull|warm|cool|pure|faint|heavy|fine|coarse|dry|wet|wild|sweet|red|blue|green|yellow|white|bed\s+of)\s*$'
 ACTION_AUXILIARY_PAT = r'\b(?:will|would|shall|should|can|could|may|might|must|to|do|did|does)\s*$'
 LINKING_VERBS_PAT = r'\b(?:is|are|was|were|be|been|being|became|turned|grew|looked|felt|seemed)\s*$'
 SUBJECT_PRONOUNS_PAT = r'\b(?:he|she|it|they|we|you|i|who)\s*$'
 PHRASAL_PARTICLES_PAT = r'^\s*(?:up|off|out|away|down|over|back|again)\b'
+
+ROSE_VERB_PREPS = r'^\s*(?:from|into|onto|upon|above|to|up|out|after|over|off|in|against|among|towards|toward|by|with|through)\b'
+ROSE_VERB_ADVERBS = r'^\s*(?:at\s+once|slowly|quickly|swiftly|gradually|suddenly|again|steeply|higher|taller|high|early|late|majestic|straight|upwards|upward|visibly|steadily|sharply)\b'
+ROSE_VERB_AND = r'^\s*and\b'
 
 def is_verb_context(token, left_ctx, right_ctx):
     token_lower = token.lower()
     left_str = left_ctx.lower().strip()
     right_str = right_ctx.lower().strip()
 
-    # 1. Determiners, possessives, prepositions of containment/association, or color modifiers -> ALWAYS COLOR/NOUN
-    if re.search(DETERMINERS_PREP_PAT, left_str):
+    if token_lower == 'rose':
+        # 1. Compound hyphenated noun/adjective suffixes: rose-brambles, rose-colored, dawn-rose
+        if re.search(r'^(?:-colored|-coloured|-tinted|-pink|-red|-velvet|-silk|-satin|-hue|-shade|-brambles|-leaf|-leaves|-petals)\b', right_str):
+            return False
+        if re.search(r'\b(?:dawn|moss|tea|briar|dog)-$', left_str):
+            return False
+
+        # 2. Directional prepositions / particles after rose -> ALWAYS VERB
+        if re.search(ROSE_VERB_PREPS, right_str):
+            return True
+
+        # 3. Adverbs after rose -> ALWAYS VERB
+        if re.search(ROSE_VERB_ADVERBS, right_str):
+            return True
+
+        # 4. Action sequence ('rose and ...') -> ALWAYS VERB
+        if re.search(ROSE_VERB_AND, right_str):
+            return True
+
+        # 5. Relative clause ('that rose', 'which rose') -> VERB unless followed by linking verb ('that rose is red')
+        if re.search(r'\b(?:that|which)\s*$', left_str):
+            if not re.search(r'^\s*(?:is|was|were|grew|smelled|looks|seemed)\b', right_str):
+                return True
+
+        # 6. Clause / sentence punctuation right after rose (e.g. 'and they all rose.', 'he rose.') when preceded by subject pronoun / subject noun
+        if not right_str or re.search(r'^\s*[\.\!\?\,\;\:\'\"]', right_str):
+            if not re.search(DETERMINERS_PREP_PAT, left_str) and not re.search(r'\b(?:a|an|the|my|his|her|its|their|your|our)\s*$', left_str):
+                return True
+
+        # 7. Explicit determiners / possessives (a rose, my rose, wild rose) without verb context -> COLOR/NOUN
+        if re.search(DETERMINERS_PREP_PAT, left_str):
+            return False
+
+        # 8. 'the rose' -> NOUN/COLOR if followed by 'of', or linking verb, or end of clause
+        if re.search(r'\bthe\s*$', left_str):
+            if re.search(r'^\s*(?:of|is|was|were|in\s+full|bloomed)\b', right_str) or not right_str:
+                return False
+
+        # 9. Subject pronoun or clause-modifier (he rose, she rose, they all rose, also rose, both rose, then rose) -> VERB
+        if not left_str or re.search(r'\b(?:he|she|it|they|we|you|i|who|this|these|those|also|both|then|thereupon|now|together|again)\s*(?:all)?\s*$', left_str):
+            return True
+
+        # 10. Subject noun / proper noun before rose (e.g. Menelaus rose, steam rose, sun rose, king rose) -> VERB
+        if re.search(r'\b[a-z]{3,}\s*$', left_str):
+            last_word = left_str.split()[-1]
+            if last_word not in ['red', 'white', 'yellow', 'pink', 'pale', 'dark', 'sweet', 'wild', 'fresh', 'of', 'in', 'with', 'like', 'as']:
+                return True
+
         return False
 
-    # 2. Compound adjectives or compound noun contexts -> ALWAYS COLOR/NOUN
+    # Original checks for other verb tokens (rust, dust, tan, brown)
+    if re.search(DETERMINERS_PREP_PAT, left_str) or re.search(r'\b(?:the|this|that|these|those|of|in|with|into|like|as)\s*$', left_str):
+        return False
+
     if re.search(r'^(?:-colored|-coloured|-tinted|-pink|-red|-velvet|-silk|-satin|-hue|-shade|colored|coloured|tinted|shade|hue|petals|hips|water|garden|bush|tree|skin|eyes|hair|cloak|coat|dress|wall|sky|sand|sword|ring|leaves|stone|sea|ocean|desert)\b', right_str):
         return False
 
-    # 3. Linking verbs (was tan, turned pale, grew dark, looked silver) -> COLOR/ADJECTIVE
     if re.search(LINKING_VERBS_PAT, left_str):
         return False
 
-    # 4. Action auxiliary verbs (will rust, to dust, did brown, would tan) -> VERB
     if re.search(ACTION_AUXILIARY_PAT, left_str):
         return True
 
-    # 5. Phrasal verb particles on right context (black out, rose up, dusted off, rusted away) -> VERB
     if re.search(PHRASAL_PARTICLES_PAT, right_str):
         return True
 
-    # 6. Subject pronouns performing active verb functions -> VERB
     if re.search(SUBJECT_PRONOUNS_PAT, left_str):
-        if token_lower in ['rose', 'dust', 'rust', 'tan', 'brown']:
-            return True
-
-    # 7. Specific past-tense noun subjects performing action 'rose' (sun rose, smoke rose, tide rose)
-    if token_lower == 'rose':
-        if re.search(r'\b(?:sun|smoke|wind|crowd|voice|tide|dust|figure|curtain|flame|fire|heat)\s*$', left_str):
-            return True
-        if re.search(r'^\s*(?:from|into|onto|upon|above|to)\b', right_str):
+        if token_lower in ['dust', 'rust', 'tan', 'brown']:
             return True
 
     return False
