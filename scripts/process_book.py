@@ -64,18 +64,38 @@ def normalize_color_token(tok):
                 return cand
     return None
 
-def clean_text(text):
+def clean_text(text, start_marker=None, end_marker=None, start_line=None, end_line=None):
     lines = text.splitlines()
     start_i = 0
     end_i = len(lines)
+
     for i, line in enumerate(lines):
         if '*** START OF THE PROJECT GUTENBERG EBOOK' in line or '*** START OF THIS PROJECT GUTENBERG EBOOK' in line:
-            start_i = i
+            start_i = i + 1
         if '*** END OF THE PROJECT GUTENBERG EBOOK' in line or '*** END OF THIS PROJECT GUTENBERG EBOOK' in line:
-            end_i = i + 1
+            end_i = i
+
+    if start_line is not None and start_line > 0:
+        start_i = max(start_i, start_line - 1)
+
+    if end_line is not None and end_line > 0:
+        end_i = min(end_i, end_line)
+
+    if start_marker:
+        for i in range(start_i, end_i):
+            if start_marker in lines[i]:
+                start_i = i
+                break
+
+    if end_marker:
+        for i in range(start_i, end_i):
+            if end_marker in lines[i]:
+                end_i = i
+                break
 
     clean_lines = lines[start_i:end_i]
     return '\n'.join(clean_lines) + '\n'
+
 
 def is_screenplay_format(text):
     scene_pattern = re.compile(r'^(?:INT/EXT\.|EXT/INT\.|INT\.|EXT\.)(?:\s|$)', re.MULTILINE | re.IGNORECASE)
@@ -491,23 +511,161 @@ def verify_indices(book_dir, text, rows):
     else:
         print(f"Warning: {mismatches} mismatches found during offset verification!")
 
-def process_book(book_dir_path, title=None, author=None):
+def generate_build_word_index_script(book_dir):
+    script_path = book_dir / "build_word_index.py"
+    if script_path.exists():
+        return
+    content = r'''#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import argparse
+import json
+import csv
+import re
+from pathlib import Path
+
+def detect_chapters(text):
+    pattern = re.compile(r'^\s*=\s*=\s*=\s*=\s*=\s*=\s*$', re.MULTILINE)
+    starts = [m.start() for m in pattern.finditer(text)]
+    if not starts:
+        return [(0, len(text), 0)]
+    if starts[0] > 0:
+        starts.insert(0, 0)
+    filtered_starts = []
+    for s in starts:
+        if not filtered_starts or (s - filtered_starts[-1] > 200):
+            filtered_starts.append(s)
+    spans = []
+    for i, s in enumerate(filtered_starts):
+        e = filtered_starts[i+1] if i+1 < len(filtered_starts) else len(text)
+        spans.append((s, e, i))
+    return spans
+
+def detect_paragraphs(text):
+    para_split = re.compile(r'(?:\r?\n){2,}|\r?\n(?=\s{4}|\t)|(?<=\n)(?=\s*=\s*=\s*=\s*=\s*=)')
+    spans = []
+    last = 0
+    for m in para_split.finditer(text):
+        if m.start() > last:
+            if text[last:m.start()].strip():
+                spans.append((last, m.start()))
+        last = m.end()
+    if last < len(text) and text[last:].strip():
+        spans.append((last, len(text)))
+    return spans
+
+def chapter_idx_for_position(spans, pos):
+    for s, e, ci in spans:
+        if s <= pos < e:
+            return ci
+    return spans[-1][2] if spans else 0
+
+def build_index(text, keep_hyphens=False):
+    if keep_hyphens:
+        word_pattern = re.compile(r"[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*")
+    else:
+        word_pattern = re.compile(r"[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?")
+
+    chapter_spans = detect_chapters(text)
+    para_spans = detect_paragraphs(text)
+
+    rows = []
+    wid = 0
+
+    for p_idx, (ps, pe) in enumerate(para_spans):
+        paragraph_text = text[ps:pe]
+        c_idx = chapter_idx_for_position(chapter_spans, ps)
+        for m in word_pattern.finditer(paragraph_text):
+            rows.append({
+                "word_idx": wid,
+                "start_char": ps + m.start(),
+                "word": m.group(0),
+                "paragraph_idx": p_idx,
+                "chapter_idx": c_idx
+            })
+            wid += 1
+    return rows
+
+def write_csv(rows, out_csv):
+    if not rows:
+        Path(out_csv).write_text("", encoding="utf-8")
+        return
+    with open(out_csv, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=["word_idx", "start_char", "word", "paragraph_idx", "chapter_idx"]
+        )
+        writer.writeheader()
+        for r in rows:
+            writer.writerow(r)
+
+def write_json(rows, out_json):
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump(rows, f, ensure_ascii=False, indent=2)
+
+def main():
+    ap = argparse.ArgumentParser(
+        description="Build word index (CSV + JSON) from a text file."
+    )
+    ap.add_argument("input_txt", nargs="?", default="book.txt", help="Path to the input .txt file")
+    ap.add_argument("--csv", default="hhgttg_word_index.csv", help="Output CSV path")
+    ap.add_argument("--json", default="hhgttg_word_index.json", help="Output JSON path")
+    ap.add_argument("--keep-hyphens", action="store_true",
+                    help="Treat hyphenated words as a single token")
+    args = ap.parse_args()
+
+    text = Path(args.input_txt).read_text(encoding="utf-8", errors="ignore").replace("\\r\\n", "\\n").replace("\\r", "\\n")
+    rows = build_index(text, keep_hyphens=args.keep_hyphens)
+    write_csv(rows, args.csv)
+    write_json(rows, args.json)
+
+    print(f"Done.\\nCSV : {args.csv}\\nJSON: {args.json}\\nWords indexed: {len(rows)}")
+
+if __name__ == "__main__":
+    main()
+'''
+    script_path.write_text(content, encoding="utf-8")
+    print(f"Created {script_path}")
+
+def process_book(book_dir_path, title=None, author=None, start_marker=None, end_marker=None, start_line=None, end_line=None, force_clean=False):
     book_dir = Path(book_dir_path).resolve()
     repo_root = book_dir.parent
     book_name = book_dir.name
 
+    config_path = book_dir / "book_config.json"
+    if config_path.exists():
+        try:
+            cfg = json.loads(config_path.read_text(encoding='utf-8'))
+            title = title or cfg.get("title")
+            author = author or cfg.get("author")
+            start_marker = start_marker or cfg.get("start_marker")
+            end_marker = end_marker or cfg.get("end_marker")
+            start_line = start_line or cfg.get("start_line")
+            end_line = end_line or cfg.get("end_line")
+        except Exception as e:
+            print(f"Warning: Failed to read {config_path}: {e}")
+
     book_txt = book_dir / "book.txt"
-    if not book_txt.exists():
-        raw_candidates = [f for f in book_dir.glob("*") if f.is_file() and f.suffix in ['.txt', ''] and f.name != 'build_word_index.py']
-        if not raw_candidates:
+    has_bounds = any(x is not None for x in [start_marker, end_marker, start_line, end_line])
+
+    if not book_txt.exists() or force_clean or has_bounds:
+        raw_candidates = [f for f in book_dir.glob("*") if f.is_file() and f.suffix in ['.txt', ''] and f.name not in ['build_word_index.py', 'book.txt', 'book_config.json']]
+        if raw_candidates:
+            raw_file = raw_candidates[0]
+            print(f"Cleaning raw source file: {raw_file}")
+            raw_text = raw_file.read_text(encoding='utf-8', errors='ignore')
+        elif book_txt.exists():
+            print(f"Re-cleaning existing text file: {book_txt}")
+            raw_text = book_txt.read_text(encoding='utf-8', errors='ignore')
+        else:
             print(f"Error: No text file found in {book_dir}")
             sys.exit(1)
-        raw_file = raw_candidates[0]
-        print(f"Cleaning raw file: {raw_file}")
-        raw_text = raw_file.read_text(encoding='utf-8', errors='ignore')
-        cleaned = clean_text(raw_text)
+
+        cleaned = clean_text(raw_text, start_marker=start_marker, end_marker=end_marker, start_line=start_line, end_line=end_line)
         book_txt.write_text(cleaned, encoding='utf-8')
-        print(f"Created {book_txt}")
+        print(f"Updated {book_txt} with boundary-cleaned text ({len(cleaned)} chars).")
+
+    generate_build_word_index_script(book_dir)
 
     text = book_txt.read_text(encoding='utf-8', errors='ignore').replace("\r\n", "\n").replace("\r", "\n")
     print(f"Indexing {book_txt} ({len(text)} chars)...")
@@ -531,9 +689,24 @@ def main():
     ap.add_argument("book_dir", help="Directory of the book or screenplay")
     ap.add_argument("--title", help="Display title of the book for index.html card")
     ap.add_argument("--author", help="Author name of the book for index.html card")
+    ap.add_argument("--start-marker", help="Marker string to begin text extraction")
+    ap.add_argument("--end-marker", help="Marker string to end text extraction")
+    ap.add_argument("--start-line", type=int, help="1-indexed line number to start text extraction")
+    ap.add_argument("--end-line", type=int, help="1-indexed line number to end text extraction")
+    ap.add_argument("--force-clean", action="store_true", help="Force re-cleaning of book.txt")
     args = ap.parse_args()
 
-    process_book(args.book_dir, title=args.title, author=args.author)
+    process_book(
+        args.book_dir,
+        title=args.title,
+        author=args.author,
+        start_marker=args.start_marker,
+        end_marker=args.end_marker,
+        start_line=args.start_line,
+        end_line=args.end_line,
+        force_clean=args.force_clean
+    )
 
 if __name__ == "__main__":
     main()
+
