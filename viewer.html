@@ -1540,11 +1540,11 @@ function combineChaptersToMetaRows(activeChapters) {
 function getVariationParams() {
   const params = new URLSearchParams(window.location.search);
   let minimalism = params.get("minimalism");
-  if (minimalism !== "on" && minimalism !== "off") minimalism = "on";
+  if (minimalism !== "on" && minimalism !== "off") minimalism = "off";
   let strips = params.get("strips");
   if (strips !== "on" && strips !== "off") strips = "on";
   let rounding = params.get("rounding");
-  if (rounding !== "full" && rounding !== "rounded" && rounding !== "off") rounding = "rounded";
+  if (rounding !== "full" && rounding !== "rounded" && rounding !== "off") rounding = "off";
   let minwidth = params.get("minwidth");
   if (minwidth !== "height" && minwidth !== "20" && minwidth !== "10" && minwidth !== "off") minwidth = "20";
   return { minimalism, strips, rounding, minwidth };
