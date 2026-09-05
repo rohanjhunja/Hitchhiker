@@ -681,6 +681,12 @@ def process_book(book_dir_path, title=None, author=None, start_marker=None, end_
     verify_indices(book_dir, text, rows)
     update_gallery_previews(repo_root, book_name, text, rows)
 
+    try:
+        from build_gallery_quotes import build_quotes
+        build_quotes(book_name)
+    except Exception as e:
+        print(f"Note: gallery quotes update skipped ({e})")
+
     if title and author:
         update_index_html(repo_root, book_name, title, author)
 

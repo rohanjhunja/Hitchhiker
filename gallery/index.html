@@ -1,0 +1,3031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>3D Poster Gallery — A Book By Its Color</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geom:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛️</text></svg>">
+<style>
+  :root {
+    --bg: #07090e;
+    --panel-glass: rgba(15, 23, 42, 0.76);
+    --panel-border: rgba(255, 255, 255, 0.12);
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-gold: #f59e0b;
+    --frame-black: #111113;
+    --app-height: 100dvh;
+    --light-leak: transparent;
+    --cam-pitch: 0deg;
+    --cam-yaw: 0deg;
+    --poster-w: min(39vh, 320px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+  html, body {
+    width: 100%; height: 100%; height: var(--app-height);
+    overflow: hidden; overflow-x: clip; background: var(--bg); color: var(--text);
+    font-family: "Geom", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    position: fixed; inset: 0;
+  }
+
+  /* 3D Gallery Viewport & Camera Rig */
+  #gallery-stage {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    overflow: hidden; overflow-x: clip; perspective: 1300px;
+  }
+
+  /* Unified Camera Rig: rotates the entire room & wall together in stereoscopic perspective */
+  #gallery-camera-rig {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--cam-pitch, 0deg)) rotateY(var(--cam-yaw, 0deg));
+    transition: transform 0.12s ease-out;
+    display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+  }
+
+  /* Room Background (Wall & Floor): zoomed in for close, immersive gallery viewing */
+  .room-bg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center 36%;
+    transform: scale(1.22);
+    transform-origin: center 40%;
+    transition: background-image 0.6s ease, opacity 0.8s ease;
+    z-index: 1; pointer-events: none;
+  }
+  .room-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at center, transparent 48%, rgba(0,0,0,0.28) 100%);
+    pointer-events: none;
+  }
+
+  /* Replay Optical Anamorphic Lens Flare Canvas (with rich blurred color bloom) */
+  .replay-lens-flare {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    z-index: 2; pointer-events: none;
+    opacity: 0;
+    filter: blur(36px);
+    transform: scale(1.08);
+    transition: opacity 0.5s ease;
+  }
+  body.mode-replay .replay-lens-flare {
+    opacity: 1;
+  }
+  body.mode-replay .room-bg {
+    opacity: 0.10; filter: grayscale(60%) brightness(0.35);
+  }
+
+  /* Fixed Screen-space Overlays */
+  .screen-overlay-layer {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+    z-index: 20; pointer-events: none;
+  }
+
+  /* Navigation Header */
+  .gallery-header {
+    width: 100%; max-width: 1400px;
+    padding: 0.75rem 1.25rem; display: flex; align-items: center; justify-content: space-between;
+    gap: 0.75rem; flex-wrap: nowrap; pointer-events: auto;
+  }
+  .header-left, .header-right, .header-center {
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .nav-btn {
+    appearance: none; background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #ffffff; padding: 0.4rem 0.8rem; border-radius: 999px;
+    font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex;
+    align-items: center; gap: 0.4rem; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    text-decoration: none; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+  }
+  .nav-btn:hover, .nav-btn:focus-visible {
+    background: rgba(12, 17, 26, 0.85); border-color: rgba(255, 255, 255, 0.55); color: #ffffff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); transform: translateY(-1px);
+  }
+  .grid-nav-btn {
+    padding: 0.45rem 0.6rem;
+    min-width: 36px;
+    justify-content: center;
+  }
+
+  /* Segmented pill group - Translucent white minimal capsule (no nested internal lines) */
+  .pill-group {
+    display: inline-flex; background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px; padding: 2px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+  }
+  .pill-group:hover {
+    background: rgba(12, 17, 26, 0.85); border-color: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+  .pill-btn {
+    appearance: none; background: transparent; border: none !important; color: rgba(255, 255, 255, 0.9);
+    padding: 0.35rem 0.65rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  }
+  .pill-btn svg {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+  }
+  .pill-btn:hover {
+    background: rgba(255, 255, 255, 0.22); color: #ffffff;
+  }
+  .pill-btn.active {
+    background: #ffffff; color: #0a0e17; font-weight: 700; border: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25); text-shadow: none;
+  }
+  .pill-btn.active svg {
+    filter: none;
+  }
+  .pill-btn.active:hover {
+    background: #ffffff; color: #0a0e17;
+  }
+
+  /* Central Stage Area */
+  .center-stage {
+    position: relative; z-index: 10; flex: 1; width: 100%; max-width: 1200px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 0 1rem; pointer-events: none;
+    margin-top: -2vh;
+  }
+
+  /* Floating Label Block (Above Poster) - Monospaced Typography constrained to Poster Width + 50% */
+  .quote-display-container {
+    min-height: 52px; width: 100%; max-width: calc(var(--poster-w) * 1.5);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 0.5rem; pointer-events: auto; position: relative;
+  }
+  .quote-label-row,
+  .quote-card {
+    background: transparent !important; border: none !important;
+    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    box-shadow: none !important; border-radius: 0 !important; padding: 0 !important;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.65rem;
+    width: 100%; max-width: 100%; transition: opacity 0.25s ease;
+  }
+  .quote-text {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.86rem; line-height: 1.5; color: #ffffff; font-weight: 500;
+    text-align: center; width: 100%;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 18px rgba(0, 0, 0, 0.5);
+    letter-spacing: -0.01em; word-break: break-word;
+  }
+  .quote-text strong {
+    color: #ffffff; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;
+  }
+  .quote-text.smooth-text-fade {
+    animation: smoothQuoteFade 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes smoothQuoteFade {
+    0% { opacity: 0.15; transform: translateY(3px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Bookmark Button - Translucent white, darkens on hover */
+  .bookmark-btn {
+    appearance: none; background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.24);
+    color: rgba(255, 255, 255, 0.95); width: 28px; height: 28px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s ease; flex-shrink: 0; font-size: 0.95rem;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  .bookmark-btn:hover {
+    background: rgba(12, 17, 26, 0.85); border-color: rgba(255, 255, 255, 0.7); color: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); transform: scale(1.1);
+  }
+  .bookmark-btn.bookmarked {
+    color: var(--accent-gold); border-color: rgba(245, 158, 11, 0.6);
+    background: rgba(255, 255, 255, 0.22); box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+  }
+  .bookmark-btn.bookmarked:hover {
+    background: rgba(12, 17, 26, 0.9); border-color: #fbbf24; color: #fde047;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.6); transform: scale(1.15);
+  }
+
+  /* Poster Presentation Zone on Gallery Wall */
+  .poster-presentation-zone {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    pointer-events: auto;
+  }
+
+  /* 3D Wall Stage: centered on the gallery wall, sized to --poster-w */
+  .poster-wall-stage {
+    position: relative;
+    width: var(--poster-w);
+    aspect-ratio: 2 / 3;
+    perspective: 1400px;
+    transform-style: preserve-3d;
+  }
+
+  /* Wall Panel holding the framed poster flat against the wall */
+  .wall-panel {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    transform: none;
+  }
+
+  /* The Poster Frame: FLUSH & FLAT AGAINST WALL with Room-Specific Lighting Shadows */
+  .poster-wall-frame {
+    position: relative;
+    width: 100%; height: 100%;
+    background: #ffffff;
+    /* Thin 3px matte black aluminum frame */
+    border: 3px solid var(--frame-black);
+    outline: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    cursor: pointer;
+    transform: none !important;
+    overflow: hidden;
+    container-type: inline-size;
+    transition: box-shadow 0.6s ease;
+  }
+
+  /* Room 1: Top lighting (pure downward vertical shadow) */
+  .poster-wall-frame.room-1-shadow,
+  .poster-wall-frame:not(.room-3-shadow) {
+    box-shadow:
+      0 3px 6px rgba(0, 0, 0, 0.26),
+      0 14px 28px -2px rgba(0, 0, 0, 0.38),
+      0 28px 56px -4px rgba(0, 0, 0, 0.24);
+  }
+
+  /* Room 3: Top-right lighting (strong diagonal shadow cast to bottom-left) */
+  .poster-wall-frame.room-3-shadow {
+    box-shadow:
+      -5px 4px 8px rgba(20, 15, 10, 0.28),
+      -22px 16px 32px -2px rgba(25, 18, 12, 0.40),
+      -44px 32px 64px -4px rgba(30, 20, 15, 0.24);
+  }
+
+  /* Inner White Poster Sheet & Body matching home page preview to scale */
+  .poster-body {
+    width: 100%; height: 100%;
+    padding: 4.5% 4.5% 4% 4.5%;
+    padding: 4.5cqw 4.5cqw 4cqw 4.5cqw;
+    display: flex; flex-direction: column;
+    box-sizing: border-box;
+    background: #ffffff;
+    position: relative;
+    z-index: 2;
+  }
+
+  .poster-preview {
+    flex: 1; min-height: 0; width: 100%;
+    display: block; overflow: hidden;
+    background: #ffffff; border: none;
+    border-radius: 0; padding: 0; margin-bottom: 0;
+    position: relative;
+  }
+  .poster-preview svg {
+    width: 100%; height: 100%;
+    display: block;
+  }
+
+  .poster-meta {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    margin-top: 2.8%;
+    margin-top: 2.8cqw;
+    flex-shrink: 0;
+  }
+  .poster-text {
+    flex: 1;
+    min-width: 0;
+  }
+  .poster-title {
+    font-family: "Geom", Helvetica, Arial, sans-serif;
+    font-size: clamp(14px, 5.4cqw, 24px);
+    font-weight: 800;
+    margin: 0 0 0.8cqw 0;
+    line-height: 1.2;
+    color: #0f172a;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .poster-author {
+    font-family: "Geom", Helvetica, Arial, sans-serif;
+    font-size: clamp(11px, 4.2cqw, 18px);
+    color: #64748b;
+    margin: 0;
+    font-style: italic;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* Poster print button hidden on poster per design specifications */
+  .poster-print-btn {
+    display: none !important;
+  }
+
+  /* Ambient Lighting Overlays matching the Room lighting to scale */
+  .room-lighting-overlay {
+    position: absolute; inset: 0; pointer-events: none;
+    z-index: 4; border-radius: 1px;
+    transition: background 0.6s ease, opacity 0.6s ease;
+  }
+  .room-lighting-overlay.room-lighting-1 {
+    /* Room 1: Minimalist White Cube - Top-down skylight daylight */
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.04) 45%, rgba(10, 15, 25, 0.07) 100%),
+                radial-gradient(ellipse 120% 60% at 50% 0%, rgba(255, 255, 255, 0.16), transparent 75%);
+    mix-blend-mode: overlay;
+  }
+  .room-lighting-overlay.room-lighting-3 {
+    /* Room 3: Sunlit Loft - Warm morning sunbeam angled from top-right */
+    background: linear-gradient(225deg, rgba(255, 238, 195, 0.38) 0%, rgba(255, 242, 210, 0.18) 35%, rgba(255, 245, 225, 0.04) 65%, rgba(25, 20, 15, 0.08) 100%),
+                radial-gradient(ellipse 90% 70% at 85% 15%, rgba(255, 240, 200, 0.28), transparent 70%);
+    mix-blend-mode: soft-light;
+  }
+
+  /* Selected Tile Shine Highlight in Replay Mode */
+  .tile-shining {
+    animation: tileShinePulse 0.6s ease-out;
+  }
+  @keyframes tileShinePulse {
+    0% { filter: brightness(2.2) drop-shadow(0 0 16px #ffffff) drop-shadow(0 0 24px currentColor); }
+    50% { filter: brightness(1.6) drop-shadow(0 0 10px currentColor); }
+    100% { filter: brightness(1.4) drop-shadow(0 0 6px currentColor) drop-shadow(0 0 14px rgba(255,255,255,0.95)); }
+  }
+
+  /* Bookmarked Colors Subtle Shine Highlight (in interactive mode when bookmarks turned on) */
+  .tile-bookmarked-shine {
+    animation: bookmarkSubtlePulse 2.4s ease-in-out infinite alternate !important;
+    stroke: rgba(255, 255, 255, 0.88) !important;
+    stroke-width: 0.75px !important;
+  }
+  @keyframes bookmarkSubtlePulse {
+    0% {
+      filter: brightness(1.12) drop-shadow(0 0 3px rgba(255, 255, 255, 0.65));
+    }
+    50% {
+      filter: brightness(1.4) drop-shadow(0 0 8px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 14px currentColor);
+    }
+    100% {
+      filter: brightness(1.18) drop-shadow(0 0 4px rgba(255, 255, 255, 0.75));
+    }
+  }
+
+  /* Glaze / Specular Reflection Sheen */
+  .glaze-reflection {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 40%, rgba(255,255,255,0.02) 100%);
+  }
+
+  /* Subtle Load Animation: Smooth Fade & Glitter Sweep (No independent tilt!) */
+  .poster-wall-frame.animating-load {
+    animation: posterFlatReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes posterFlatReveal {
+    0% { opacity: 0.2; transform: scale(0.985); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .glitter-sweep {
+    position: absolute; inset: -50%; width: 200%; height: 200%; pointer-events: none;
+    background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.55) 50%, transparent 65%);
+    transform: rotate(25deg) translateY(-100%);
+    opacity: 0; z-index: 5;
+  }
+  .poster-wall-frame.animating-load .glitter-sweep {
+    animation: glitterSweep 0.95s 0.05s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes glitterSweep {
+    0% { opacity: 0; transform: rotate(25deg) translateY(-80%); }
+    40% { opacity: 0.85; }
+    100% { opacity: 0; transform: rotate(25deg) translateY(80%); }
+  }
+
+  /* Left/Right Navigation Arrows flanking poster - Translucent white, darkens on hover */
+  .side-nav-btn {
+    appearance: none; background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #ffffff; width: 42px; height: 42px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    font-size: 1.4rem; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); position: absolute; top: 50%; transform: translateY(-50%);
+    z-index: 12; pointer-events: auto;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+  .side-nav-btn:hover {
+    background: rgba(12, 17, 26, 0.85); border-color: rgba(255, 255, 255, 0.7); color: #ffffff;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45); transform: translateY(-50%) scale(1.1);
+  }
+  .side-nav-prev { left: -60px; }
+  .side-nav-next { right: -60px; }
+
+  /* Replay Timeline Controls - Minimalist translucent white capsule */
+  .timeline-bar-wrap {
+    width: 100%; max-width: calc(var(--poster-w) * 1.5); margin-top: 0.6rem;
+    display: flex; align-items: center; gap: 0.65rem;
+    background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.22);
+    padding: 0.35rem 0.75rem; border-radius: 999px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); opacity: 0; pointer-events: none; transform: translateY(6px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+  .timeline-bar-wrap:hover {
+    background: rgba(12, 17, 26, 0.85); border-color: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 6px 26px rgba(0, 0, 0, 0.45);
+  }
+  body.mode-replay .timeline-bar-wrap {
+    opacity: 1; pointer-events: auto; transform: translateY(0);
+  }
+  .play-pause-btn {
+    appearance: none; background: transparent; border: none !important;
+    color: #ffffff; width: 28px; height: 28px; border-radius: 50%; display: inline-flex;
+    align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+  .play-pause-btn:hover {
+    background: rgba(255, 255, 255, 0.22); color: #ffffff;
+    transform: scale(1.1);
+  }
+
+  /* Simplified Timeline: Minimalist line & luminous scrubber dot */
+  .timeline-track {
+    flex: 1; height: 2px; background: rgba(255, 255, 255, 0.25); border-radius: 2px;
+    position: relative; cursor: pointer; padding: 7px 0; background-clip: content-box;
+    transition: background 0.2s ease;
+  }
+  .timeline-track:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+  .timeline-progress {
+    height: 2px; border-radius: 2px; background: #ffffff;
+    width: 0%; pointer-events: none; box-shadow: 0 0 6px rgba(255, 255, 255, 0.45);
+    transition: width 0.06s linear;
+  }
+  .timeline-dot {
+    position: absolute; top: 50%; left: 0%;
+    transform: translate(-50%, -50%);
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.95), 0 0 4px #38bdf8;
+    pointer-events: none;
+    transition: left 0.06s linear;
+  }
+  .timeline-time {
+    font-size: 0.75rem; font-family: "JetBrains Mono", monospace; color: rgba(255, 255, 255, 0.85);
+    flex-shrink: 0; min-width: 68px; text-align: right;
+  }
+
+  /* Pacing / Delay Mode Toggle (Icon-Only: No nested lines/borders) */
+  .pacing-toggle {
+    display: inline-flex; background: transparent !important; border: none !important;
+    border-radius: 999px; padding: 0; flex-shrink: 0; box-shadow: none !important;
+    gap: 2px;
+  }
+  .pacing-btn {
+    appearance: none; background: transparent; border: none !important; color: rgba(255, 255, 255, 0.75);
+    padding: 0.25rem 0.45rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .pacing-btn:hover {
+    background: rgba(255, 255, 255, 0.22); color: #ffffff;
+  }
+  .pacing-btn.active {
+    background: #ffffff; color: #0a0e17; font-weight: 700; border: none !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
+  .room-short { display: none; }
+  .pacing-short { display: none; }
+  .mobile-text { display: none; }
+  body.mode-replay #bookmarks-toggle { display: none !important; }
+  .export-video-btn {
+    appearance: none; background: transparent; border: none !important;
+    color: rgba(255, 255, 255, 0.9); padding: 0.3rem 0.45rem; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; transition: all 0.2s ease; flex-shrink: 0;
+    box-shadow: none !important;
+  }
+  .export-video-btn:hover {
+    background: rgba(255, 255, 255, 0.22); color: #ffffff;
+    transform: scale(1.08);
+  }
+
+  /* Bottom Poster Preview Controls - Translucent white outlines with hover contrast */
+  .gallery-footer-controls {
+    width: 100%; max-width: 1200px;
+    padding: 0.6rem 1rem; display: flex; align-items: center; justify-content: center;
+    gap: 0.45rem; flex-wrap: wrap; font-size: 0.78rem;
+    font-family: "JetBrains Mono", monospace; pointer-events: auto;
+  }
+  .ctrl-label {
+    color: rgba(255, 255, 255, 0.88); margin-left: 0.3rem; font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  }
+  .ctrl-sep {
+    color: rgba(255, 255, 255, 0.35); margin: 0 0.15rem;
+  }
+  .ctrl-opt {
+    color: rgba(255, 255, 255, 0.78); text-decoration: none; cursor: pointer; transition: all 0.2s ease;
+    padding: 0.15rem 0.5rem; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  }
+  .ctrl-opt:hover {
+    color: #ffffff; background: rgba(12, 17, 26, 0.85); border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); transform: translateY(-1px);
+  }
+  .ctrl-opt.active {
+    color: #07090e; font-weight: 700; text-decoration: none;
+    background: #ffffff; border: 1px solid #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+  .ctrl-opt.active:hover {
+    background: #ffffff; color: #07090e; box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+  }
+
+  /* Collection Index Modal Drawer */
+  .index-drawer {
+    position: fixed; inset: 0; z-index: 50; background: rgba(5, 7, 12, 0.85);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 2rem 1rem; pointer-events: auto;
+  }
+  .index-drawer.open { opacity: 1; visibility: visible; }
+  .index-modal-card {
+    width: 100%; max-width: 900px; max-height: 85vh; background: #0d131f;
+    border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 1.5rem; display: flex;
+    flex-direction: column; box-shadow: 0 25px 60px rgba(0,0,0,0.6); overflow: hidden;
+  }
+  .index-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  .index-modal-header h2 { font-size: 1.25rem; font-weight: 700; color: #ffffff; }
+  .close-index-btn {
+    appearance: none; background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.22);
+    color: rgba(255, 255, 255, 0.95); width: 32px; height: 32px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 1.1rem; transition: all 0.2s ease;
+  }
+  .close-index-btn:hover {
+    color: #ffffff; border-color: rgba(255, 255, 255, 0.7); background: rgba(12, 17, 26, 0.85);
+  }
+  .index-modal-body {
+    padding: 1.25rem 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem;
+  }
+  .index-section-title {
+    font-size: 0.85rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.75rem;
+    font-family: "JetBrains Mono", monospace;
+  }
+  .index-books-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem;
+  }
+  .index-book-card {
+    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 0.8rem; padding: 0.75rem; cursor: pointer; transition: all 0.2s ease;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .index-book-card:hover {
+    background: rgba(255, 255, 255, 0.18); border-color: rgba(255, 255, 255, 0.8); transform: translateY(-2px);
+  }
+  .index-book-card.current {
+    border-color: rgba(255, 255, 255, 0.9); background: rgba(255, 255, 255, 0.14);
+  }
+  .index-thumb-frame {
+    width: 90px; aspect-ratio: 2 / 3; background: #ffffff; border: 1px solid rgba(0,0,0,0.15); border-radius: 2px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 0.5rem; overflow: hidden;
+    padding: 3px; box-sizing: border-box; display: flex; flex-direction: column;
+  }
+  .index-thumb-frame svg { width: 100%; height: 100%; display: block; }
+  .index-book-title { font-size: 0.85rem; font-weight: 700; color: var(--text); line-height: 1.25; }
+  .index-book-author { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+  /* Export Video Modal */
+  .export-modal {
+    position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: all 0.3s ease; padding: 1rem; pointer-events: auto;
+  }
+  .export-modal.open { opacity: 1; visibility: visible; }
+  .export-card {
+    background: #0d131f; border: 1px solid var(--panel-border); border-radius: 1.5rem;
+    padding: 2rem; max-width: 440px; width: 100%; text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+  }
+  .export-progress-bar {
+    width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 999px;
+    margin: 1.5rem 0 0.75rem 0; overflow: hidden;
+  }
+  .export-progress-fill {
+    width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), #818cf8);
+    transition: width 0.1s linear; border-radius: 999px;
+  }
+
+  /* Responsive / Mobile 1-Fold adjustments */
+  @media (max-width: 768px) {
+    :root {
+      --poster-w: min(40vh, 260px);
+    }
+    .room-full { display: none; }
+    .room-short { display: inline; }
+    .pacing-full { display: none; }
+    .pacing-short { display: inline; }
+    .desktop-text { display: none; }
+    .mobile-text { display: inline; }
+
+    .gallery-header {
+      padding: 0.35rem 0.4rem;
+      gap: 0.2rem;
+      width: 100%;
+      max-width: 100vw;
+      box-sizing: border-box;
+      overflow: visible;
+    }
+    .header-left, .header-center, .header-right { gap: 0.2rem; }
+    .header-left .nav-btn { padding: 0.32rem 0.45rem; font-size: 0.74rem; }
+    #active-book-title-short {
+      max-width: 58px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .header-center .pill-btn,
+    .header-right .pill-btn {
+      padding: 0.3rem 0.42rem;
+      font-size: 0.72rem;
+    }
+
+    .side-nav-prev { left: -14px; }
+    .side-nav-next { right: -14px; }
+    .side-nav-btn { width: 36px; height: 36px; font-size: 1.1rem; }
+    .quote-display-container { min-height: 44px; margin-bottom: 0.35rem; width: 100%; max-width: calc(var(--poster-w) * 1.5); }
+    .quote-text { font-size: 0.78rem; line-height: 1.4; }
+    .gallery-footer-controls { font-size: 0.7rem; gap: 0.25rem; padding: 0.4rem 0.5rem; max-width: 100vw; }
+    .poster-wall-stage { width: var(--poster-w); }
+
+    /* Replay Timeline Bar on Mobile: sleek single-line pill capsule */
+    .timeline-bar-wrap {
+      width: min(94vw, calc(var(--poster-w) * 1.5));
+      padding: 0.35rem 0.55rem;
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.35rem;
+      border-radius: 999px;
+    }
+    .timeline-bar-wrap .play-pause-btn {
+      width: 24px; height: 24px; flex-shrink: 0;
+    }
+    .timeline-bar-wrap .timeline-track {
+      flex: 1;
+      min-width: 65px;
+    }
+    .timeline-bar-wrap .timeline-time {
+      min-width: 52px;
+      font-size: 0.68rem;
+    }
+    .timeline-bar-wrap .pacing-toggle {
+      flex-shrink: 0;
+      gap: 1px;
+    }
+    .timeline-bar-wrap .pacing-btn {
+      padding: 0.2rem 0.32rem;
+      font-size: 0.68rem;
+    }
+    .timeline-bar-wrap .export-video-btn {
+      width: 24px; height: 24px;
+      padding: 0;
+      flex-shrink: 0;
+    }
+  }
+  @media (max-height: 680px) {
+    :root {
+      --poster-w: min(37vh, 238px);
+    }
+    .quote-display-container { min-height: 40px; margin-bottom: 0.25rem; width: 100%; max-width: calc(var(--poster-w) * 1.5); }
+    .timeline-bar-wrap { width: min(92vw, calc(var(--poster-w) * 1.5)); }
+    .poster-wall-stage { width: var(--poster-w); }
+    .gallery-footer-controls { padding: 0.3rem; }
+  }
+</style>
+</head>
+<body class="mode-interactive bookmarks-hide">
+
+<div id="gallery-stage">
+  <!-- 3D Camera Rig (Rotates Whole Room & Wall Scene together in Stereoscopic 3D Perspective) -->
+  <div id="gallery-camera-rig">
+    <!-- Room Background -->
+    <div class="room-bg" id="room-bg" style="background-image: url('assets/room1.jpg')"></div>
+
+    <!-- Replay Optical Lens Flare Canvas -->
+    <canvas id="replay-lens-flare" class="replay-lens-flare"></canvas>
+
+    <!-- Center Stage Wall Zone -->
+    <div class="center-stage">
+      <!-- Floating Label Block (Above Poster) - Pure white typography & bookmark toggle only (no card design) -->
+      <div class="quote-display-container">
+        <div class="quote-label-row" id="quote-card" style="opacity: 0">
+          <div class="quote-text" id="quote-text">Hover or tap on any color block below…</div>
+          <button type="button" class="bookmark-btn" id="quote-bookmark-btn" title="Bookmark Quote (★)" aria-label="Bookmark Quote">
+            <span id="bookmark-star-icon">☆</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Poster Presentation on Gallery Wall (Flat & Flush mounted!) -->
+      <div class="poster-presentation-zone">
+        <!-- Left arrow -->
+        <button type="button" class="side-nav-btn side-nav-prev" id="btn-prev-poster" title="Previous Wall (←)">‹</button>
+
+        <!-- 3D Wall Stage holding the poster panel -->
+        <div class="poster-wall-stage" id="poster-wall-stage">
+          <div class="wall-panel" id="active-wall-panel">
+            <div class="poster-wall-frame animating-load" id="poster-frame">
+              <div class="poster-body">
+                <div class="poster-preview" id="poster-container">
+                  <!-- Poster Vector SVG injected here -->
+                </div>
+                <div class="poster-meta">
+                  <div class="poster-text">
+                    <h3 class="poster-title" id="poster-title">The Hitchhiker’s Guide</h3>
+                    <div class="poster-author" id="poster-author">Douglas Adams</div>
+                  </div>
+                </div>
+              </div>
+              <!-- Room Ambient Lighting Overlay to Scale -->
+              <div class="room-lighting-overlay room-lighting-1" id="room-lighting-overlay"></div>
+              <div class="glaze-reflection"></div>
+              <div class="glitter-sweep"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right arrow -->
+        <button type="button" class="side-nav-btn side-nav-next" id="btn-next-poster" title="Next Wall (→)">›</button>
+      </div>
+
+      <!-- Replay Timeline Controls -->
+      <div class="timeline-bar-wrap" id="replay-controls">
+        <button type="button" class="play-pause-btn" id="btn-play-pause" title="Play/Pause (Space)">
+          <svg id="play-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </button>
+        <div class="timeline-track" id="timeline-track" title="Seek replay timeline">
+          <div class="timeline-progress" id="timeline-progress"></div>
+          <div class="timeline-dot" id="timeline-dot"></div>
+        </div>
+        <div class="timeline-time" id="timeline-time">0:00 / 0:00</div>
+        <!-- Replay Delay / Pacing Control Toggle (Icon-Only: Jump, Smooth, Bookmarked Only) -->
+        <div class="pill-group pacing-toggle" id="pacing-toggle" title="Replay pacing mode">
+          <button type="button" class="pill-btn pacing-btn" data-pacing="jump" title="Jump (Snappy Pacing)" aria-label="Jump (Snappy Pacing)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+          </button>
+          <button type="button" class="pill-btn pacing-btn active" data-pacing="smooth" title="Smooth Cadence" aria-label="Smooth Cadence">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12c3.5-7 7.5-7 10 0s6.5 7 10 0"/></svg>
+          </button>
+          <button type="button" class="pill-btn pacing-btn" data-pacing="bookmarked" title="Bookmarked Only (★)" aria-label="Bookmarked Only">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </button>
+        </div>
+        <button type="button" class="export-video-btn" id="btn-export-video" title="Download 9:16 Replay Video (1080x1920)" aria-label="Download 9:16 Replay Video">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen-space Header & Footer Overlays -->
+  <div class="screen-overlay-layer">
+    <!-- Header Bar -->
+    <header class="gallery-header">
+      <div class="header-left">
+        <a href="../" class="nav-btn grid-nav-btn" title="Back to Grid View" aria-label="Back to Grid View">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        </a>
+        <button type="button" class="nav-btn" id="open-index-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          <span id="active-book-title-short">Collection Index</span>
+        </button>
+      </div>
+
+      <div class="header-center">
+        <!-- Mode Toggle -->
+        <div class="pill-group" id="mode-toggle">
+          <button type="button" class="pill-btn active" id="btn-mode-interactive" data-mode="interactive">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span class="desktop-text">Interactive</span>
+          </button>
+          <button type="button" class="pill-btn" id="btn-mode-replay" data-mode="replay">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <span class="desktop-text">Replay</span>
+          </button>
+        </div>
+
+        <!-- Bookmarks Highlight Toggle (Icon-Only: Hide vs Show Bookmarks) -->
+        <div class="pill-group" id="bookmarks-toggle" title="Toggle Bookmarks Highlight">
+          <button type="button" class="pill-btn active" id="btn-bm-hide" data-bookmark-view="hide" title="Hide Bookmarks" aria-label="Hide Bookmarks">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+          <button type="button" class="pill-btn" id="btn-bm-show" data-bookmark-view="show" title="Highlight Bookmarked Colors with Subtle Shine" aria-label="Show Bookmarks">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Download Actions (Icon-Only: Poster SVG, 9:16 Scene JPEG with Selected Quote) -->
+        <div class="pill-group" id="download-actions-group" title="Download Options">
+          <button type="button" class="pill-btn" id="btn-download-poster" title="Download Poster (SVG)" aria-label="Download Poster (SVG)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </button>
+          <button type="button" class="pill-btn" id="btn-download-scene-jpeg" title="Download 9:16 Scene JPEG with Quote" aria-label="Download 9:16 Scene JPEG with Quote">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2.5"/>
+              <circle cx="12" cy="18" r="1"/>
+              <line x1="9" y1="7" x2="15" y2="7"/>
+              <line x1="9" y1="11" x2="15" y2="11"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Room Setting Switcher (Icon-Only: Room 1 Top Skylight vs Room 3 Top-Right Natural Light) -->
+        <div class="pill-group" title="Gallery Wall Room Environment">
+          <button type="button" class="pill-btn active" data-room="1" title="Room 1: Top Skylight" aria-label="Room 1: Top Skylight">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M8 3.5l1.5 3M16 3.5l-1.5 3M4 11h16v10H4z"/></svg>
+          </button>
+          <button type="button" class="pill-btn" data-room="3" title="Room 3: Top-Right Natural Light" aria-label="Room 3: Top-Right Natural Light">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3l-4.5 4.5M16.5 2l-3 4.5M22 7.5l-4.5 3M4 11h16v10H4z"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Bottom Poster Preview Controls -->
+    <footer class="gallery-footer-controls" id="gallery-variations">
+      <span class="ctrl-label">Minimalism:</span>
+      <a href="#" class="ctrl-opt" data-param="minimalism" data-value="on">On</a>
+      <a href="#" class="ctrl-opt" data-param="minimalism" data-value="off">Off</a>
+      <span class="ctrl-sep">·</span>
+      <span class="ctrl-label">Text-Strips:</span>
+      <a href="#" class="ctrl-opt" data-param="strips" data-value="on">On</a>
+      <a href="#" class="ctrl-opt" data-param="strips" data-value="off">Off</a>
+      <span class="ctrl-sep">·</span>
+      <span class="ctrl-label">Rounding:</span>
+      <a href="#" class="ctrl-opt" data-param="rounding" data-value="full">Full</a>
+      <a href="#" class="ctrl-opt" data-param="rounding" data-value="rounded">Rounded</a>
+      <a href="#" class="ctrl-opt" data-param="rounding" data-value="off">Off</a>
+      <span class="ctrl-sep">·</span>
+      <span class="ctrl-label">Minimum Width:</span>
+      <a href="#" class="ctrl-opt" data-param="minwidth" data-value="height">Height</a>
+      <a href="#" class="ctrl-opt" data-param="minwidth" data-value="20">20%</a>
+      <a href="#" class="ctrl-opt" data-param="minwidth" data-value="10">10%</a>
+      <a href="#" class="ctrl-opt" data-param="minwidth" data-value="off">Off</a>
+    </footer>
+  </div>
+</div>
+
+<!-- Collection Index Modal Drawer -->
+<div class="index-drawer" id="index-drawer">
+  <div class="index-modal-card">
+    <div class="index-modal-header">
+      <h2>Gallery Collection Index</h2>
+      <button type="button" class="close-index-btn" id="close-index-btn">✕</button>
+    </div>
+    <div class="index-modal-body" id="index-modal-body"></div>
+  </div>
+</div>
+
+<!-- 9:16 Video Export Modal -->
+<div class="export-modal" id="export-modal">
+  <div class="export-card">
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem">Rendering 9:16 Replay Video</h3>
+    <p style="color: var(--muted); font-size: 0.85rem">Creating vertical 1080 × 1920 video with dynamic light leaks and quotes...</p>
+    <div class="export-progress-bar">
+      <div class="export-progress-fill" id="export-progress-fill"></div>
+    </div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent)" id="export-status-text">Rendering: 0%</div>
+  </div>
+</div>
+
+<script>
+/* ---------- Curated Book Catalog & Sections ---------- */
+const BOOK_CATALOG = [
+  { key: "HitchhikersGuide", title: "The Hitchhiker’s Guide", author: "Douglas Adams", section: "Science Fiction & Galactic Epics" },
+  { key: "Dune", title: "Dune", author: "Frank Herbert", section: "Science Fiction & Galactic Epics" },
+  { key: "FellowshipOfTheRing", title: "The Fellowship of the Ring", author: "J.R.R. Tolkien", section: "The Lord of the Rings" },
+  { key: "TheTwoTowers", title: "The Two Towers", author: "J.R.R. Tolkien", section: "The Lord of the Rings" },
+  { key: "ReturnOfTheKing", title: "The Return of the King", author: "J.R.R. Tolkien", section: "The Lord of the Rings" },
+  { key: "LOTR", title: "The Lord of the Rings (Complete)", author: "J.R.R. Tolkien", section: "The Lord of the Rings" },
+  { key: "Odyssey", title: "The Odyssey", author: "Homer (Butler)", section: "Mythology & Epic Classics" },
+  { key: "The Odyssey - Nolan", title: "The Odyssey", author: "Christopher Nolan", section: "Mythology & Epic Classics" },
+  { key: "MyNameIsRed", title: "My Name is Red", author: "Orhan Pamuk", section: "World Literature & Mystery" },
+  { key: "LifeOfPi", title: "Life of Pi", author: "Yann Martel", section: "World Literature & Mystery" },
+  { key: "OscarAndLucinda", title: "Oscar and Lucinda", author: "Peter Carey", section: "World Literature & Mystery" },
+  { key: "Namesake", title: "The Namesake", author: "Jhumpa Lahiri", section: "World Literature & Mystery" },
+  { key: "DeathInTheGunj", title: "A Death in the Gunj", author: "Konkona Sensharma", section: "World Literature & Mystery" },
+  { key: "AliceInWonderland", title: "Alice in Wonderland", author: "Lewis Carroll", section: "Fantasy & Classics" },
+  { key: "WizardOfOz", title: "The Wizard of Oz", author: "L. Frank Baum", section: "Fantasy & Classics" }
+];
+
+/* ---------- State ---------- */
+let previewsData = null;
+let quotesCache = {};
+let quoteDwellTimeout = null;
+let quoteAbortController = null;
+const QUOTE_DWELL_MS = 500;
+
+let currentBookIdx = 0;
+let currentMode = "interactive";
+let bookmarksViewMode = "hide"; // 'hide' | 'show'
+let currentRoom = "1";
+let isTransitioningWall = false;
+
+let currentParams = {
+  minimalism: "off",
+  strips: "on",
+  rounding: "off",
+  minwidth: "20"
+};
+
+let replayTimer = null;
+let replayStep = 0;
+let isReplaying = false;
+let replayPacing = "smooth"; // 'jump' | 'smooth' | 'bookmarked'
+let pinnedBlock = null;
+let hoveredBlock = null;
+let activeTileElements = [];
+
+/* ---------- Bookmarking (Local/Session Storage) ---------- */
+function getBookmarkKey(bookKey, blockId) {
+  return `bm_${bookKey}_${blockId}`;
+}
+function isBookmarked(bookKey, blockId) {
+  return localStorage.getItem(getBookmarkKey(bookKey, blockId)) === "1";
+}
+function toggleBookmark(bookKey, blockId) {
+  const k = getBookmarkKey(bookKey, blockId);
+  const now = !isBookmarked(bookKey, blockId);
+  if (now) {
+    localStorage.setItem(k, "1");
+  } else {
+    localStorage.removeItem(k);
+  }
+  return now;
+}
+
+function getBookmarks(bookKey) {
+  if (!activeTileElements) return [];
+  return activeTileElements.filter(t => isBookmarked(bookKey, t.quote.id)).map(t => t.quote.id);
+}
+
+function ensureInitialBookmarks(bookKey) {
+  const quotes = quotesCache && quotesCache[bookKey];
+  if (!quotes || quotes.length === 0) return;
+  const hasAny = quotes.some(q => isBookmarked(bookKey, q.id));
+  if (!hasAny) {
+    const seedIndices = [0, Math.min(quotes.length - 1, Math.floor(quotes.length * 0.25)), Math.min(quotes.length - 1, Math.floor(quotes.length * 0.6))];
+    seedIndices.forEach(idx => {
+      if (quotes[idx]) {
+        localStorage.setItem(getBookmarkKey(bookKey, quotes[idx].id), "1");
+      }
+    });
+  }
+}
+
+/* ---------- URL Parameter Parsing ---------- */
+function parseUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const requestedBook = params.get("book");
+  if (requestedBook) {
+    const idx = BOOK_CATALOG.findIndex(b => b.key.toLowerCase() === requestedBook.toLowerCase());
+    if (idx !== -1) currentBookIdx = idx;
+  }
+  if (params.get("minimalism")) currentParams.minimalism = params.get("minimalism");
+  if (params.get("strips")) currentParams.strips = params.get("strips");
+  if (params.get("rounding")) currentParams.rounding = params.get("rounding");
+  if (params.get("minwidth")) currentParams.minwidth = params.get("minwidth");
+  if (params.get("mode") === "replay") currentMode = "replay";
+  if (params.get("bookmarks") === "show" || params.get("view") === "bookmarks" || params.get("view") === "labeled") {
+    bookmarksViewMode = "show";
+  }
+  if (params.get("room")) currentRoom = params.get("room");
+  if (currentRoom !== "1" && currentRoom !== "3") currentRoom = "1";
+}
+
+function syncUrl() {
+  const params = new URLSearchParams();
+  const book = BOOK_CATALOG[currentBookIdx];
+  params.set("book", book.key);
+  params.set("minimalism", currentParams.minimalism);
+  params.set("strips", currentParams.strips);
+  params.set("rounding", currentParams.rounding);
+  params.set("minwidth", currentParams.minwidth);
+  if (currentMode !== "interactive") params.set("mode", currentMode);
+  if (bookmarksViewMode === "show") params.set("bookmarks", "show");
+  if (currentRoom !== "1") params.set("room", currentRoom);
+  history.replaceState(null, "", "?" + params.toString());
+}
+
+/* ---------- Room Background Switcher (Room 1 Top Light, Room 3 Top-Right Light) ---------- */
+function setRoom(roomNum) {
+  if (roomNum !== "1" && roomNum !== "3") roomNum = "1";
+  currentRoom = roomNum;
+  const roomBg = document.getElementById("room-bg");
+  if (roomBg) roomBg.style.backgroundImage = `url('assets/room${roomNum}.jpg')`;
+
+  // Lighting overlay
+  const lightOverlay = document.getElementById("room-lighting-overlay");
+  if (lightOverlay) {
+    lightOverlay.className = `room-lighting-overlay room-lighting-${roomNum}`;
+  }
+
+  // Cast shadow matching room lighting
+  const frame = document.getElementById("poster-frame");
+  if (frame) {
+    frame.classList.toggle("room-1-shadow", roomNum === "1");
+    frame.classList.toggle("room-3-shadow", roomNum === "3");
+  }
+
+  document.querySelectorAll("[data-room]").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-room") === roomNum);
+  });
+  syncUrl();
+}
+
+/* ---------- Stereoscopic 3D Camera Look-around (Rotates WHOLE room view together!) ---------- */
+function initStereoscopicParallax() {
+  const cameraRig = document.getElementById("gallery-camera-rig");
+  
+  let targetX = 0, targetY = 0;
+  let currentX = 0, currentY = 0;
+
+  window.addEventListener("pointermove", (e) => {
+    const halfW = window.innerWidth / 2;
+    const halfH = window.innerHeight / 2;
+    targetX = (e.clientX - halfW) / halfW;
+    targetY = (e.clientY - halfH) / halfH;
+  });
+
+  if (window.DeviceOrientationEvent) {
+    window.addEventListener("deviceorientation", (e) => {
+      if (e.gamma !== null && e.beta !== null) {
+        targetX = Math.max(-1, Math.min(1, e.gamma / 25));
+        targetY = Math.max(-1, Math.min(1, (e.beta - 45) / 25));
+      }
+    });
+  }
+
+  function renderParallax() {
+    currentX += (targetX - currentX) * 0.08;
+    currentY += (targetY - currentY) * 0.08;
+
+    // Whole room camera pitch & yaw: the entire room (wall + poster) rotates as one without differential sliding!
+    const pitch = -currentY * 1.5;
+    const yaw = currentX * 2.0;
+    cameraRig.style.setProperty("--cam-pitch", `${pitch.toFixed(2)}deg`);
+    cameraRig.style.setProperty("--cam-yaw", `${yaw.toFixed(2)}deg`);
+
+    requestAnimationFrame(renderParallax);
+  }
+  renderParallax();
+}
+
+/* ---------- Clustering & Scaling Algorithms ---------- */
+function clusterColorBlocks(tiles, totalWeightCh) {
+  if (!tiles || tiles.length <= 1) return tiles;
+  let result = tiles.map(t => ({ ...t }));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let i = 0; i < result.length; i++) {
+      let targetIdx = -1, minGap = Infinity;
+      for (let j = 0; j < result.length; j++) {
+        if (i === j) continue;
+        if (result[i].color === result[j].color) {
+          const gap = Math.abs(i - j);
+          if (gap <= 3 && gap < minGap) {
+            if ((result[i].len + result[j].len) <= totalWeightCh * 0.50) {
+              targetIdx = j;
+              minGap = gap;
+            }
+          }
+        }
+      }
+      if (targetIdx !== -1) {
+        if (result[i].len >= result[targetIdx].len) {
+          result[i].len += result[targetIdx].len;
+          result.splice(targetIdx, 1);
+        } else {
+          result[targetIdx].len += result[i].len;
+          result.splice(i, 1);
+        }
+        changed = true;
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+function combineChaptersToMetaRows(activeChapters) {
+  if (!activeChapters || activeChapters.length < 30) return activeChapters;
+  const C = activeChapters.length;
+  const mergeFactor = Math.max(2, Math.floor(C / 16));
+  const targetCount = Math.ceil(C / mergeFactor);
+  const combined = [];
+  const chunkSize = C / targetCount;
+  for (let k = 0; k < targetCount; k++) {
+    const start = Math.floor(k * chunkSize);
+    const end = (k === targetCount - 1) ? C : Math.floor((k + 1) * chunkSize);
+    const metaRowParas = [];
+    for (let i = start; i < end; i++) metaRowParas.push(...activeChapters[i]);
+    if (metaRowParas.length > 0) combined.push(metaRowParas);
+  }
+  return combined;
+}
+
+/* ---------- Vector Poster SVG Renderer ---------- */
+function buildPosterSvg(bookKey) {
+  const chapters = previewsData[bookKey];
+  if (!chapters) return { svgEl: null, tiles: [] };
+
+  const { minimalism, strips, rounding, minwidth } = currentParams;
+
+  const globalColorCounts = new Map();
+  chapters.forEach(ch => {
+    ch.forEach(p => {
+      const c = p[1];
+      if (c !== 0) globalColorCounts.set(c, (globalColorCounts.get(c) || 0) + 1);
+    });
+  });
+
+  let activeChapters = [];
+  chapters.forEach(ch => {
+    const coloredParas = ch.filter(p => p[1] !== 0);
+    if (coloredParas.length > 0) activeChapters.push(coloredParas);
+  });
+
+  if (minimalism === "on" && activeChapters.length >= 30) {
+    activeChapters = combineChaptersToMetaRows(activeChapters);
+  }
+
+  const C = activeChapters.length;
+  if (C === 0) return { svgEl: null, tiles: [] };
+
+  const activeChapterWeights = activeChapters.map(ch => ch.reduce((sum, p) => sum + p[0], 0));
+  const H = 300, W = 200;
+  const rowGap = Math.max(0.4, Math.min(2.0, 50 / C));
+  const minRow = Math.max(1.0, Math.min(4.0, 150 / C));
+  const totalWeight = activeChapterWeights.reduce((s, w) => s + w, 0) || 1;
+  const Hpad = H - rowGap * (C - 1);
+
+  let heights = [];
+  if (strips === "on") {
+    const baseH = Math.floor(Hpad / C);
+    heights = Array(C).fill(baseH);
+    let sumH = heights.reduce((a, b) => a + b, 0);
+    let diffH = Hpad - sumH, k = 0;
+    while (diffH > 0 && k < heights.length) { heights[k]++; diffH--; k++; }
+  } else {
+    let leftoverH = Math.max(0, Hpad - C * minRow);
+    heights = activeChapterWeights.map(w => minRow + Math.floor(leftoverH * (w / totalWeight)));
+    let sumH = heights.reduce((a, b) => a + b, 0), diffH = Hpad - sumH, k = 0;
+    while (diffH !== 0 && k < heights.length * 2) {
+      const i = k % heights.length;
+      const step = diffH > 0 ? 1 : -1;
+      if (step < 0 && heights[i] <= minRow) { k++; continue; }
+      heights[i] += step; diffH -= step; k++;
+    }
+  }
+
+  const svgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svgEl.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svgEl.setAttribute("width", "100%");
+  svgEl.setAttribute("height", "100%");
+  svgEl.setAttribute("preserveAspectRatio", "none");
+  svgEl.style.display = "block";
+
+  const bookQuotes = (quotesCache && quotesCache[bookKey]) || [];
+  let blockCounter = 0;
+  let y = 0;
+  const tilesOut = [];
+
+  activeChapters.forEach((ch, chIdx) => {
+    const h = heights[chIdx];
+    let rawTiles = [];
+    ch.forEach(p => {
+      const pLen = p[0], pColor = p[1];
+      if (rawTiles.length > 0 && rawTiles[rawTiles.length - 1].color === pColor) {
+        rawTiles[rawTiles.length - 1].len += pLen;
+      } else {
+        rawTiles.push({ len: pLen, color: pColor });
+      }
+    });
+
+    const rowTotalWeightRaw = rawTiles.reduce((sum, t) => sum + t.len, 0) || 1;
+    const tileShares = rawTiles.map(t => t.len / rowTotalWeightRaw);
+    const hasDominantColor = Math.max(...tileShares) >= 0.50;
+    const shareThreshold = Math.max(0.08, Math.min(0.30, 0.15 * (15 / Math.max(1, h))));
+
+    let filteredTiles = rawTiles;
+    if (minimalism === "on") {
+      filteredTiles = rawTiles.filter(t => {
+        if (!hasDominantColor) return true;
+        const share = t.len / rowTotalWeightRaw;
+        const isRareInBook = (globalColorCounts.get(t.color) || 0) <= 2;
+        return isRareInBook || (share >= shareThreshold);
+      });
+    }
+    if (filteredTiles.length === 0) filteredTiles = rawTiles;
+
+    let tiles = filteredTiles;
+    if (minimalism === "on") tiles = clusterColorBlocks(tiles, rowTotalWeightRaw);
+
+    const totalWeightCh = tiles.reduce((sum, item) => sum + item.len, 0) || 1;
+    const tileCount = tiles.length;
+    const effectiveMinMode = (rounding === "full") ? "height" : minwidth;
+
+    let tileWidths = [];
+    if (effectiveMinMode === "height") {
+      const minTileW = (tileCount * h > W) ? (W / tileCount) : h;
+      const leftoverW = Math.max(0, W - tileCount * minTileW);
+      tileWidths = tiles.map(item => minTileW + leftoverW * (item.len / totalWeightCh));
+    } else if (effectiveMinMode === "20" || effectiveMinMode === "10") {
+      const factor = (effectiveMinMode === "20") ? 0.20 : 0.10;
+      const baseMinH = factor * h;
+      const baseMinW = tiles.map(item => Math.max(baseMinH, 0.50 * (item.len / totalWeightCh) * W));
+      const sumMinW = baseMinW.reduce((a, b) => a + b, 0);
+      if (sumMinW > W) {
+        const scale = W / sumMinW;
+        tileWidths = baseMinW.map(w => w * scale);
+      } else {
+        const leftoverW = W - sumMinW;
+        tileWidths = tiles.map((item, idx) => baseMinW[idx] + leftoverW * (item.len / totalWeightCh));
+      }
+    } else {
+      tileWidths = tiles.map(item => (item.len / totalWeightCh) * W);
+    }
+
+    let rx = 0;
+    if (rounding === "full") rx = h / 2;
+    else if (rounding === "rounded") rx = H * 0.01;
+
+    let x = 0;
+    tiles.forEach((item, idx) => {
+      const w = tileWidths[idx];
+      if (w > 0.01) {
+        const blockId = blockCounter;
+        const blockQuote = bookQuotes[blockId] || {
+          id: blockId,
+          ch: chIdx + 1,
+          para: blockId + 1,
+          color: item.color,
+          name: "Color",
+          quote: ""
+        };
+
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", x.toFixed(2));
+        rect.setAttribute("y", y.toFixed(2));
+        rect.setAttribute("width", Math.max(0.1, w).toFixed(2));
+        rect.setAttribute("height", Math.max(0.1, h).toFixed(2));
+        if (rx > 0) {
+          rect.setAttribute("rx", rx.toFixed(2));
+          rect.setAttribute("ry", rx.toFixed(2));
+        }
+        rect.setAttribute("fill", item.color);
+        rect.setAttribute("data-block-id", blockId);
+        rect.setAttribute("data-ch", chIdx + 1);
+        rect.style.transition = "opacity 0.2s ease, filter 0.2s ease, stroke 0.2s ease";
+
+        rect.addEventListener("pointerenter", () => {
+          const currentTile = activeTileElements[blockId];
+          onBlockHover(currentTile ? currentTile.quote : blockQuote, rect);
+        });
+        rect.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const currentTile = activeTileElements[blockId];
+          onBlockClick(currentTile ? currentTile.quote : blockQuote, rect);
+        });
+
+        rect.style.animation = `blockFadeIn 0.5s calc(${chIdx * 16}ms) ease-out both`;
+
+        svgEl.appendChild(rect);
+        tilesOut.push({
+          element: rect,
+          quote: blockQuote,
+          geom: { x, y, w, h, rx, color: item.color }
+        });
+        blockCounter++;
+      }
+      x += w;
+    });
+    y += h + rowGap;
+  });
+
+  return { svgEl, tiles: tilesOut };
+}
+
+/* ---------- Printable Poster SVG Downloader ---------- */
+function downloadPosterSvg(bookKey, title, author) {
+  const container = document.getElementById("poster-container");
+  if (!container) return;
+  const previewSvg = container.querySelector("svg");
+  if (!previewSvg) return;
+
+  const rectsContent = previewSvg.innerHTML;
+  const svgWidth = 800;
+  const svgHeight = 1200;
+  const padding = 40;
+  const contentWidth = svgWidth - padding * 2;
+  const previewHeight = 970;
+
+  const scaleX = contentWidth / 200;
+  const scaleY = previewHeight / 300;
+
+  function escapeXml(unsafe) {
+    return String(unsafe).replace(/[<>&'"]/g, c => {
+      switch (c) {
+        case '<': return '&lt;';
+        case '>': return '&gt;';
+        case '&': return '&amp;';
+        case '\'': return '&apos;';
+        case '"': return '&quot;';
+      }
+    });
+  }
+
+  const safeTitle = escapeXml(title);
+  const safeAuthor = escapeXml(author);
+
+  const fullSvgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="${svgWidth}" height="${svgHeight}">
+  <rect width="${svgWidth}" height="${svgHeight}" fill="#ffffff"/>
+  <g transform="translate(${padding}, ${padding}) scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})">
+    ${rectsContent}
+  </g>
+  <text x="${padding}" y="1065" font-family="Geom, Helvetica, Arial, sans-serif" font-size="44" font-weight="800" fill="#0f172a">${safeTitle}</text>
+  <text x="${padding}" y="1110" font-family="Geom, Helvetica, Arial, sans-serif" font-size="28" font-style="italic" fill="#64748b">${safeAuthor}</text>
+</svg>`;
+
+  const blob = new Blob([fullSvgContent], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${bookKey}_poster.svg`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+let currentDisplayedQuote = null;
+
+function renderPoster(bookKey) {
+  const container = document.getElementById("poster-container");
+  if (!container) return;
+  container.innerHTML = "";
+  activeTileElements = [];
+  currentDisplayedQuote = null;
+  pinnedBlock = null;
+  hoveredBlock = null;
+
+  const book = BOOK_CATALOG[currentBookIdx];
+  const titleEl = document.getElementById("poster-title");
+  const authorEl = document.getElementById("poster-author");
+  if (titleEl && book) titleEl.textContent = book.title;
+  if (authorEl && book) authorEl.textContent = book.author;
+
+  const { svgEl, tiles } = buildPosterSvg(bookKey);
+  if (!svgEl) return;
+
+  activeTileElements = tiles;
+  container.appendChild(svgEl);
+
+  triggerLoadAnimation();
+  setupTimeline(activeTileElements);
+  updateBookmarkedTilesHighlight();
+}
+
+/* ---------- Subtle Load Animation: Smooth Fade & Glitter Sweep (No independent tilt!) ---------- */
+function triggerLoadAnimation() {
+  const frame = document.querySelector("#active-wall-panel .poster-wall-frame");
+  if (!frame) return;
+  frame.classList.remove("animating-load");
+  void frame.offsetWidth;
+  frame.classList.add("animating-load");
+  setTimeout(() => {
+    frame.classList.remove("animating-load");
+  }, 2000);
+}
+
+/* ---------- Label Block Display: Pure White Text & Bookmark Toggle (No Card Design) ---------- */
+function displayQuote(quote, isInteractiveHover = false) {
+  if (quote) currentDisplayedQuote = quote;
+  const card = document.getElementById("quote-card");
+  const textEl = document.getElementById("quote-text");
+  const bmBtn = document.getElementById("quote-bookmark-btn");
+  const starIcon = document.getElementById("bookmark-star-icon");
+
+  if (!quote) {
+    if (!pinnedBlock && card) card.style.opacity = "0";
+    return;
+  }
+
+  const book = BOOK_CATALOG[currentBookIdx];
+  const bookmarked = isBookmarked(book.key, quote.id);
+
+  if (textEl) {
+    textEl.innerHTML = quote.quote || quote.name || "Loading passage…";
+    if (currentMode === "replay" && replayPacing === "smooth") {
+      textEl.classList.remove("smooth-text-fade");
+      void textEl.offsetWidth;
+      textEl.classList.add("smooth-text-fade");
+    } else {
+      textEl.classList.remove("smooth-text-fade");
+    }
+  }
+
+  if (starIcon) starIcon.textContent = bookmarked ? "★" : "☆";
+  if (bmBtn) {
+    bmBtn.classList.toggle("bookmarked", bookmarked);
+    bmBtn.onclick = (e) => {
+      e.stopPropagation();
+      const nowBookmarked = toggleBookmark(book.key, quote.id);
+      if (starIcon) starIcon.textContent = nowBookmarked ? "★" : "☆";
+      bmBtn.classList.toggle("bookmarked", nowBookmarked);
+      updateBookmarkedTilesHighlight();
+    };
+  }
+
+  if (card) card.style.opacity = "1";
+}
+
+function onBlockHover(quote, rect) {
+  if (currentMode !== "interactive") return;
+  hoveredBlock = quote;
+  if (!pinnedBlock) displayQuote(quote, true);
+  rect.style.filter = "brightness(1.3) drop-shadow(0 0 6px currentColor)";
+}
+
+function onBlockClick(quote, rect) {
+  const book = BOOK_CATALOG[currentBookIdx];
+  if (book && !quotesCache[book.key]) {
+    loadQuotesForBook(book.key, { immediate: true });
+  }
+
+  if (currentMode === "replay") {
+    // Rewind replay to this block and pause it!
+    const idx = activeTileElements.findIndex(t => t.quote.id === quote.id);
+    if (idx !== -1) {
+      pauseReplay();
+      replayStep = idx;
+      highlightReplayTile(idx);
+      displayQuote(quote);
+      updateTimelineProgress(replayStep, activeTileElements.length);
+      updateLensFlareForStep(idx);
+    }
+    return;
+  }
+
+  if (pinnedBlock && pinnedBlock.id === quote.id) {
+    pinnedBlock = null;
+  } else {
+    pinnedBlock = quote;
+    displayQuote(quote);
+  }
+}
+
+document.getElementById("poster-wall-stage").addEventListener("pointerleave", () => {
+  hoveredBlock = null;
+  if (currentMode === "interactive" && !pinnedBlock) {
+    displayQuote(null);
+  }
+  if (currentMode === "interactive") {
+    activeTileElements.forEach(item => {
+      item.element.style.filter = "none";
+    });
+  }
+});
+
+/* ---------- Optical Anamorphic Lens Flare Engine (Replay Mode) ---------- */
+let flareCanvas = null;
+let flareCtx = null;
+let flareAnimId = null;
+
+const flareState = {
+  active: false,
+  currColor: "#f59e0b",
+  prevColor: "#38bdf8",
+  nextColor: "#ec4899",
+  currRgb: { r: 245, g: 158, b: 11 },
+  targetCurrRgb: { r: 245, g: 158, b: 11 },
+  prevRgb: { r: 56, g: 189, b: 248 },
+  targetPrevRgb: { r: 56, g: 189, b: 248 },
+  nextRgb: { r: 236, g: 72, b: 153 },
+  targetNextRgb: { r: 236, g: 72, b: 153 },
+  targetAngle: -90,
+  currentAngle: -90,
+  targetSpread: 35,
+  currentSpread: 35,
+  targetPrevSpread: 12,
+  currentPrevSpread: 12,
+  targetNextSpread: 12,
+  currentNextSpread: 12,
+  intensity: 0,
+  targetIntensity: 0
+};
+
+function hexToRgb(hex) {
+  if (!hex || typeof hex !== 'string') return { r: 245, g: 158, b: 11 };
+  let c = hex.replace('#', '');
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  const num = parseInt(c, 16);
+  if (isNaN(num)) return { r: 245, g: 158, b: 11 };
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+
+function lerpRgb(c1, c2, t) {
+  return {
+    r: Math.round(c1.r + (c2.r - c1.r) * t),
+    g: Math.round(c1.g + (c2.g - c1.g) * t),
+    b: Math.round(c1.b + (c2.b - c1.b) * t)
+  };
+}
+
+function rgbToHex(c) {
+  const h = (v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0');
+  return `#${h(c.r)}${h(c.g)}${h(c.b)}`;
+}
+
+function hexToRgba(hex, alpha) {
+  const rgb = hexToRgb(hex);
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+}
+
+function initLensFlare() {
+  flareCanvas = document.getElementById("replay-lens-flare");
+  if (!flareCanvas) return;
+  flareCtx = flareCanvas.getContext("2d");
+
+  function resizeFlare() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    flareCanvas.width = window.innerWidth * dpr;
+    flareCanvas.height = window.innerHeight * dpr;
+  }
+  window.addEventListener("resize", resizeFlare);
+  resizeFlare();
+
+  function renderFlareLoop() {
+    if (flareState.active || flareState.intensity > 0.01) {
+      drawLensFlareFrame();
+    }
+    flareAnimId = requestAnimationFrame(renderFlareLoop);
+  }
+  renderFlareLoop();
+}
+
+function updateLensFlareForStep(stepIdx) {
+  if (!activeTileElements || activeTileElements.length === 0) return;
+  const N = activeTileElements.length;
+  const currTile = activeTileElements[stepIdx];
+  if (!currTile) return;
+
+  const prevTile = activeTileElements[(stepIdx - 1 + N) % N];
+  const nextTile = activeTileElements[(stepIdx + 1) % N];
+
+  const gm = currTile.geom;
+  const blockCenterX = gm.x + gm.w / 2;
+  const dx = (blockCenterX - 100) / 100;
+  const wFrac = Math.max(0.04, Math.min(1.0, gm.w / 200));
+
+  flareState.active = (currentMode === "replay");
+  flareState.targetIntensity = (currentMode === "replay") ? 1.0 : 0.0;
+
+  // Angles proportional to the width and position of the block from the centre back of the poster
+  flareState.targetAngle = -90 + (dx * 62);
+  // Primary color spread 3x wider
+  flareState.targetSpread = Math.max(54, Math.min(215, wFrac * 405));
+
+  // Previous and next blocks at appropriate (much lesser) angles and spreads
+  flareState.targetPrevSpread = Math.max(16, flareState.targetSpread * 0.26);
+  flareState.targetNextSpread = Math.max(16, flareState.targetSpread * 0.26);
+
+  flareState.targetCurrRgb = hexToRgb(currTile.quote.color || "#f59e0b");
+  flareState.targetPrevRgb = hexToRgb(prevTile.quote.color || "#38bdf8");
+  flareState.targetNextRgb = hexToRgb(nextTile.quote.color || "#ec4899");
+}
+
+function drawLensFlareFrame() {
+  if (!flareCtx || !flareCanvas) return;
+  const ctx = flareCtx;
+  const w = flareCanvas.width;
+  const h = flareCanvas.height;
+
+  flareState.currentAngle += (flareState.targetAngle - flareState.currentAngle) * 0.18;
+  flareState.currentSpread += (flareState.targetSpread - flareState.currentSpread) * 0.18;
+  flareState.currentPrevSpread += (flareState.targetPrevSpread - flareState.currentPrevSpread) * 0.18;
+  flareState.currentNextSpread += (flareState.targetNextSpread - flareState.currentNextSpread) * 0.18;
+  flareState.intensity += (flareState.targetIntensity - flareState.intensity) * 0.12;
+
+  // Smooth RGB color fade in transition
+  const colorLerp = (replayPacing === "smooth") ? 0.09 : 0.35;
+  flareState.currRgb = lerpRgb(flareState.currRgb, flareState.targetCurrRgb, colorLerp);
+  flareState.prevRgb = lerpRgb(flareState.prevRgb, flareState.targetPrevRgb, colorLerp);
+  flareState.nextRgb = lerpRgb(flareState.nextRgb, flareState.targetNextRgb, colorLerp);
+  flareState.currColor = rgbToHex(flareState.currRgb);
+  flareState.prevColor = rgbToHex(flareState.prevRgb);
+  flareState.nextColor = rgbToHex(flareState.nextRgb);
+
+  ctx.clearRect(0, 0, w, h);
+  if (flareState.intensity <= 0.01) return;
+
+  const posterFrame = document.getElementById("poster-frame");
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  let ox = w * 0.5;
+  let oy = h * 0.48;
+  if (posterFrame) {
+    const r = posterFrame.getBoundingClientRect();
+    ox = (r.left + r.width * 0.5) * dpr;
+    oy = (r.top + r.height * 0.44) * dpr;
+  }
+
+  const maxR = Math.max(w, h) * 0.98;
+  const alphaMul = flareState.intensity;
+
+  ctx.save();
+
+  // 1. Dark atmospheric backdrop
+  ctx.fillStyle = `rgba(6, 8, 14, ${0.92 * alphaMul})`;
+  ctx.fillRect(0, 0, w, h);
+
+  // 2. Central Radiant Core Halo (soft, feathered bloom behind poster)
+  const coreGrad = ctx.createRadialGradient(ox, oy, 10, ox, oy, 540 * dpr);
+  coreGrad.addColorStop(0, hexToRgba(flareState.currColor, 0.48 * alphaMul));
+  coreGrad.addColorStop(0.28, hexToRgba(flareState.currColor, 0.22 * alphaMul));
+  coreGrad.addColorStop(0.65, hexToRgba(flareState.currColor, 0.06 * alphaMul));
+  coreGrad.addColorStop(0.9, hexToRgba(flareState.currColor, 0.01 * alphaMul));
+  coreGrad.addColorStop(1, "transparent");
+  ctx.fillStyle = coreGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  const toRad = Math.PI / 180;
+  const mainAngleRad = flareState.currentAngle * toRad;
+  const mainSpreadRad = flareState.currentSpread * toRad;
+
+  // 3. Previous Block Secondary Beam (at much lesser angle & narrower spread)
+  const prevAngleRad = mainAngleRad - (28 * toRad + mainSpreadRad * 0.18);
+  const prevSpreadRad = flareState.currentPrevSpread * toRad;
+  ctx.beginPath();
+  ctx.moveTo(ox, oy);
+  ctx.arc(ox, oy, maxR * 0.78, prevAngleRad - prevSpreadRad * 0.5, prevAngleRad + prevSpreadRad * 0.5);
+  ctx.closePath();
+  const prevGrad = ctx.createRadialGradient(ox, oy, 15, ox, oy, maxR * 0.78);
+  prevGrad.addColorStop(0, hexToRgba(flareState.prevColor, 0.35 * alphaMul));
+  prevGrad.addColorStop(0.28, hexToRgba(flareState.prevColor, 0.16 * alphaMul));
+  prevGrad.addColorStop(0.75, hexToRgba(flareState.prevColor, 0.03 * alphaMul));
+  prevGrad.addColorStop(1, "transparent");
+  ctx.fillStyle = prevGrad;
+  ctx.fill();
+
+  // 4. Next Block Secondary Beam (at much lesser angle & narrower spread)
+  const nextAngleRad = mainAngleRad + (28 * toRad + mainSpreadRad * 0.18);
+  const nextSpreadRad = flareState.currentNextSpread * toRad;
+  ctx.beginPath();
+  ctx.moveTo(ox, oy);
+  ctx.arc(ox, oy, maxR * 0.78, nextAngleRad - nextSpreadRad * 0.5, nextAngleRad + nextSpreadRad * 0.5);
+  ctx.closePath();
+  const nextGrad = ctx.createRadialGradient(ox, oy, 15, ox, oy, maxR * 0.78);
+  nextGrad.addColorStop(0, hexToRgba(flareState.nextColor, 0.35 * alphaMul));
+  nextGrad.addColorStop(0.28, hexToRgba(flareState.nextColor, 0.16 * alphaMul));
+  nextGrad.addColorStop(0.75, hexToRgba(flareState.nextColor, 0.03 * alphaMul));
+  nextGrad.addColorStop(1, "transparent");
+  ctx.fillStyle = nextGrad;
+  ctx.fill();
+
+  // 5. Primary Lens Flare Beam (Active Block - luminous and 3x wider spread)
+  ctx.beginPath();
+  ctx.moveTo(ox, oy);
+  ctx.arc(ox, oy, maxR, mainAngleRad - mainSpreadRad * 0.5, mainAngleRad + mainSpreadRad * 0.5);
+  ctx.closePath();
+  const mainGrad = ctx.createRadialGradient(ox, oy, 15, ox, oy, maxR * 0.95);
+  mainGrad.addColorStop(0, hexToRgba(flareState.currColor, 0.82 * alphaMul));
+  mainGrad.addColorStop(0.22, hexToRgba(flareState.currColor, 0.44 * alphaMul));
+  mainGrad.addColorStop(0.60, hexToRgba(flareState.currColor, 0.14 * alphaMul));
+  mainGrad.addColorStop(0.88, hexToRgba(flareState.currColor, 0.02 * alphaMul));
+  mainGrad.addColorStop(1, "transparent");
+  ctx.fillStyle = mainGrad;
+  ctx.fill();
+
+  // 6. Anamorphic Lens Flare Horizontal Streak
+  ctx.save();
+  ctx.translate(ox, oy);
+  ctx.rotate(mainAngleRad + Math.PI / 2);
+  const streakGrad = ctx.createLinearGradient(-w * 0.7, 0, w * 0.7, 0);
+  streakGrad.addColorStop(0, "transparent");
+  streakGrad.addColorStop(0.35, hexToRgba(flareState.currColor, 0.08 * alphaMul));
+  streakGrad.addColorStop(0.5, hexToRgba("#ffffff", 0.38 * alphaMul));
+  streakGrad.addColorStop(0.65, hexToRgba(flareState.currColor, 0.08 * alphaMul));
+  streakGrad.addColorStop(1, "transparent");
+  ctx.fillStyle = streakGrad;
+  ctx.fillRect(-w * 0.7, -3 * dpr, w * 1.4, 6 * dpr);
+  ctx.restore();
+
+  // 7. Subtle Concentric Lens Circles
+  const ringDist = 240 * dpr;
+  const ringX = ox + Math.cos(mainAngleRad + Math.PI) * ringDist;
+  const ringY = oy + Math.sin(mainAngleRad + Math.PI) * ringDist;
+  ctx.beginPath();
+  ctx.arc(ringX, ringY, 40 * dpr, 0, Math.PI * 2);
+  ctx.strokeStyle = hexToRgba(flareState.currColor, 0.15 * alphaMul);
+  ctx.lineWidth = 1.5 * dpr;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/* ---------- Replay Loop Engine ---------- */
+function highlightReplayTile(idx) {
+  const currentItem = activeTileElements[idx];
+  if (!currentItem) return;
+  const quote = currentItem.quote;
+
+  const isSmooth = (replayPacing === "smooth");
+  activeTileElements.forEach((item, i) => {
+    item.element.style.transition = isSmooth
+      ? "filter 0.42s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.42s ease, opacity 0.42s ease"
+      : "filter 0.15s ease, stroke 0.15s ease, opacity 0.15s ease";
+    if (i === idx) {
+      item.element.style.opacity = "1.0";
+      item.element.style.filter = "brightness(1.45) drop-shadow(0 0 8px " + quote.color + ") drop-shadow(0 0 16px rgba(255,255,255,0.95))";
+      item.element.style.stroke = "#ffffff";
+      item.element.style.strokeWidth = "1.8";
+      item.element.classList.remove("tile-shining");
+      void item.element.offsetWidth;
+      item.element.classList.add("tile-shining");
+    } else {
+      // The poster should NOT be dimmed out!
+      item.element.style.opacity = "1.0";
+      item.element.style.filter = "none";
+      item.element.style.stroke = "none";
+      item.element.classList.remove("tile-shining");
+    }
+  });
+}
+
+function getNextBookmarkedStep(fromIdx) {
+  const book = BOOK_CATALOG[currentBookIdx];
+  const N = activeTileElements.length;
+  if (N === 0) return -1;
+  for (let offset = 1; offset <= N; offset++) {
+    const candidate = (fromIdx + offset) % N;
+    if (isBookmarked(book.key, activeTileElements[candidate].quote.id)) {
+      return candidate;
+    }
+  }
+  return -1;
+}
+
+function setPacing(mode) {
+  replayPacing = mode;
+  document.querySelectorAll(".pacing-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-pacing") === mode);
+  });
+  if (isReplaying) {
+    if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
+    startReplay();
+  }
+}
+
+function startReplay() {
+  if (activeTileElements.length === 0) return;
+  isReplaying = true;
+  document.getElementById("play-icon").innerHTML = `<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>`;
+
+  const book = BOOK_CATALOG[currentBookIdx];
+  if (book && !quotesCache[book.key]) {
+    loadQuotesForBook(book.key, { immediate: true });
+  }
+
+  // If in "bookmarked only" mode and not on a bookmark, jump to next bookmark
+  if (replayPacing === "bookmarked") {
+    const curr = activeTileElements[replayStep];
+    if (!curr || !isBookmarked(book.key, curr.quote.id)) {
+      const nextBm = getNextBookmarkedStep(replayStep - 1);
+      if (nextBm !== -1) replayStep = nextBm;
+    }
+  }
+
+  function stepLoop() {
+    if (!isReplaying) return;
+    if (replayStep >= activeTileElements.length) replayStep = 0;
+
+    const currentItem = activeTileElements[replayStep];
+    const quote = currentItem.quote;
+    const currentBook = BOOK_CATALOG[currentBookIdx];
+    const bookmarked = isBookmarked(currentBook.key, quote.id);
+
+    highlightReplayTile(replayStep);
+    updateLensFlareForStep(replayStep);
+    displayQuote(quote);
+    updateTimelineProgress(replayStep, activeTileElements.length);
+
+    let stepDuration = 700;
+    if (replayPacing === "jump") {
+      stepDuration = 240;
+      replayStep++;
+    } else if (replayPacing === "smooth") {
+      stepDuration = bookmarked ? 1400 : 700;
+      replayStep++;
+    } else if (replayPacing === "bookmarked") {
+      stepDuration = 1800; // Comfortable reading pause for bookmarked quotes
+      const nextBm = getNextBookmarkedStep(replayStep);
+      if (nextBm !== -1) {
+        replayStep = nextBm;
+      } else {
+        stepDuration = 700;
+        replayStep++;
+      }
+    }
+
+    replayTimer = setTimeout(stepLoop, stepDuration);
+  }
+
+  stepLoop();
+}
+
+function pauseReplay() {
+  isReplaying = false;
+  if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
+  document.getElementById("play-icon").innerHTML = `<path d="M8 5v14l11-7z"/>`;
+}
+
+function togglePlayPause() {
+  if (isReplaying) pauseReplay();
+  else startReplay();
+}
+
+function jumpToStep(idx) {
+  pauseReplay();
+  replayStep = Math.max(0, Math.min(activeTileElements.length - 1, idx));
+  const item = activeTileElements[replayStep];
+  if (item) {
+    highlightReplayTile(replayStep);
+    displayQuote(item.quote);
+    updateTimelineProgress(replayStep, activeTileElements.length);
+    updateLensFlareForStep(replayStep);
+  }
+}
+
+/* ---------- Replay Timeline: Simple Line & Dot ---------- */
+function setupTimeline(tiles) {
+  const track = document.getElementById("timeline-track");
+  if (!track) return;
+  const count = tiles.length;
+
+  track.onclick = (e) => {
+    const rect = track.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const frac = Math.max(0, Math.min(1, clickX / rect.width));
+    const targetIdx = Math.floor(frac * count);
+    jumpToStep(targetIdx);
+  };
+}
+
+function updateTimelineTicks() {
+  // Simple line & dot timeline - no ticks needed
+}
+
+function updateTimelineProgress(step, total) {
+  const progEl = document.getElementById("timeline-progress");
+  const dotEl = document.getElementById("timeline-dot");
+  const timeEl = document.getElementById("timeline-time");
+  const pct = (step / Math.max(1, total - 1)) * 100;
+  if (progEl) progEl.style.width = `${pct.toFixed(2)}%`;
+  if (dotEl) dotEl.style.left = `${pct.toFixed(2)}%`;
+
+  let stepSec = 0.7;
+  if (replayPacing === "jump") stepSec = 0.24;
+  else if (replayPacing === "bookmarked") stepSec = 1.8;
+
+  const totalSecs = Math.round(total * stepSec);
+  const curSecs = Math.round(step * stepSec);
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  if (timeEl) timeEl.textContent = `${fmt(curSecs)} / ${fmt(totalSecs)}`;
+}
+
+/* ---------- Mode Switching: Interactive vs Replay ---------- */
+function setMode(mode) {
+  currentMode = mode;
+  document.body.classList.toggle("mode-replay", mode === "replay");
+  document.body.classList.toggle("mode-interactive", mode === "interactive");
+
+  document.getElementById("btn-mode-interactive").classList.toggle("active", mode === "interactive");
+  document.getElementById("btn-mode-replay").classList.toggle("active", mode === "replay");
+
+  if (mode === "replay") {
+    pinnedBlock = null;
+    flareState.active = true;
+    flareState.targetIntensity = 1.0;
+    updateBookmarkedTilesHighlight();
+    startReplay();
+  } else {
+    pauseReplay();
+    flareState.active = false;
+    flareState.targetIntensity = 0.0;
+    activeTileElements.forEach(item => {
+      item.element.style.opacity = "1.0";
+      item.element.style.filter = "none";
+      item.element.style.stroke = "none";
+      item.element.classList.remove("tile-shining");
+    });
+    updateBookmarkedTilesHighlight();
+    displayQuote(null);
+  }
+  syncUrl();
+}
+
+/* ---------- Bookmarks Toggle: Hide vs Show (Subtle Shine on Bookmarked Colors) ---------- */
+function setBookmarksView(mode) {
+  bookmarksViewMode = (mode === "show") ? "show" : "hide";
+  const isShow = (bookmarksViewMode === "show");
+
+  document.body.classList.toggle("bookmarks-show", isShow);
+  document.body.classList.toggle("bookmarks-hide", !isShow);
+
+  const btnHide = document.getElementById("btn-bm-hide");
+  const btnShow = document.getElementById("btn-bm-show");
+  if (btnHide) btnHide.classList.toggle("active", !isShow);
+  if (btnShow) btnShow.classList.toggle("active", isShow);
+
+  if (isShow) {
+    const book = BOOK_CATALOG[currentBookIdx];
+    if (book) ensureInitialBookmarks(book.key);
+  }
+
+  updateBookmarkedTilesHighlight();
+  syncUrl();
+}
+
+function updateBookmarkedTilesHighlight() {
+  const book = BOOK_CATALOG[currentBookIdx];
+  if (!book) return;
+  const shouldShine = (currentMode === "interactive" && bookmarksViewMode === "show");
+  activeTileElements.forEach(item => {
+    if (!item.element || !item.quote) return;
+    if (shouldShine && isBookmarked(book.key, item.quote.id)) {
+      item.element.classList.add("tile-bookmarked-shine");
+    } else {
+      item.element.classList.remove("tile-bookmarked-shine");
+    }
+  });
+}
+
+/* ---------- Poster Switching Engine (No room/wall animation, subtle shining sweep preserved) ---------- */
+function navigateAdjacentWall(direction) {
+  const newIdx = direction === 'next' 
+    ? (currentBookIdx + 1) % BOOK_CATALOG.length
+    : (currentBookIdx - 1 + BOOK_CATALOG.length) % BOOK_CATALOG.length;
+  loadBook(newIdx);
+}
+
+/* ---------- On-Demand Debounced Quotes Loading & Linking ---------- */
+async function fetchQuotesForBook(bookKey) {
+  if (quotesCache[bookKey]) {
+    linkQuotesToActiveTiles(bookKey);
+    return quotesCache[bookKey];
+  }
+
+  if (quoteAbortController) {
+    quoteAbortController.abort();
+  }
+  quoteAbortController = new AbortController();
+
+  const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:";
+  const perBookUrl = `quotes/${encodeURIComponent(bookKey)}.json`;
+  const fallbackUrl = isLocal ? "../gallery_quotes.json" : "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/gallery_quotes.json";
+
+  try {
+    const resp = await fetch(perBookUrl, { signal: quoteAbortController.signal, cache: "no-store" });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const quotes = await resp.json();
+    quotesCache[bookKey] = quotes;
+    linkQuotesToActiveTiles(bookKey);
+    return quotes;
+  } catch (err) {
+    if (err.name === "AbortError") {
+      return null;
+    }
+    console.warn(`Could not load ${perBookUrl}, trying gallery_quotes.json:`, err);
+    try {
+      const fbResp = await fetch(fallbackUrl, { cache: "no-store" });
+      if (fbResp.ok) {
+        const allQuotes = await fbResp.json();
+        Object.assign(quotesCache, allQuotes);
+        linkQuotesToActiveTiles(bookKey);
+        return quotesCache[bookKey];
+      }
+    } catch (fbErr) {
+      console.error("Quotes fallback fetch failed:", fbErr);
+    }
+  }
+  return null;
+}
+
+function loadQuotesForBook(bookKey, options = {}) {
+  const immediate = options.immediate || false;
+
+  if (quoteDwellTimeout) {
+    clearTimeout(quoteDwellTimeout);
+    quoteDwellTimeout = null;
+  }
+
+  if (quotesCache[bookKey]) {
+    linkQuotesToActiveTiles(bookKey);
+    return;
+  }
+
+  if (immediate) {
+    fetchQuotesForBook(bookKey);
+  } else {
+    quoteDwellTimeout = setTimeout(() => {
+      fetchQuotesForBook(bookKey);
+    }, QUOTE_DWELL_MS);
+  }
+}
+
+function linkQuotesToActiveTiles(bookKey) {
+  const quotes = quotesCache[bookKey];
+  if (!quotes || !activeTileElements || activeTileElements.length === 0) return;
+  const book = BOOK_CATALOG[currentBookIdx];
+  if (!book || book.key !== bookKey) return;
+
+  activeTileElements.forEach((tile, idx) => {
+    const q = quotes[idx];
+    if (q) {
+      tile.quote = q;
+    }
+  });
+
+  ensureInitialBookmarks(bookKey);
+
+  if (pinnedBlock) {
+    const freshQuote = quotes[pinnedBlock.id] || pinnedBlock;
+    pinnedBlock = freshQuote;
+    displayQuote(freshQuote, false);
+  } else if (hoveredBlock) {
+    const freshQuote = quotes[hoveredBlock.id] || hoveredBlock;
+    hoveredBlock = freshQuote;
+    displayQuote(freshQuote, true);
+  }
+
+  updateBookmarkedTilesHighlight();
+}
+
+function loadBook(idx) {
+  pauseReplay();
+
+  currentBookIdx = (idx + BOOK_CATALOG.length) % BOOK_CATALOG.length;
+  const book = BOOK_CATALOG[currentBookIdx];
+  const shortTitle = document.getElementById("active-book-title-short");
+  if (shortTitle) shortTitle.textContent = book.title;
+
+  pinnedBlock = null;
+  hoveredBlock = null;
+  displayQuote(null);
+
+  renderPoster(book.key);
+
+  if (currentMode === "replay") {
+    loadQuotesForBook(book.key, { immediate: true });
+    replayStep = 0;
+    startReplay();
+  } else {
+    loadQuotesForBook(book.key, { immediate: false });
+  }
+
+  syncUrl();
+}
+
+/* ---------- Collection Index Drawer & Thumbnails ---------- */
+function renderMiniThumb(bookKey, container) {
+  const chapters = previewsData[bookKey];
+  if (!chapters) return;
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 200 300");
+  svg.setAttribute("preserveAspectRatio", "none");
+
+  const activeChapters = chapters.map(ch => ch.filter(p => p[1] !== 0)).filter(ch => ch.length > 0);
+  const C = activeChapters.length;
+  if (C === 0) return;
+
+  const H = 300, W = 200;
+  const baseH = Math.max(0.5, H / C);
+
+  let y = 0;
+  activeChapters.forEach(colored => {
+    const totalW = colored.reduce((s, p) => s + p[0], 0) || 1;
+    let x = 0;
+    colored.forEach(p => {
+      const w = (p[0] / totalW) * W;
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", x.toFixed(1));
+      rect.setAttribute("y", y.toFixed(1));
+      rect.setAttribute("width", Math.max(0.1, w).toFixed(1));
+      rect.setAttribute("height", Math.max(0.1, baseH).toFixed(1));
+      rect.setAttribute("fill", p[1]);
+      svg.appendChild(rect);
+      x += w;
+    });
+    y += baseH;
+  });
+
+  container.appendChild(svg);
+}
+
+function renderIndexDrawer() {
+  const container = document.getElementById("index-modal-body");
+  container.innerHTML = "";
+
+  const sectionsMap = new Map();
+  BOOK_CATALOG.forEach(book => {
+    const list = sectionsMap.get(book.section) || [];
+    list.push(book);
+    sectionsMap.set(book.section, list);
+  });
+
+  sectionsMap.forEach((books, sectionTitle) => {
+    const secWrap = document.createElement("div");
+    secWrap.innerHTML = `<div class="index-section-title">${sectionTitle}</div>`;
+    
+    const grid = document.createElement("div");
+    grid.className = "index-books-grid";
+
+    books.forEach(b => {
+      const idx = BOOK_CATALOG.findIndex(item => item.key === b.key);
+      const card = document.createElement("div");
+      card.className = `index-book-card ${idx === currentBookIdx ? 'current' : ''}`;
+      
+      const thumb = document.createElement("div");
+      thumb.className = "index-thumb-frame";
+      renderMiniThumb(b.key, thumb);
+
+      card.appendChild(thumb);
+      card.innerHTML += `
+        <div class="index-book-title">${b.title}</div>
+        <div class="index-book-author">${b.author}</div>
+      `;
+
+      card.onclick = () => {
+        loadBook(idx);
+        closeIndexDrawer();
+      };
+      grid.appendChild(card);
+    });
+
+    secWrap.appendChild(grid);
+    container.appendChild(secWrap);
+  });
+}
+
+function openIndexDrawer() {
+  renderIndexDrawer();
+  document.getElementById("index-drawer").classList.add("open");
+}
+function closeIndexDrawer() {
+  document.getElementById("index-drawer").classList.remove("open");
+}
+
+/* ---------- Bottom Preview Variations UI ---------- */
+function updateVariationUI() {
+  const container = document.getElementById("gallery-variations");
+  const links = container.querySelectorAll(".ctrl-opt");
+  links.forEach(link => {
+    const param = link.getAttribute("data-param");
+    const val = link.getAttribute("data-value");
+    link.classList.toggle("active", currentParams[param] === val);
+  });
+}
+
+document.querySelectorAll("#gallery-variations .ctrl-opt").forEach(link => {
+  link.onclick = (e) => {
+    e.preventDefault();
+    const param = link.getAttribute("data-param");
+    const val = link.getAttribute("data-value");
+    currentParams[param] = val;
+    updateVariationUI();
+    const book = BOOK_CATALOG[currentBookIdx];
+    renderPoster(book.key);
+    syncUrl();
+  };
+});
+
+/* ---------- Direct 2D Canvas MP4 Video Export Engine (9:16, 1080x1920, <60s) ---------- */
+async function exportReplayVideo() {
+  pauseReplay();
+  const book = BOOK_CATALOG[currentBookIdx];
+  if (book && !quotesCache[book.key]) {
+    await fetchQuotesForBook(book.key);
+  }
+  const tiles = activeTileElements;
+  const N = tiles.length;
+  if (N === 0) return;
+
+  const modal = document.getElementById("export-modal");
+  const progressFill = document.getElementById("export-progress-fill");
+  const statusText = document.getElementById("export-status-text");
+  modal.classList.add("open");
+
+  let bookmarkedCount = tiles.filter(t => isBookmarked(book.key, t.quote.id)).length;
+  const weightedUnits = (N - bookmarkedCount) * 1.0 + bookmarkedCount * 2.0;
+  // Twice the speed: 24s base target instead of 48s
+  const standardDurationSec = Math.min(0.45, 24.0 / Math.max(1, weightedUnits));
+  const bookmarkedDurationSec = standardDurationSec * 2.0;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1920;
+  const ctx = canvas.getContext("2d");
+
+  const posterW = 760;
+  const posterH = 1140;
+  const posterX = (1080 - posterW) / 2;
+  const posterY = 500;
+  const scaleX = posterW / 200;
+  const scaleY = posterH / 300;
+
+  const stream = canvas.captureStream(30);
+  let mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
+  if (!MediaRecorder.isTypeSupported(mimeType)) {
+    mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
+  }
+
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8500000 });
+  const recordedChunks = [];
+  recorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+
+  const exportPromise = new Promise(resolve => {
+    recorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: mimeType });
+      const dlUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = dlUrl;
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+      a.download = `${book.key}_replay_9x16.${ext}`;
+      a.click();
+      resolve();
+    };
+  });
+
+  recorder.start();
+
+  const fps = 30;
+  let currentFrame = 0;
+  let totalFrames = 0;
+
+  tiles.forEach(t => {
+    const isBm = isBookmarked(book.key, t.quote.id);
+    const dur = isBm ? bookmarkedDurationSec : standardDurationSec;
+    totalFrames += Math.round(dur * fps);
+  });
+
+  for (let qIdx = 0; qIdx < tiles.length; qIdx++) {
+    const activeTile = tiles[qIdx];
+    const q = activeTile.quote;
+    const isBm = isBookmarked(book.key, q.id);
+    const durSec = isBm ? bookmarkedDurationSec : standardDurationSec;
+    const framesForQuote = Math.round(durSec * fps);
+
+    for (let f = 0; f < framesForQuote; f++) {
+      // 1. Black Background
+      ctx.fillStyle = "#07090e";
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      // 2. Optical Anamorphic Lens Flare Atmosphere (Behind Poster)
+      const ox = 540;
+      const oy = posterY + posterH * 0.44;
+      const maxR = 1400;
+
+      // Central radiant core halo behind poster
+      const coreGrad = ctx.createRadialGradient(ox, oy, 20, ox, oy, 650);
+      coreGrad.addColorStop(0, hexToRgba(q.color, 0.48));
+      coreGrad.addColorStop(0.35, hexToRgba(q.color, 0.18));
+      coreGrad.addColorStop(0.75, hexToRgba(q.color, 0.05));
+      coreGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = coreGrad;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      const gm = activeTile.geom;
+      const blockCenterX = gm.x + gm.w / 2;
+      const dx = (blockCenterX - 100) / 100;
+      const wFrac = Math.max(0.04, Math.min(1.0, gm.w / 200));
+
+      const toRad = Math.PI / 180;
+      const mainAngleRad = (-90 + dx * 62) * toRad;
+      // 3x wider primary color spread in video export as well
+      const mainSpreadRad = Math.max(54, Math.min(215, wFrac * 405)) * toRad;
+
+      const prevTile = tiles[(qIdx - 1 + N) % N];
+      const nextTile = tiles[(qIdx + 1) % N];
+      const prevColor = prevTile.quote.color || "#38bdf8";
+      const nextColor = nextTile.quote.color || "#ec4899";
+
+      // Previous Block Secondary Beam (lesser angle, narrower spread)
+      const prevAngleRad = mainAngleRad - (28 * toRad + mainSpreadRad * 0.18);
+      const prevSpreadRad = Math.max(16 * toRad, mainSpreadRad * 0.26);
+      ctx.beginPath();
+      ctx.moveTo(ox, oy);
+      ctx.arc(ox, oy, maxR * 0.78, prevAngleRad - prevSpreadRad * 0.5, prevAngleRad + prevSpreadRad * 0.5);
+      ctx.closePath();
+      const prevGrad = ctx.createRadialGradient(ox, oy, 20, ox, oy, maxR * 0.78);
+      prevGrad.addColorStop(0, hexToRgba(prevColor, 0.35));
+      prevGrad.addColorStop(0.28, hexToRgba(prevColor, 0.16));
+      prevGrad.addColorStop(0.75, hexToRgba(prevColor, 0.03));
+      prevGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = prevGrad;
+      ctx.fill();
+
+      // Next Block Secondary Beam (lesser angle, narrower spread)
+      const nextAngleRad = mainAngleRad + (28 * toRad + mainSpreadRad * 0.18);
+      const nextSpreadRad = Math.max(16 * toRad, mainSpreadRad * 0.26);
+      ctx.beginPath();
+      ctx.moveTo(ox, oy);
+      ctx.arc(ox, oy, maxR * 0.78, nextAngleRad - nextSpreadRad * 0.5, nextAngleRad + nextSpreadRad * 0.5);
+      ctx.closePath();
+      const nextGrad = ctx.createRadialGradient(ox, oy, 20, ox, oy, maxR * 0.78);
+      nextGrad.addColorStop(0, hexToRgba(nextColor, 0.35));
+      nextGrad.addColorStop(0.28, hexToRgba(nextColor, 0.16));
+      nextGrad.addColorStop(0.75, hexToRgba(nextColor, 0.03));
+      nextGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = nextGrad;
+      ctx.fill();
+
+      // Primary Lens Flare Beam (Active Block - luminous and 3x wider spread)
+      ctx.beginPath();
+      ctx.moveTo(ox, oy);
+      ctx.arc(ox, oy, maxR, mainAngleRad - mainSpreadRad * 0.5, mainAngleRad + mainSpreadRad * 0.5);
+      ctx.closePath();
+      const mainGrad = ctx.createRadialGradient(ox, oy, 15, ox, oy, maxR * 0.95);
+      mainGrad.addColorStop(0, hexToRgba(q.color, 0.82));
+      mainGrad.addColorStop(0.22, hexToRgba(q.color, 0.44));
+      mainGrad.addColorStop(0.60, hexToRgba(q.color, 0.14));
+      mainGrad.addColorStop(0.88, hexToRgba(q.color, 0.02));
+      mainGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = mainGrad;
+      ctx.fill();
+
+      // Anamorphic horizontal streak
+      ctx.save();
+      ctx.translate(ox, oy);
+      ctx.rotate(mainAngleRad + Math.PI / 2);
+      const streakGrad = ctx.createLinearGradient(-750, 0, 750, 0);
+      streakGrad.addColorStop(0, "transparent");
+      streakGrad.addColorStop(0.35, hexToRgba(q.color, 0.10));
+      streakGrad.addColorStop(0.5, hexToRgba("#ffffff", 0.45));
+      streakGrad.addColorStop(0.65, hexToRgba(q.color, 0.10));
+      streakGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = streakGrad;
+      ctx.fillRect(-750, -6, 1500, 12);
+      ctx.restore();
+
+      // 3. Header Typography
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(255,255,255,0.65)";
+      ctx.font = "600 28px 'JetBrains Mono', monospace";
+      ctx.fillText(book.author.toUpperCase(), 540, 130);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "800 48px 'Geom', sans-serif";
+      ctx.fillText(book.title, 540, 195);
+
+      // 4. Quote Card above poster
+      const cardY = 250;
+      ctx.fillStyle = isBm ? "rgba(245, 158, 11, 0.15)" : "rgba(255, 255, 255, 0.06)";
+      ctx.strokeStyle = isBm ? "rgba(245, 158, 11, 0.7)" : "rgba(255, 255, 255, 0.18)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(140, cardY, 800, 200, 20);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = q.color;
+      ctx.beginPath();
+      ctx.arc(185, cardY + 44, 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 24px 'JetBrains Mono', monospace";
+      ctx.fillText(`${q.name.toUpperCase()}  ·  CH ${q.ch}  ${isBm ? ' ★' : ''}`, 210, cardY + 52);
+
+      ctx.font = "500 28px 'Geom', sans-serif";
+      ctx.fillStyle = "#f1f5f9";
+      const cleanQuote = q.quote.replace(/<[^>]+>/g, '');
+      const words = cleanQuote.split(' ');
+      let line = '', lineY = cardY + 105;
+      for (let w = 0; w < words.length; w++) {
+        const testLine = line + words[w] + ' ';
+        if (ctx.measureText(testLine).width > 710 && w > 0) {
+          ctx.fillText(line, 185, lineY);
+          line = words[w] + ' ';
+          lineY += 38;
+          if (lineY > cardY + 180) break;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, 185, lineY);
+
+      // 5. Framed Poster Flush with Wall
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.65)";
+      ctx.shadowBlur = 35;
+      ctx.shadowOffsetY = 18;
+      ctx.fillStyle = "#111113";
+      ctx.fillRect(posterX - 6, posterY - 6, posterW + 12, posterH + 12);
+      ctx.restore();
+
+      // 6. White Poster Sheet & Preview to Scale
+      ctx.save();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(posterX, posterY, posterW, posterH);
+
+      const posterMarginX = Math.round(posterW * 0.045);
+      const posterMarginTop = Math.round(posterW * 0.045);
+      const previewW = posterW - posterMarginX * 2;
+      const previewH = Math.round(posterH * 0.81);
+      const sX = previewW / 200;
+      const sY = previewH / 300;
+
+      tiles.forEach((t, idx) => {
+        const tgm = t.geom;
+        const tx = posterX + posterMarginX + tgm.x * sX;
+        const ty = posterY + posterMarginTop + tgm.y * sY;
+        const tw = tgm.w * sX;
+        const th = tgm.h * sY;
+        const trx = tgm.rx * sX;
+
+        // Non-active blocks remain at 100% opacity (not dimmed out)
+        ctx.globalAlpha = 1.0;
+        ctx.fillStyle = tgm.color;
+        ctx.beginPath();
+        if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
+        else ctx.rect(tx, ty, tw, th);
+        ctx.fill();
+
+        if (idx === qIdx) {
+          ctx.save();
+          ctx.shadowColor = "#ffffff";
+          ctx.shadowBlur = 18;
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 3.5;
+          ctx.stroke();
+
+          // Specular shine gradient over active tile
+          const shineGrad = ctx.createLinearGradient(tx, ty, tx + tw, ty + th);
+          shineGrad.addColorStop(0, "rgba(255, 255, 255, 0.75)");
+          shineGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.25)");
+          shineGrad.addColorStop(0.7, "transparent");
+          ctx.fillStyle = shineGrad;
+          if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
+          else ctx.rect(tx, ty, tw, th);
+          ctx.fill();
+          ctx.restore();
+        }
+      });
+
+      // 7. Title & Author on Poster Sheet to Scale
+      ctx.globalAlpha = 1.0;
+      const metaY = posterY + posterMarginTop + previewH;
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#0f172a";
+      let titleSize = 36;
+      ctx.font = `800 ${titleSize}px 'Geom', sans-serif`;
+      while (ctx.measureText(book.title).width > previewW && titleSize > 20) {
+        titleSize -= 2;
+        ctx.font = `800 ${titleSize}px 'Geom', sans-serif`;
+      }
+      ctx.fillText(book.title, posterX + posterMarginX, metaY + 48);
+
+      ctx.fillStyle = "#64748b";
+      ctx.font = "italic 400 24px 'Geom', sans-serif";
+      ctx.fillText(book.author, posterX + posterMarginX, metaY + 84);
+
+      ctx.restore();
+
+      // 8. Bottom Progress
+      const overallFrac = currentFrame / Math.max(1, totalFrames);
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      ctx.fillRect(140, 1780, 800, 8);
+      ctx.fillStyle = "#38bdf8";
+      ctx.fillRect(140, 1780, 800 * overallFrac, 8);
+
+      currentFrame++;
+      if (currentFrame % 4 === 0) {
+        const pct = Math.round((currentFrame / totalFrames) * 100);
+        progressFill.style.width = `${pct}%`;
+        statusText.textContent = `Rendering Video: ${pct}%`;
+        await new Promise(r => setTimeout(r, 6));
+      }
+    }
+  }
+
+  recorder.stop();
+  await exportPromise;
+  modal.classList.remove("open");
+}
+
+/* ---------- 9:16 Gallery Scene with Selected Quote JPEG Downloader ---------- */
+let isDownloadingScene = false;
+
+async function downloadSceneJpeg() {
+  if (isDownloadingScene) return;
+  isDownloadingScene = true;
+
+  const btn = document.getElementById("btn-download-scene-jpeg");
+  if (btn) {
+    btn.style.opacity = "0.5";
+    btn.style.pointerEvents = "none";
+  }
+
+  try {
+    const book = BOOK_CATALOG[currentBookIdx];
+    if (!book) return;
+
+    // Ensure authentic quotes are loaded
+    if (!quotesCache[book.key]) {
+      await loadQuotesForBook(book.key, { immediate: true });
+    }
+
+    // Resolve active/selected quote & corresponding tile index
+    let selectedQuote = null;
+    let selectedTileIdx = -1;
+
+    if (currentMode === "replay" && activeTileElements[replayStep]) {
+      selectedQuote = activeTileElements[replayStep].quote;
+      selectedTileIdx = replayStep;
+    } else if (pinnedBlock) {
+      selectedQuote = pinnedBlock;
+      selectedTileIdx = activeTileElements.findIndex(t => t.quote.id === pinnedBlock.id);
+    } else if (hoveredBlock) {
+      selectedQuote = hoveredBlock;
+      selectedTileIdx = activeTileElements.findIndex(t => t.quote.id === hoveredBlock.id);
+    } else if (currentDisplayedQuote) {
+      selectedQuote = currentDisplayedQuote;
+      selectedTileIdx = activeTileElements.findIndex(t => t.quote.id === currentDisplayedQuote.id);
+    } else {
+      const bms = getBookmarks(book.key);
+      if (bms.length > 0) {
+        const bmIdx = activeTileElements.findIndex(t => bms.includes(t.quote.id));
+        if (bmIdx !== -1) {
+          selectedQuote = activeTileElements[bmIdx].quote;
+          selectedTileIdx = bmIdx;
+        }
+      }
+      if (!selectedQuote && activeTileElements.length > 0) {
+        selectedQuote = activeTileElements[0].quote;
+        selectedTileIdx = 0;
+      }
+    }
+
+    // Use full authentic cached text if available
+    if (selectedQuote && quotesCache[book.key] && quotesCache[book.key][selectedQuote.id]) {
+      selectedQuote = quotesCache[book.key][selectedQuote.id];
+    }
+
+    const isBm = selectedQuote ? isBookmarked(book.key, selectedQuote.id) : false;
+
+    // Set up 9:16 Canvas (1080 x 1920)
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    const posterW = 640;
+    const posterH = 960;
+    const posterX = Math.round((1080 - posterW) / 2); // 220
+    const posterY = 640;
+
+    if (currentMode === "replay") {
+      // Replay mode backdrop: deep dark space with lens flare
+      ctx.fillStyle = "#07090e";
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      const qColor = (selectedQuote && selectedQuote.color) ? selectedQuote.color : "#38bdf8";
+      const ox = 540;
+      const oy = posterY + posterH * 0.44;
+      const maxR = 1400;
+
+      // Radiant core gradient behind poster
+      const coreGrad = ctx.createRadialGradient(ox, oy, 20, ox, oy, 720);
+      coreGrad.addColorStop(0, hexToRgba(qColor, 0.55));
+      coreGrad.addColorStop(0.35, hexToRgba(qColor, 0.22));
+      coreGrad.addColorStop(0.75, hexToRgba(qColor, 0.05));
+      coreGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = coreGrad;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      // Active tile beam flare
+      let mainAngleRad = -Math.PI / 2;
+      let mainSpreadRad = 65 * (Math.PI / 180);
+      if (selectedTileIdx >= 0 && activeTileElements[selectedTileIdx]) {
+        const gm = activeTileElements[selectedTileIdx].geom;
+        const blockCenterX = gm.x + gm.w / 2;
+        const dx = (blockCenterX - 100) / 100;
+        const wFrac = Math.max(0.04, Math.min(1.0, gm.w / 200));
+        mainAngleRad = (-90 + dx * 62) * (Math.PI / 180);
+        mainSpreadRad = Math.max(54, Math.min(215, wFrac * 405)) * (Math.PI / 180);
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(ox, oy);
+      ctx.arc(ox, oy, maxR, mainAngleRad - mainSpreadRad * 0.5, mainAngleRad + mainSpreadRad * 0.5);
+      ctx.closePath();
+      const mainGrad = ctx.createRadialGradient(ox, oy, 15, ox, oy, maxR * 0.95);
+      mainGrad.addColorStop(0, hexToRgba(qColor, 0.85));
+      mainGrad.addColorStop(0.22, hexToRgba(qColor, 0.44));
+      mainGrad.addColorStop(0.60, hexToRgba(qColor, 0.14));
+      mainGrad.addColorStop(0.88, hexToRgba(qColor, 0.02));
+      mainGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = mainGrad;
+      ctx.fill();
+
+      // Anamorphic horizontal streak
+      ctx.save();
+      ctx.translate(ox, oy);
+      ctx.rotate(mainAngleRad + Math.PI / 2);
+      const streakGrad = ctx.createLinearGradient(-750, 0, 750, 0);
+      streakGrad.addColorStop(0, "transparent");
+      streakGrad.addColorStop(0.35, hexToRgba(qColor, 0.12));
+      streakGrad.addColorStop(0.5, hexToRgba("#ffffff", 0.5));
+      streakGrad.addColorStop(0.65, hexToRgba(qColor, 0.12));
+      streakGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = streakGrad;
+      ctx.fillRect(-750, -8, 1500, 16);
+      ctx.restore();
+
+    } else {
+      // Interactive mode: draw actual Gallery Wall Room (Room 1 or Room 3)
+      const roomImg = new Image();
+      await new Promise(resolve => {
+        roomImg.onload = resolve;
+        roomImg.onerror = resolve;
+        roomImg.src = `assets/room${currentRoom}.jpg`;
+      });
+
+      if (roomImg.naturalWidth) {
+        const zoom = 1.25;
+        const imgRatio = roomImg.naturalWidth / roomImg.naturalHeight;
+        const canvasRatio = 1080 / 1920;
+        let dw, dh;
+        if (imgRatio > canvasRatio) {
+          dh = 1920 * zoom;
+          dw = dh * imgRatio;
+        } else {
+          dw = 1080 * zoom;
+          dh = dw / imgRatio;
+        }
+        const dx = (1080 - dw) / 2;
+        const dy = (1920 - dh) * 0.36;
+        ctx.drawImage(roomImg, dx, dy, dw, dh);
+      } else {
+        ctx.fillStyle = "#e5e7eb";
+        ctx.fillRect(0, 0, 1080, 1920);
+      }
+
+      // Vignette
+      const vigGrad = ctx.createRadialGradient(540, 860, 320, 540, 860, 980);
+      vigGrad.addColorStop(0, "transparent");
+      vigGrad.addColorStop(1, "rgba(0,0,0,0.30)");
+      ctx.fillStyle = vigGrad;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      // Room ambient lighting overlay
+      if (currentRoom === 3) {
+        const roomLight = ctx.createLinearGradient(1080, 0, 0, 1920);
+        roomLight.addColorStop(0, "rgba(255, 248, 230, 0.24)");
+        roomLight.addColorStop(0.5, "rgba(255, 255, 255, 0.05)");
+        roomLight.addColorStop(1, "rgba(15, 10, 5, 0.08)");
+        ctx.fillStyle = roomLight;
+        ctx.fillRect(0, 0, 1080, 1920);
+      } else {
+        const roomLight = ctx.createLinearGradient(0, 0, 0, 1920);
+        roomLight.addColorStop(0, "rgba(255, 255, 255, 0.22)");
+        roomLight.addColorStop(0.45, "rgba(255, 255, 255, 0.04)");
+        roomLight.addColorStop(1, "rgba(10, 15, 25, 0.08)");
+        ctx.fillStyle = roomLight;
+        ctx.fillRect(0, 0, 1080, 1920);
+      }
+    }
+
+    // Framed Poster Drop Shadow
+    ctx.save();
+    if (currentMode === "interactive" && currentRoom === 3) {
+      ctx.shadowColor = "rgba(0, 0, 0, 0.48)";
+      ctx.shadowBlur = 42;
+      ctx.shadowOffsetX = -18;
+      ctx.shadowOffsetY = 24;
+    } else {
+      ctx.shadowColor = "rgba(0, 0, 0, 0.52)";
+      ctx.shadowBlur = 40;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 22;
+    }
+    const frameBorder = 5;
+    ctx.fillStyle = "#121316";
+    ctx.fillRect(posterX - frameBorder, posterY - frameBorder, posterW + frameBorder * 2, posterH + frameBorder * 2);
+    ctx.restore();
+
+    // White Poster Sheet & Color Blocks
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(posterX, posterY, posterW, posterH);
+
+    const posterMarginX = Math.round(posterW * 0.045);
+    const posterMarginTop = Math.round(posterW * 0.045);
+    const previewW = posterW - posterMarginX * 2;
+    const previewH = Math.round(posterH * 0.81);
+    const sX = previewW / 200;
+    const sY = previewH / 300;
+
+    activeTileElements.forEach((t, idx) => {
+      const tgm = t.geom;
+      const tx = posterX + posterMarginX + tgm.x * sX;
+      const ty = posterY + posterMarginTop + tgm.y * sY;
+      const tw = tgm.w * sX;
+      const th = tgm.h * sY;
+      const trx = tgm.rx * sX;
+
+      ctx.globalAlpha = 1.0;
+      ctx.fillStyle = tgm.color;
+      ctx.beginPath();
+      if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
+      else ctx.rect(tx, ty, tw, th);
+      ctx.fill();
+
+      if (selectedTileIdx === idx) {
+        ctx.save();
+        ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 18;
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
+        else ctx.rect(tx, ty, tw, th);
+        ctx.stroke();
+
+        const shineGrad = ctx.createLinearGradient(tx, ty, tx + tw, ty + th);
+        shineGrad.addColorStop(0, "rgba(255, 255, 255, 0.85)");
+        shineGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.25)");
+        shineGrad.addColorStop(0.7, "transparent");
+        ctx.fillStyle = shineGrad;
+        ctx.fill();
+        ctx.restore();
+      } else if (bookmarksViewMode === "show" && isBookmarked(book.key, t.quote.id)) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(245, 158, 11, 0.85)";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
+        else ctx.rect(tx, ty, tw, th);
+        ctx.stroke();
+        ctx.restore();
+      }
+    });
+
+    // Title & Author on Poster Sheet to scale
+    ctx.globalAlpha = 1.0;
+    const metaY = posterY + posterMarginTop + previewH;
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#0f172a";
+    let titleSize = 34;
+    ctx.font = `800 ${titleSize}px 'Geom', 'Inter', sans-serif`;
+    while (ctx.measureText(book.title).width > previewW && titleSize > 18) {
+      titleSize -= 2;
+      ctx.font = `800 ${titleSize}px 'Geom', 'Inter', sans-serif`;
+    }
+    ctx.fillText(book.title, posterX + posterMarginX, metaY + 44);
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = "italic 400 22px 'Geom', 'Inter', sans-serif";
+    ctx.fillText(book.author, posterX + posterMarginX, metaY + 76);
+
+    // Glaze Reflection
+    const glazeGrad = ctx.createLinearGradient(posterX, posterY, posterX + posterW, posterY + posterH);
+    glazeGrad.addColorStop(0, "rgba(255, 255, 255, 0.12)");
+    glazeGrad.addColorStop(0.35, "rgba(255, 255, 255, 0.03)");
+    glazeGrad.addColorStop(0.7, "transparent");
+    ctx.fillStyle = glazeGrad;
+    ctx.fillRect(posterX, posterY, posterW, posterH);
+    ctx.restore();
+
+    // Ambient lighting overlay on the poster itself
+    if (currentMode === "interactive") {
+      ctx.save();
+      if (currentRoom === 3) {
+        const posterLight = ctx.createLinearGradient(posterX + posterW, posterY, posterX, posterY + posterH);
+        posterLight.addColorStop(0, "rgba(255, 248, 230, 0.16)");
+        posterLight.addColorStop(0.5, "rgba(255, 255, 255, 0.03)");
+        posterLight.addColorStop(1, "rgba(15, 10, 5, 0.05)");
+        ctx.fillStyle = posterLight;
+      } else {
+        const posterLight = ctx.createLinearGradient(posterX, posterY, posterX, posterY + posterH);
+        posterLight.addColorStop(0, "rgba(255, 255, 255, 0.18)");
+        posterLight.addColorStop(0.45, "rgba(255, 255, 255, 0.03)");
+        posterLight.addColorStop(1, "rgba(10, 15, 25, 0.06)");
+        ctx.fillStyle = posterLight;
+      }
+      ctx.fillRect(posterX, posterY, posterW, posterH);
+      ctx.restore();
+    }
+
+    // Selected Quote Above Poster (JetBrains Mono, constrained to poster width + 50% = 960px)
+    if (selectedQuote) {
+      ctx.save();
+      const maxQuoteWidth = posterW * 1.5; // 960px
+      const quoteBoxCenter = 540;
+
+      ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 2;
+
+      const rawQuoteText = (selectedQuote.quote || selectedQuote.name || "").replace(/<[^>]+>/g, '').trim();
+      const displayString = (isBm ? "★ " : "") + rawQuoteText;
+
+      let fontSize = 24;
+      if (displayString.length > 200) fontSize = 21;
+      if (displayString.length < 80) fontSize = 28;
+
+      ctx.font = `500 ${fontSize}px 'JetBrains Mono', monospace`;
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#ffffff";
+
+      const wrapLimit = maxQuoteWidth - 40;
+      const words = displayString.split(/\s+/);
+      const lines = [];
+      let curLine = "";
+
+      for (let i = 0; i < words.length; i++) {
+        const testLine = curLine ? (curLine + " " + words[i]) : words[i];
+        if (ctx.measureText(testLine).width > wrapLimit && curLine) {
+          lines.push(curLine);
+          curLine = words[i];
+        } else {
+          curLine = testLine;
+        }
+      }
+      if (curLine) lines.push(curLine);
+
+      const lineHeight = Math.round(fontSize * 1.48);
+      const totalTextH = lines.length * lineHeight;
+      const textStartY = Math.max(140, Math.round((600 + 120 - totalTextH) / 2));
+
+      for (let l = 0; l < lines.length; l++) {
+        ctx.fillText(lines[l], quoteBoxCenter, textStartY + l * lineHeight);
+      }
+      ctx.restore();
+    }
+
+    // Subtle Gallery Branding at Top (Minimalist JetBrains Mono)
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = "600 15px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 1;
+    ctx.fillText(`${book.title.toUpperCase()}  ·  ${book.author.toUpperCase()}`, 540, 72);
+    ctx.restore();
+
+    // Export to JPEG
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${book.key}_scene_quote_9x16.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, "image/jpeg", 0.95);
+
+  } catch (err) {
+    console.error("Error generating scene JPEG:", err);
+  } finally {
+    isDownloadingScene = false;
+    if (btn) {
+      btn.style.opacity = "";
+      btn.style.pointerEvents = "";
+    }
+  }
+}
+
+/* ---------- Event Listeners & Boot ---------- */
+function initEvents() {
+  document.getElementById("btn-mode-interactive").onclick = () => setMode("interactive");
+  document.getElementById("btn-mode-replay").onclick = () => setMode("replay");
+  document.getElementById("btn-bm-hide").onclick = () => setBookmarksView("hide");
+  document.getElementById("btn-bm-show").onclick = () => setBookmarksView("show");
+
+  // Download Actions
+  const dlPosterBtn = document.getElementById("btn-download-poster");
+  if (dlPosterBtn) {
+    dlPosterBtn.onclick = () => {
+      const book = BOOK_CATALOG[currentBookIdx];
+      if (book) downloadPosterSvg(book.key, book.title, book.author);
+    };
+  }
+
+  const dlSceneBtn = document.getElementById("btn-download-scene-jpeg");
+  if (dlSceneBtn) {
+    dlSceneBtn.onclick = () => {
+      downloadSceneJpeg();
+    };
+  }
+
+  document.querySelectorAll("[data-room]").forEach(btn => {
+    btn.onclick = () => setRoom(btn.getAttribute("data-room"));
+  });
+
+  // Adjacent Wall Navigation buttons
+  document.getElementById("btn-prev-poster").onclick = () => navigateAdjacentWall('prev');
+  document.getElementById("btn-next-poster").onclick = () => navigateAdjacentWall('next');
+
+  document.getElementById("btn-play-pause").onclick = togglePlayPause;
+  document.getElementById("poster-wall-stage").onclick = (e) => {
+    if (currentMode === "replay") togglePlayPause();
+  };
+
+  document.getElementById("btn-export-video").onclick = exportReplayVideo;
+
+  document.getElementById("open-index-btn").onclick = openIndexDrawer;
+  document.getElementById("close-index-btn").onclick = closeIndexDrawer;
+  document.getElementById("index-drawer").onclick = (e) => {
+    if (e.target.id === "index-drawer") closeIndexDrawer();
+  };
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") navigateAdjacentWall('prev');
+    if (e.key === "ArrowRight") navigateAdjacentWall('next');
+    if (e.key === " ") {
+      e.preventDefault();
+      if (currentMode === "replay") togglePlayPause();
+    }
+    if (e.key === "Escape") closeIndexDrawer();
+  });
+
+  let touchStartX = 0;
+  window.addEventListener("touchstart", (e) => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+  window.addEventListener("touchend", (e) => {
+    const diff = e.changedTouches[0].screenX - touchStartX;
+    if (Math.abs(diff) > 55) {
+      if (diff > 0) navigateAdjacentWall('prev');
+      else navigateAdjacentWall('next');
+    }
+  }, { passive: true });
+
+  // Replay Pacing / Delay Mode buttons (Jump, Smooth, Bookmarked Only)
+  document.querySelectorAll(".pacing-btn").forEach(btn => {
+    btn.onclick = () => setPacing(btn.getAttribute("data-pacing"));
+  });
+
+  initStereoscopicParallax();
+  initLensFlare();
+}
+
+(async function init() {
+  parseUrlParams();
+  initEvents();
+  updateVariationUI();
+
+  try {
+    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:";
+    const previewsUrl = isLocal ? "../gallery_previews.json" : "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/gallery_previews.json";
+
+    const pResp = await fetch(previewsUrl, { cache: "no-store" });
+    if (!pResp.ok) throw new Error("Failed to load gallery previews data");
+    previewsData = await pResp.json();
+
+    setRoom(currentRoom);
+    setMode(currentMode);
+    setBookmarksView(bookmarksViewMode);
+
+    loadBook(currentBookIdx);
+  } catch (err) {
+    console.error("Gallery initialization error:", err);
+  }
+})();
+</script>
+</body>
+</html>
