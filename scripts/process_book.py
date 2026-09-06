@@ -463,6 +463,129 @@ def update_gallery_previews(repo_root, book_name, text, words):
     previews_path.write_text(json.dumps(previews, ensure_ascii=False), encoding='utf-8')
     print(f"Updated {previews_path} for '{book_name}' ({len(book_preview)} chapters).")
 
+def update_gallery_sections(repo_root, book_name, text, rows):
+    is_screenplay = ("DeathInTheGunj" in book_name) or ("Nolan" in book_name)
+    if is_screenplay:
+        spans = detect_screenplay_chapters(text)
+    else:
+        spans = detect_prose_chapters(text)
+
+    by_para = defaultdict(list)
+    for r in rows:
+        by_para[r["paragraph_idx"]].append(r)
+
+    paras_segments = []
+    for pid in sorted(by_para.keys()):
+        list_w = sorted(by_para[pid], key=lambda x: x["start_char"])
+        start = list_w[0]["start_char"]
+        last = list_w[-1]
+        end = last["start_char"] + len(last["word"])
+        c_idx = list_w[0]["chapter_idx"]
+
+        while start > 0 and text[start-1] in "\"'([—–-":
+            start -= 1
+        while end < len(text) and text[end] in ".\"?!\")] :;…—–- ":
+            if text[end] in "\r\n":
+                break
+            end += 1
+        while end > start and text[end-1] == " ":
+            end -= 1
+
+        para_text = text[start:end]
+        para_len = max(1, end - start)
+
+        matches = []
+        for m in COLOR_REGEX.finditer(para_text):
+            for g_idx in (1, 2):
+                tok = m.group(g_idx)
+                norm = normalize_color_token(tok)
+                if norm:
+                    m_start = m.start(g_idx)
+                    m_end = m.end(g_idx)
+                    left_c = para_text[max(0, m_start-40):m_start]
+                    right_c = para_text[m_end:min(len(para_text), m_end+40)]
+                    if not is_verb_context(norm, left_c, right_c):
+                        matches.append({"start": m_start, "end": m_end, "hex": COLOR_MAP[norm]})
+
+        N = len(matches)
+        if N == 1:
+            paras_segments.append({"chapter_idx": c_idx, "len": para_len, "hex": matches[0]["hex"]})
+        elif N > 1:
+            for i, match in enumerate(matches):
+                seg_start = 0 if i == 0 else (matches[i-1]["end"] + match["start"]) // 2
+                seg_end = para_len if i == N - 1 else (match["end"] + matches[i+1]["start"]) // 2
+                seg_len = max(1, seg_end - seg_start)
+                paras_segments.append({"chapter_idx": c_idx, "len": seg_len, "hex": match["hex"]})
+
+    by_chapter = defaultdict(list)
+    for seg in paras_segments:
+        by_chapter[seg["chapter_idx"]].append(seg)
+    sorted_cis = sorted(by_chapter.keys())
+
+    def clean_h_title(s):
+        s = re.sub(r"^[_*#\s]+|[_*#\s]+$", "", s)
+        s = re.sub(r"\s+", " ", s)
+        return s.strip().upper()
+
+    chapters = []
+    for row_idx, ci in enumerate(sorted_cis):
+        span = next((sp for sp in spans if sp[2] == ci), None)
+        header = ""
+        if span:
+            sub = text[span[0]:min(len(text), span[0]+250)]
+            lines = [l.strip() for l in sub.splitlines() if l.strip()]
+            if lines:
+                header = lines[0]
+                if len(lines) > 1 and len(lines[0]) < 20 and len(lines[1]) < 50:
+                    if re.match(r"^(?:CHAPTER|Chapter|Book|BOOK|Part|PART)\b", lines[0]):
+                        header = f"{lines[0]}: {lines[1]}"
+
+        clean_h = clean_h_title(header)
+        if is_screenplay:
+            short_lbl = f"SEQ. {row_idx + 1}"
+            full_lbl = clean_h if (clean_h and not clean_h.startswith("INT") and not clean_h.startswith("EXT")) else f"SCENE SEQUENCE {row_idx + 1}"
+        else:
+            m_ch = re.search(r"(?:CHAPTER|Chapter)\s+([0-9IVXLCDM]+)", header)
+            m_bk = re.search(r"(?:BOOK|Book)\s+([0-9IVXLCDM]+)", header)
+            if m_ch:
+                short_lbl = f"CH. {m_ch.group(1).upper()}"
+            elif m_bk:
+                short_lbl = f"BK. {m_bk.group(1).upper()}"
+            else:
+                short_lbl = f"CH. {row_idx + 1}"
+
+            full_lbl = clean_h if (clean_h and clean_h != "= = = = = =") else short_lbl
+
+        chapters.append({
+            "row": row_idx,
+            "ci": ci,
+            "short": short_lbl,
+            "label": full_lbl
+        })
+
+    sections_path = repo_root / "gallery_sections.json"
+    if sections_path.exists():
+        try:
+            sections_data = json.loads(sections_path.read_text(encoding="utf-8"))
+        except Exception:
+            sections_data = {}
+    else:
+        sections_data = {}
+
+    total_rows = len(sorted_cis)
+    existing_entry = sections_data.get(book_name, {})
+    existing_sections = existing_entry.get("sections")
+    if not existing_sections:
+        existing_sections = [{"title": book_name.upper(), "startRow": 0, "endRow": max(0, total_rows - 1)}]
+
+    sections_data[book_name] = {
+        "book": existing_sections[0]["title"],
+        "sections": existing_sections,
+        "chapters": chapters
+    }
+    sections_path.write_text(json.dumps(sections_data, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"Updated {sections_path} for '{book_name}' ({len(chapters)} chapters).")
+
 def update_index_html(repo_root, book_name, title, author):
     for filename in ["index.html", "viewer.html"]:
         index_path = repo_root / filename
@@ -680,6 +803,10 @@ def process_book(book_dir_path, title=None, author=None, start_marker=None, end_
 
     verify_indices(book_dir, text, rows)
     update_gallery_previews(repo_root, book_name, text, rows)
+    try:
+        update_gallery_sections(repo_root, book_name, text, rows)
+    except Exception as e:
+        print(f"Note: gallery sections update skipped ({e})")
 
     try:
         from build_gallery_quotes import build_quotes

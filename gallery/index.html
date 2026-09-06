@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geom:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛️</text></svg>">
+<script src="assets/mp4-muxer.min.js"></script>
 <style>
   :root {
     --bg: #07090e;
@@ -508,21 +509,21 @@
 
   /* Bottom Poster Preview Controls - Translucent white outlines with hover contrast */
   .gallery-footer-controls {
-    width: 100%; max-width: 1200px;
-    padding: 0.6rem 1rem; display: flex; align-items: center; justify-content: center;
-    gap: 0.45rem; flex-wrap: wrap; font-size: 0.78rem;
+    width: 100%; max-width: 1300px;
+    padding: 0.5rem 0.8rem; display: flex; align-items: center; justify-content: center;
+    gap: 0.32rem; flex-wrap: wrap; font-size: 0.74rem;
     font-family: "JetBrains Mono", monospace; pointer-events: auto;
   }
   .ctrl-label {
-    color: rgba(255, 255, 255, 0.88); margin-left: 0.3rem; font-weight: 600;
+    color: rgba(255, 255, 255, 0.88); margin-left: 0.2rem; font-weight: 600;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
   }
   .ctrl-sep {
-    color: rgba(255, 255, 255, 0.35); margin: 0 0.15rem;
+    color: rgba(255, 255, 255, 0.35); margin: 0 0.1rem;
   }
   .ctrl-opt {
     color: rgba(255, 255, 255, 0.78); text-decoration: none; cursor: pointer; transition: all 0.2s ease;
-    padding: 0.15rem 0.5rem; border-radius: 999px;
+    padding: 0.12rem 0.44rem; border-radius: 999px;
     background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
@@ -789,7 +790,7 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
           </button>
         </div>
-        <button type="button" class="export-video-btn" id="btn-export-video" title="Download 9:16 Replay Video (1080x1920)" aria-label="Download 9:16 Replay Video">
+        <button type="button" class="export-video-btn" id="btn-export-video" title="Download 30s Replay Video (1080x1920)" aria-label="Download 30s Replay Video">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
         </button>
       </div>
@@ -886,6 +887,10 @@
       <a href="#" class="ctrl-opt" data-param="minwidth" data-value="20">20%</a>
       <a href="#" class="ctrl-opt" data-param="minwidth" data-value="10">10%</a>
       <a href="#" class="ctrl-opt" data-param="minwidth" data-value="off">Off</a>
+      <span class="ctrl-sep">·</span>
+      <span class="ctrl-label">Labels:</span>
+      <a href="#" class="ctrl-opt" data-param="labels" data-value="on">On</a>
+      <a href="#" class="ctrl-opt active" data-param="labels" data-value="off">Off</a>
     </footer>
   </div>
 </div>
@@ -904,12 +909,12 @@
 <!-- 9:16 Video Export Modal -->
 <div class="export-modal" id="export-modal">
   <div class="export-card">
-    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem">Rendering 9:16 Replay Video</h3>
-    <p style="color: var(--muted); font-size: 0.85rem">Creating vertical 1080 × 1920 video with dynamic light leaks and quotes...</p>
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem">Rendering 30s Replay Video</h3>
+    <p style="color: var(--muted); font-size: 0.85rem">Creating 30-second vertical 1080 × 1920 video with dynamic light leaks and quotes...</p>
     <div class="export-progress-bar">
       <div class="export-progress-fill" id="export-progress-fill"></div>
     </div>
-    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent)" id="export-status-text">Rendering: 0%</div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent)" id="export-status-text">Rendering: 0s / 30s (0%)</div>
   </div>
 </div>
 
@@ -935,6 +940,7 @@ const BOOK_CATALOG = [
 
 /* ---------- State ---------- */
 let previewsData = null;
+let sectionsDataCache = {};
 let quotesCache = {};
 let quoteDwellTimeout = null;
 let quoteAbortController = null;
@@ -950,7 +956,8 @@ let currentParams = {
   minimalism: "off",
   strips: "on",
   rounding: "off",
-  minwidth: "20"
+  minwidth: "20",
+  labels: "off"
 };
 
 let replayTimer = null;
@@ -1010,6 +1017,7 @@ function parseUrlParams() {
   if (params.get("strips")) currentParams.strips = params.get("strips");
   if (params.get("rounding")) currentParams.rounding = params.get("rounding");
   if (params.get("minwidth")) currentParams.minwidth = params.get("minwidth");
+  if (params.get("labels")) currentParams.labels = params.get("labels");
   if (params.get("mode") === "replay") currentMode = "replay";
   if (params.get("bookmarks") === "show" || params.get("view") === "bookmarks" || params.get("view") === "labeled") {
     bookmarksViewMode = "show";
@@ -1026,6 +1034,7 @@ function syncUrl() {
   params.set("strips", currentParams.strips);
   params.set("rounding", currentParams.rounding);
   params.set("minwidth", currentParams.minwidth);
+  params.set("labels", currentParams.labels);
   if (currentMode !== "interactive") params.set("mode", currentMode);
   if (bookmarksViewMode === "show") params.set("bookmarks", "show");
   if (currentRoom !== "1") params.set("room", currentRoom);
@@ -1155,7 +1164,9 @@ function buildPosterSvg(bookKey) {
   const chapters = previewsData[bookKey];
   if (!chapters) return { svgEl: null, tiles: [] };
 
-  const { minimalism, strips, rounding, minwidth } = currentParams;
+  const { minimalism, strips, rounding, minwidth, labels } = currentParams;
+  const isLabelsOn = (labels === "on");
+  const padX = isLabelsOn ? 14 : 0;
 
   const globalColorCounts = new Map();
   chapters.forEach(ch => {
@@ -1180,6 +1191,7 @@ function buildPosterSvg(bookKey) {
 
   const activeChapterWeights = activeChapters.map(ch => ch.reduce((sum, p) => sum + p[0], 0));
   const H = 300, W = 200;
+  const W_avail = W - padX * 2;
   const rowGap = Math.max(0.4, Math.min(2.0, 50 / C));
   const minRow = Math.max(1.0, Math.min(4.0, 150 / C));
   const totalWeight = activeChapterWeights.reduce((s, w) => s + w, 0) || 1;
@@ -1211,10 +1223,19 @@ function buildPosterSvg(bookKey) {
   svgEl.setAttribute("preserveAspectRatio", "none");
   svgEl.style.display = "block";
 
+  if (isLabelsOn) {
+    const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    bgRect.setAttribute("width", W.toString());
+    bgRect.setAttribute("height", H.toString());
+    bgRect.setAttribute("fill", "#ffffff");
+    svgEl.appendChild(bgRect);
+  }
+
   const bookQuotes = (quotesCache && quotesCache[bookKey]) || [];
   let blockCounter = 0;
   let y = 0;
   const tilesOut = [];
+  const rowGeometries = [];
 
   activeChapters.forEach((ch, chIdx) => {
     const h = heights[chIdx];
@@ -1253,30 +1274,30 @@ function buildPosterSvg(bookKey) {
 
     let tileWidths = [];
     if (effectiveMinMode === "height") {
-      const minTileW = (tileCount * h > W) ? (W / tileCount) : h;
-      const leftoverW = Math.max(0, W - tileCount * minTileW);
+      const minTileW = (tileCount * h > W_avail) ? (W_avail / tileCount) : h;
+      const leftoverW = Math.max(0, W_avail - tileCount * minTileW);
       tileWidths = tiles.map(item => minTileW + leftoverW * (item.len / totalWeightCh));
     } else if (effectiveMinMode === "20" || effectiveMinMode === "10") {
       const factor = (effectiveMinMode === "20") ? 0.20 : 0.10;
       const baseMinH = factor * h;
-      const baseMinW = tiles.map(item => Math.max(baseMinH, 0.50 * (item.len / totalWeightCh) * W));
+      const baseMinW = tiles.map(item => Math.max(baseMinH, 0.50 * (item.len / totalWeightCh) * W_avail));
       const sumMinW = baseMinW.reduce((a, b) => a + b, 0);
-      if (sumMinW > W) {
-        const scale = W / sumMinW;
+      if (sumMinW > W_avail) {
+        const scale = W_avail / sumMinW;
         tileWidths = baseMinW.map(w => w * scale);
       } else {
-        const leftoverW = W - sumMinW;
+        const leftoverW = W_avail - sumMinW;
         tileWidths = tiles.map((item, idx) => baseMinW[idx] + leftoverW * (item.len / totalWeightCh));
       }
     } else {
-      tileWidths = tiles.map(item => (item.len / totalWeightCh) * W);
+      tileWidths = tiles.map(item => (item.len / totalWeightCh) * W_avail);
     }
 
     let rx = 0;
     if (rounding === "full") rx = h / 2;
     else if (rounding === "rounded") rx = H * 0.01;
 
-    let x = 0;
+    let x = padX;
     tiles.forEach((item, idx) => {
       const w = tileWidths[idx];
       if (w > 0.01) {
@@ -1326,8 +1347,114 @@ function buildPosterSvg(bookKey) {
       }
       x += w;
     });
+
+    rowGeometries.push({ idx: chIdx, y, h });
     y += h + rowGap;
   });
+
+  if (isLabelsOn) {
+    const bookSecData = (sectionsDataCache && sectionsDataCache[bookKey]) || null;
+    const chaptersList = (bookSecData && bookSecData.chapters) || [];
+    const sectionsList = (bookSecData && bookSecData.sections) || [
+      { title: bookKey.toUpperCase(), startRow: 0, endRow: Math.max(0, rowGeometries.length - 1) }
+    ];
+
+    // --- Left Margin: Chapter numbers/names (Rotated -90 degrees) ---
+    const leftGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    leftGroup.setAttribute("class", "poster-labels-left");
+
+    const charW = 1.95;
+    const minGapY = 2.5;
+    let lastLeftYEnd = -Infinity;
+
+    rowGeometries.forEach((row, rIdx) => {
+      const chInfo = chaptersList[rIdx] || { short: `CH. ${rIdx + 1}`, label: `CH. ${rIdx + 1}` };
+      const centerY = row.y + row.h / 2;
+
+      let candidateText = (chInfo.label && chInfo.label.length < 32 && row.h > 12)
+        ? chInfo.label
+        : chInfo.short;
+
+      const maxSpan = Math.max(row.h * 1.6, 8);
+      const maxChars = Math.max(3, Math.floor(maxSpan / charW));
+
+      if (candidateText.length > maxChars) {
+        if (maxChars >= 6) {
+          candidateText = candidateText.slice(0, maxChars - 1).trim() + "…";
+        } else {
+          candidateText = chInfo.short;
+        }
+      }
+
+      const textLen = candidateText.length * charW;
+      const yStart = centerY - textLen / 2;
+      const yEnd = centerY + textLen / 2;
+
+      if (yStart < lastLeftYEnd + minGapY) return;
+      if (yStart < 2 || yEnd > H - 2) return;
+
+      const textEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      textEl.setAttribute("x", "7");
+      textEl.setAttribute("y", centerY.toFixed(2));
+      textEl.setAttribute("transform", `rotate(-90, 7, ${centerY.toFixed(2)})`);
+      textEl.setAttribute("text-anchor", "middle");
+      textEl.setAttribute("dominant-baseline", "central");
+      textEl.setAttribute("font-family", "'JetBrains Mono', monospace");
+      textEl.setAttribute("font-size", "3.2");
+      textEl.setAttribute("font-weight", "500");
+      textEl.setAttribute("fill", "#9ca3af");
+      textEl.setAttribute("letter-spacing", "0.4");
+      textEl.textContent = candidateText.toUpperCase();
+
+      leftGroup.appendChild(textEl);
+      lastLeftYEnd = yEnd;
+    });
+    svgEl.appendChild(leftGroup);
+
+    // --- Right Margin: Book/part information (Rotated 90 degrees) ---
+    const rightGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    rightGroup.setAttribute("class", "poster-labels-right");
+
+    sectionsList.forEach(sec => {
+      const sRow = Math.max(0, Math.min(sec.startRow, rowGeometries.length - 1));
+      const eRow = Math.max(sRow, Math.min(sec.endRow, rowGeometries.length - 1));
+
+      const yTop = rowGeometries[sRow].y;
+      const yBottom = rowGeometries[eRow].y + rowGeometries[eRow].h;
+      const spanH = yBottom - yTop;
+      const centerY = (yTop + yBottom) / 2;
+
+      const rawTitle = sec.title.toUpperCase();
+      const maxChars = Math.max(3, Math.floor((spanH - 4) / charW));
+      let displayTitle = rawTitle;
+
+      if (displayTitle.length > maxChars) {
+        if (maxChars >= 6) {
+          displayTitle = displayTitle.slice(0, maxChars - 1).trim() + "…";
+        } else if (maxChars >= 3) {
+          displayTitle = displayTitle.slice(0, maxChars);
+        } else {
+          return;
+        }
+      }
+
+      const textEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      textEl.setAttribute("x", "193");
+      textEl.setAttribute("y", centerY.toFixed(2));
+      textEl.setAttribute("transform", `rotate(90, 193, ${centerY.toFixed(2)})`);
+      textEl.setAttribute("text-anchor", "middle");
+      textEl.setAttribute("dominant-baseline", "central");
+      textEl.setAttribute("font-family", "'JetBrains Mono', monospace");
+      textEl.setAttribute("font-size", "3.3");
+      textEl.setAttribute("font-weight", "600");
+      textEl.setAttribute("fill", "#9ca3af");
+      textEl.setAttribute("letter-spacing", "0.5");
+      textEl.textContent = displayTitle;
+
+      rightGroup.appendChild(textEl);
+    });
+    svgEl.appendChild(rightGroup);
+  }
 
   return { svgEl, tiles: tilesOut };
 }
@@ -1562,6 +1689,12 @@ function lerpRgb(c1, c2, t) {
 function rgbToHex(c) {
   const h = (v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0');
   return `#${h(c.r)}${h(c.g)}${h(c.b)}`;
+}
+
+function lerpColor(hex1, hex2, t) {
+  const c1 = hexToRgb(hex1);
+  const c2 = hexToRgb(hex2);
+  return rgbToHex(lerpRgb(c1, c2, t));
 }
 
 function hexToRgba(hex, alpha) {
@@ -2228,14 +2361,18 @@ document.querySelectorAll("#gallery-variations .ctrl-opt").forEach(link => {
   };
 });
 
-/* ---------- Direct 2D Canvas MP4 Video Export Engine (9:16, 1080x1920, <60s) ---------- */
+/* ---------- Direct 2D Canvas MP4 Video Export Engine (9:16, 1080x1920, Exact 30s) ---------- */
 async function exportReplayVideo() {
   pauseReplay();
   const book = BOOK_CATALOG[currentBookIdx];
   if (book && !quotesCache[book.key]) {
     await fetchQuotesForBook(book.key);
   }
-  const tiles = activeTileElements;
+  let tiles = activeTileElements;
+  if (replayPacing === "bookmarked") {
+    const bmTiles = tiles.filter(t => isBookmarked(book.key, t.quote.id));
+    if (bmTiles.length > 0) tiles = bmTiles;
+  }
   const N = tiles.length;
   if (N === 0) return;
 
@@ -2243,304 +2380,467 @@ async function exportReplayVideo() {
   const progressFill = document.getElementById("export-progress-fill");
   const statusText = document.getElementById("export-status-text");
   modal.classList.add("open");
+  progressFill.style.width = "0%";
+  statusText.textContent = "Preparing 30s video render: 0s / 30s (0%)";
 
-  let bookmarkedCount = tiles.filter(t => isBookmarked(book.key, t.quote.id)).length;
-  const weightedUnits = (N - bookmarkedCount) * 1.0 + bookmarkedCount * 2.0;
-  // Twice the speed: 24s base target instead of 48s
-  const standardDurationSec = Math.min(0.45, 24.0 / Math.max(1, weightedUnits));
-  const bookmarkedDurationSec = standardDurationSec * 2.0;
+  const totalDurationSec = 30.0;
+  const fps = 30;
+  const totalFrames = Math.round(totalDurationSec * fps); // 900 frames
+
+  // Calculate weighted frame counts per tile ensuring exactly totalFrames (900)
+  const weights = tiles.map(t => isBookmarked(book.key, t.quote.id) ? 2.0 : 1.0);
+  const totalWeight = weights.reduce((s, w) => s + w, 0);
+
+  const frameCounts = new Array(tiles.length).fill(0);
+  let accumulatedFrames = 0;
+  let targetAccumulated = 0;
+
+  for (let i = 0; i < tiles.length; i++) {
+    targetAccumulated += (totalFrames * weights[i]) / totalWeight;
+    const roundedTarget = Math.round(targetAccumulated);
+    frameCounts[i] = Math.max(1, roundedTarget - accumulatedFrames);
+    accumulatedFrames = roundedTarget;
+  }
+  // Ensure the final frame count sum is exactly totalFrames
+  let sumFrames = frameCounts.reduce((s, f) => s + f, 0);
+  if (sumFrames !== totalFrames) {
+    frameCounts[frameCounts.length - 1] += (totalFrames - sumFrames);
+  }
 
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
   canvas.height = 1920;
   const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
 
-  const posterW = 760;
-  const posterH = 1140;
-  const posterX = (1080 - posterW) / 2;
-  const posterY = 500;
-  const scaleX = posterW / 200;
-  const scaleY = posterH / 300;
+  const posterW = 680;
+  const posterH = 1020;
+  const posterX = Math.round((1080 - posterW) / 2); // 200
+  const posterY = 600;
 
-  const stream = canvas.captureStream(30);
-  let mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
-  if (!MediaRecorder.isTypeSupported(mimeType)) {
-    mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
-  }
-
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8500000 });
-  const recordedChunks = [];
-  recorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
-
-  const exportPromise = new Promise(resolve => {
-    recorder.onstop = () => {
-      const blob = new Blob(recordedChunks, { type: mimeType });
-      const dlUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = dlUrl;
-      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-      a.download = `${book.key}_replay_9x16.${ext}`;
-      a.click();
-      resolve();
-    };
-  });
-
-  recorder.start();
-
-  const fps = 30;
-  let currentFrame = 0;
-  let totalFrames = 0;
-
-  tiles.forEach(t => {
-    const isBm = isBookmarked(book.key, t.quote.id);
-    const dur = isBm ? bookmarkedDurationSec : standardDurationSec;
-    totalFrames += Math.round(dur * fps);
-  });
-
-  for (let qIdx = 0; qIdx < tiles.length; qIdx++) {
-    const activeTile = tiles[qIdx];
+  // Helper to render one video frame
+  function renderSingleVideoFrame(activeTile, qIdx, frameInTile, framesForTile, currentFrame) {
     const q = activeTile.quote;
     const isBm = isBookmarked(book.key, q.id);
-    const durSec = isBm ? bookmarkedDurationSec : standardDurationSec;
-    const framesForQuote = Math.round(durSec * fps);
 
-    for (let f = 0; f < framesForQuote; f++) {
-      // 1. Black Background
-      ctx.fillStyle = "#07090e";
-      ctx.fillRect(0, 0, 1080, 1920);
+    // 1. Black Background
+    ctx.fillStyle = "#07090e";
+    ctx.fillRect(0, 0, 1080, 1920);
 
-      // 2. Optical Anamorphic Lens Flare Atmosphere (Behind Poster)
-      const ox = 540;
-      const oy = posterY + posterH * 0.44;
-      const maxR = 1400;
+    // 2. Optical Anamorphic Lens Flare Atmosphere (Behind Poster)
+    const ox = 540;
+    const oy = posterY + posterH * 0.44;
+    const maxR = 1400;
 
-      // Central radiant core halo behind poster
-      const coreGrad = ctx.createRadialGradient(ox, oy, 20, ox, oy, 650);
-      coreGrad.addColorStop(0, hexToRgba(q.color, 0.48));
-      coreGrad.addColorStop(0.35, hexToRgba(q.color, 0.18));
-      coreGrad.addColorStop(0.75, hexToRgba(q.color, 0.05));
-      coreGrad.addColorStop(1, "transparent");
-      ctx.fillStyle = coreGrad;
-      ctx.fillRect(0, 0, 1080, 1920);
-
-      const gm = activeTile.geom;
-      const blockCenterX = gm.x + gm.w / 2;
-      const dx = (blockCenterX - 100) / 100;
-      const wFrac = Math.max(0.04, Math.min(1.0, gm.w / 200));
-
-      const toRad = Math.PI / 180;
-      const mainAngleRad = (-90 + dx * 62) * toRad;
-      // 3x wider primary color spread in video export as well
-      const mainSpreadRad = Math.max(54, Math.min(215, wFrac * 405)) * toRad;
-
-      const prevTile = tiles[(qIdx - 1 + N) % N];
+    let activeColor = q.color || "#38bdf8";
+    if (replayPacing === "smooth" && framesForTile > 10 && frameInTile >= framesForTile - 10) {
       const nextTile = tiles[(qIdx + 1) % N];
-      const prevColor = prevTile.quote.color || "#38bdf8";
-      const nextColor = nextTile.quote.color || "#ec4899";
+      const blendFrac = (frameInTile - (framesForTile - 10)) / 10;
+      activeColor = lerpColor(q.color, nextTile.quote.color || "#ec4899", blendFrac);
+    }
 
-      // Previous Block Secondary Beam (lesser angle, narrower spread)
-      const prevAngleRad = mainAngleRad - (28 * toRad + mainSpreadRad * 0.18);
-      const prevSpreadRad = Math.max(16 * toRad, mainSpreadRad * 0.26);
-      ctx.beginPath();
-      ctx.moveTo(ox, oy);
-      ctx.arc(ox, oy, maxR * 0.78, prevAngleRad - prevSpreadRad * 0.5, prevAngleRad + prevSpreadRad * 0.5);
-      ctx.closePath();
-      const prevGrad = ctx.createRadialGradient(ox, oy, 20, ox, oy, maxR * 0.78);
-      prevGrad.addColorStop(0, hexToRgba(prevColor, 0.35));
-      prevGrad.addColorStop(0.28, hexToRgba(prevColor, 0.16));
-      prevGrad.addColorStop(0.75, hexToRgba(prevColor, 0.03));
-      prevGrad.addColorStop(1, "transparent");
-      ctx.fillStyle = prevGrad;
-      ctx.fill();
+    // Central radiant core halo behind poster
+    const coreGrad = ctx.createRadialGradient(ox, oy, 20, ox, oy, 680);
+    coreGrad.addColorStop(0, hexToRgba(activeColor, 0.52));
+    coreGrad.addColorStop(0.35, hexToRgba(activeColor, 0.20));
+    coreGrad.addColorStop(0.75, hexToRgba(activeColor, 0.05));
+    coreGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = coreGrad;
+    ctx.fillRect(0, 0, 1080, 1920);
 
-      // Next Block Secondary Beam (lesser angle, narrower spread)
-      const nextAngleRad = mainAngleRad + (28 * toRad + mainSpreadRad * 0.18);
-      const nextSpreadRad = Math.max(16 * toRad, mainSpreadRad * 0.26);
-      ctx.beginPath();
-      ctx.moveTo(ox, oy);
-      ctx.arc(ox, oy, maxR * 0.78, nextAngleRad - nextSpreadRad * 0.5, nextAngleRad + nextSpreadRad * 0.5);
-      ctx.closePath();
-      const nextGrad = ctx.createRadialGradient(ox, oy, 20, ox, oy, maxR * 0.78);
-      nextGrad.addColorStop(0, hexToRgba(nextColor, 0.35));
-      nextGrad.addColorStop(0.28, hexToRgba(nextColor, 0.16));
-      nextGrad.addColorStop(0.75, hexToRgba(nextColor, 0.03));
-      nextGrad.addColorStop(1, "transparent");
-      ctx.fillStyle = nextGrad;
-      ctx.fill();
+    const gm = activeTile.geom;
+    const blockCenterX = gm.x + gm.w / 2;
+    const dx = (blockCenterX - 100) / 100;
+    const wFrac = Math.max(0.04, Math.min(1.0, gm.w / 200));
 
-      // Primary Lens Flare Beam (Active Block - luminous and 3x wider spread)
-      ctx.beginPath();
-      ctx.moveTo(ox, oy);
-      ctx.arc(ox, oy, maxR, mainAngleRad - mainSpreadRad * 0.5, mainAngleRad + mainSpreadRad * 0.5);
-      ctx.closePath();
-      const mainGrad = ctx.createRadialGradient(ox, oy, 15, ox, oy, maxR * 0.95);
-      mainGrad.addColorStop(0, hexToRgba(q.color, 0.82));
-      mainGrad.addColorStop(0.22, hexToRgba(q.color, 0.44));
-      mainGrad.addColorStop(0.60, hexToRgba(q.color, 0.14));
-      mainGrad.addColorStop(0.88, hexToRgba(q.color, 0.02));
-      mainGrad.addColorStop(1, "transparent");
-      ctx.fillStyle = mainGrad;
-      ctx.fill();
+    const toRad = Math.PI / 180;
+    const mainAngleRad = (-90 + dx * 62) * toRad;
+    const mainSpreadRad = Math.max(54, Math.min(215, wFrac * 405)) * toRad;
 
-      // Anamorphic horizontal streak
-      ctx.save();
-      ctx.translate(ox, oy);
-      ctx.rotate(mainAngleRad + Math.PI / 2);
-      const streakGrad = ctx.createLinearGradient(-750, 0, 750, 0);
-      streakGrad.addColorStop(0, "transparent");
-      streakGrad.addColorStop(0.35, hexToRgba(q.color, 0.10));
-      streakGrad.addColorStop(0.5, hexToRgba("#ffffff", 0.45));
-      streakGrad.addColorStop(0.65, hexToRgba(q.color, 0.10));
-      streakGrad.addColorStop(1, "transparent");
-      ctx.fillStyle = streakGrad;
-      ctx.fillRect(-750, -6, 1500, 12);
-      ctx.restore();
+    const prevTile = tiles[(qIdx - 1 + N) % N];
+    const nextTile = tiles[(qIdx + 1) % N];
+    const prevColor = prevTile.quote.color || "#38bdf8";
+    const nextColor = nextTile.quote.color || "#ec4899";
 
-      // 3. Header Typography
-      ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(255,255,255,0.65)";
-      ctx.font = "600 28px 'JetBrains Mono', monospace";
-      ctx.fillText(book.author.toUpperCase(), 540, 130);
+    // Previous Block Secondary Beam
+    const prevAngleRad = mainAngleRad - (28 * toRad + mainSpreadRad * 0.18);
+    const prevSpreadRad = Math.max(16 * toRad, mainSpreadRad * 0.26);
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.arc(ox, oy, maxR * 0.78, prevAngleRad - prevSpreadRad * 0.5, prevAngleRad + prevSpreadRad * 0.5);
+    ctx.closePath();
+    const prevGrad = ctx.createRadialGradient(ox, oy, 20, ox, oy, maxR * 0.78);
+    prevGrad.addColorStop(0, hexToRgba(prevColor, 0.35));
+    prevGrad.addColorStop(0.28, hexToRgba(prevColor, 0.16));
+    prevGrad.addColorStop(0.75, hexToRgba(prevColor, 0.03));
+    prevGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = prevGrad;
+    ctx.fill();
 
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "800 48px 'Geom', sans-serif";
-      ctx.fillText(book.title, 540, 195);
+    // Next Block Secondary Beam
+    const nextAngleRad = mainAngleRad + (28 * toRad + mainSpreadRad * 0.18);
+    const nextSpreadRad = Math.max(16 * toRad, mainSpreadRad * 0.26);
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.arc(ox, oy, maxR * 0.78, nextAngleRad - nextSpreadRad * 0.5, nextAngleRad + nextSpreadRad * 0.5);
+    ctx.closePath();
+    const nextGrad = ctx.createRadialGradient(ox, oy, 20, ox, oy, maxR * 0.78);
+    nextGrad.addColorStop(0, hexToRgba(nextColor, 0.35));
+    nextGrad.addColorStop(0.28, hexToRgba(nextColor, 0.16));
+    nextGrad.addColorStop(0.75, hexToRgba(nextColor, 0.03));
+    nextGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = nextGrad;
+    ctx.fill();
 
-      // 4. Quote Card above poster
-      const cardY = 250;
-      ctx.fillStyle = isBm ? "rgba(245, 158, 11, 0.15)" : "rgba(255, 255, 255, 0.06)";
-      ctx.strokeStyle = isBm ? "rgba(245, 158, 11, 0.7)" : "rgba(255, 255, 255, 0.18)";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(140, cardY, 800, 200, 20);
-      ctx.fill();
-      ctx.stroke();
+    // Primary Lens Flare Beam
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.arc(ox, oy, maxR, mainAngleRad - mainSpreadRad * 0.5, mainAngleRad + mainSpreadRad * 0.5);
+    ctx.closePath();
+    const mainGrad = ctx.createRadialGradient(ox, oy, 15, ox, oy, maxR * 0.95);
+    mainGrad.addColorStop(0, hexToRgba(activeColor, 0.85));
+    mainGrad.addColorStop(0.22, hexToRgba(activeColor, 0.44));
+    mainGrad.addColorStop(0.60, hexToRgba(activeColor, 0.14));
+    mainGrad.addColorStop(0.88, hexToRgba(activeColor, 0.02));
+    mainGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = mainGrad;
+    ctx.fill();
 
-      ctx.fillStyle = q.color;
-      ctx.beginPath();
-      ctx.arc(185, cardY + 44, 10, 0, Math.PI * 2);
-      ctx.fill();
+    // Anamorphic horizontal streak
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.rotate(mainAngleRad + Math.PI / 2);
+    const streakGrad = ctx.createLinearGradient(-750, 0, 750, 0);
+    streakGrad.addColorStop(0, "transparent");
+    streakGrad.addColorStop(0.35, hexToRgba(activeColor, 0.10));
+    streakGrad.addColorStop(0.5, hexToRgba("#ffffff", 0.45));
+    streakGrad.addColorStop(0.65, hexToRgba(activeColor, 0.10));
+    streakGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = streakGrad;
+    ctx.fillRect(-750, -6, 1500, 12);
+    ctx.restore();
 
-      ctx.textAlign = "left";
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "700 24px 'JetBrains Mono', monospace";
-      ctx.fillText(`${q.name.toUpperCase()}  ·  CH ${q.ch}  ${isBm ? ' ★' : ''}`, 210, cardY + 52);
+    // 3. Header Branding Typography
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+    ctx.font = "600 18px 'JetBrains Mono', monospace";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 1;
+    ctx.fillText(`${book.title.toUpperCase()}  ·  ${book.author.toUpperCase()}`, 540, 75);
+    ctx.restore();
 
-      ctx.font = "500 28px 'Geom', sans-serif";
-      ctx.fillStyle = "#f1f5f9";
-      const cleanQuote = q.quote.replace(/<[^>]+>/g, '');
-      const words = cleanQuote.split(' ');
-      let line = '', lineY = cardY + 105;
-      for (let w = 0; w < words.length; w++) {
-        const testLine = line + words[w] + ' ';
-        if (ctx.measureText(testLine).width > 710 && w > 0) {
-          ctx.fillText(line, 185, lineY);
-          line = words[w] + ' ';
-          lineY += 38;
-          if (lineY > cardY + 180) break;
-        } else {
-          line = testLine;
-        }
+    // 4. Quote Typography Above Poster (Monospaced, max-width <= posterW * 1.5 = 1020px)
+    ctx.save();
+    const maxQuoteWidth = posterW * 1.5; // 1020px
+    const quoteBoxCenter = 540;
+    ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetY = 2;
+
+    const rawQuoteText = (q.quote || q.name || "").replace(/<[^>]+>/g, '').trim();
+    const displayString = (isBm ? "★ " : "") + rawQuoteText;
+
+    let fontSize = 24;
+    if (displayString.length > 200) fontSize = 21;
+    if (displayString.length < 80) fontSize = 28;
+
+    ctx.font = `500 ${fontSize}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffffff";
+
+    const wrapLimit = maxQuoteWidth - 40;
+    const words = displayString.split(/\s+/);
+    const lines = [];
+    let curLine = "";
+
+    for (let i = 0; i < words.length; i++) {
+      const testLine = curLine ? (curLine + " " + words[i]) : words[i];
+      if (ctx.measureText(testLine).width > wrapLimit && curLine) {
+        lines.push(curLine);
+        curLine = words[i];
+      } else {
+        curLine = testLine;
       }
-      ctx.fillText(line, 185, lineY);
+    }
+    if (curLine) lines.push(curLine);
 
-      // 5. Framed Poster Flush with Wall
-      ctx.save();
-      ctx.shadowColor = "rgba(0,0,0,0.65)";
-      ctx.shadowBlur = 35;
-      ctx.shadowOffsetY = 18;
-      ctx.fillStyle = "#111113";
-      ctx.fillRect(posterX - 6, posterY - 6, posterW + 12, posterH + 12);
-      ctx.restore();
+    const lineHeight = Math.round(fontSize * 1.48);
+    const totalTextH = lines.length * lineHeight;
+    const textStartY = Math.max(130, Math.round((580 + 120 - totalTextH) / 2));
 
-      // 6. White Poster Sheet & Preview to Scale
-      ctx.save();
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(posterX, posterY, posterW, posterH);
+    for (let l = 0; l < lines.length; l++) {
+      ctx.fillText(lines[l], quoteBoxCenter, textStartY + l * lineHeight);
+    }
+    ctx.restore();
 
-      const posterMarginX = Math.round(posterW * 0.045);
-      const posterMarginTop = Math.round(posterW * 0.045);
-      const previewW = posterW - posterMarginX * 2;
-      const previewH = Math.round(posterH * 0.81);
-      const sX = previewW / 200;
-      const sY = previewH / 300;
+    // 5. Framed Poster Flush with Wall
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.65)";
+    ctx.shadowBlur = 40;
+    ctx.shadowOffsetY = 22;
+    const frameBorder = 6;
+    ctx.fillStyle = "#111113";
+    ctx.fillRect(posterX - frameBorder, posterY - frameBorder, posterW + frameBorder * 2, posterH + frameBorder * 2);
+    ctx.restore();
 
-      tiles.forEach((t, idx) => {
-        const tgm = t.geom;
-        const tx = posterX + posterMarginX + tgm.x * sX;
-        const ty = posterY + posterMarginTop + tgm.y * sY;
-        const tw = tgm.w * sX;
-        const th = tgm.h * sY;
-        const trx = tgm.rx * sX;
+    // 6. White Poster Sheet & Preview to Scale
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(posterX, posterY, posterW, posterH);
 
-        // Non-active blocks remain at 100% opacity (not dimmed out)
-        ctx.globalAlpha = 1.0;
-        ctx.fillStyle = tgm.color;
-        ctx.beginPath();
+    const posterMarginX = Math.round(posterW * 0.045);
+    const posterMarginTop = Math.round(posterW * 0.045);
+    const previewW = posterW - posterMarginX * 2;
+    const previewH = Math.round(posterH * 0.81);
+    const sX = previewW / 200;
+    const sY = previewH / 300;
+
+    tiles.forEach((t, idx) => {
+      const tgm = t.geom;
+      const tx = posterX + posterMarginX + tgm.x * sX;
+      const ty = posterY + posterMarginTop + tgm.y * sY;
+      const tw = tgm.w * sX;
+      const th = tgm.h * sY;
+      const trx = tgm.rx * sX;
+
+      ctx.globalAlpha = 1.0;
+      ctx.fillStyle = tgm.color;
+      ctx.beginPath();
+      if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
+      else ctx.rect(tx, ty, tw, th);
+      ctx.fill();
+
+      if (idx === qIdx) {
+        ctx.save();
+        ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 18;
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 3.5;
+        ctx.stroke();
+
+        // Specular shine gradient over active tile
+        const shineGrad = ctx.createLinearGradient(tx, ty, tx + tw, ty + th);
+        shineGrad.addColorStop(0, "rgba(255, 255, 255, 0.85)");
+        shineGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.25)");
+        shineGrad.addColorStop(0.7, "transparent");
+        ctx.fillStyle = shineGrad;
         if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
         else ctx.rect(tx, ty, tw, th);
         ctx.fill();
+        ctx.restore();
+      }
+    });
 
-        if (idx === qIdx) {
-          ctx.save();
-          ctx.shadowColor = "#ffffff";
-          ctx.shadowBlur = 18;
-          ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 3.5;
-          ctx.stroke();
-
-          // Specular shine gradient over active tile
-          const shineGrad = ctx.createLinearGradient(tx, ty, tx + tw, ty + th);
-          shineGrad.addColorStop(0, "rgba(255, 255, 255, 0.75)");
-          shineGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.25)");
-          shineGrad.addColorStop(0.7, "transparent");
-          ctx.fillStyle = shineGrad;
-          if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
-          else ctx.rect(tx, ty, tw, th);
-          ctx.fill();
-          ctx.restore();
-        }
-      });
-
-      // 7. Title & Author on Poster Sheet to Scale
-      ctx.globalAlpha = 1.0;
-      const metaY = posterY + posterMarginTop + previewH;
-      ctx.textAlign = "left";
-      ctx.fillStyle = "#0f172a";
-      let titleSize = 36;
+    // Title & Author on Poster Sheet to Scale
+    ctx.globalAlpha = 1.0;
+    const metaY = posterY + posterMarginTop + previewH;
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#0f172a";
+    let titleSize = 36;
+    ctx.font = `800 ${titleSize}px 'Geom', sans-serif`;
+    while (ctx.measureText(book.title).width > previewW && titleSize > 20) {
+      titleSize -= 2;
       ctx.font = `800 ${titleSize}px 'Geom', sans-serif`;
-      while (ctx.measureText(book.title).width > previewW && titleSize > 20) {
-        titleSize -= 2;
-        ctx.font = `800 ${titleSize}px 'Geom', sans-serif`;
-      }
-      ctx.fillText(book.title, posterX + posterMarginX, metaY + 48);
-
-      ctx.fillStyle = "#64748b";
-      ctx.font = "italic 400 24px 'Geom', sans-serif";
-      ctx.fillText(book.author, posterX + posterMarginX, metaY + 84);
-
-      ctx.restore();
-
-      // 8. Bottom Progress
-      const overallFrac = currentFrame / Math.max(1, totalFrames);
-      ctx.fillStyle = "rgba(255,255,255,0.15)";
-      ctx.fillRect(140, 1780, 800, 8);
-      ctx.fillStyle = "#38bdf8";
-      ctx.fillRect(140, 1780, 800 * overallFrac, 8);
-
-      currentFrame++;
-      if (currentFrame % 4 === 0) {
-        const pct = Math.round((currentFrame / totalFrames) * 100);
-        progressFill.style.width = `${pct}%`;
-        statusText.textContent = `Rendering Video: ${pct}%`;
-        await new Promise(r => setTimeout(r, 6));
-      }
     }
+    ctx.fillText(book.title, posterX + posterMarginX, metaY + 48);
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = "italic 400 24px 'Geom', sans-serif";
+    ctx.fillText(book.author, posterX + posterMarginX, metaY + 84);
+
+    // Glaze Reflection
+    const glazeGrad = ctx.createLinearGradient(posterX, posterY, posterX + posterW, posterY + posterH);
+    glazeGrad.addColorStop(0, "rgba(255, 255, 255, 0.12)");
+    glazeGrad.addColorStop(0.35, "rgba(255, 255, 255, 0.03)");
+    glazeGrad.addColorStop(0.7, "transparent");
+    ctx.fillStyle = glazeGrad;
+    ctx.fillRect(posterX, posterY, posterW, posterH);
+
+    ctx.restore();
+
+    // 7. Bottom Replay Timeline Progress Bar on Video
+    const currentSec = currentFrame / fps;
+    const overallFrac = Math.min(1.0, currentFrame / (totalFrames - 1));
+    const trackX = 140;
+    const trackY = 1780;
+    const trackW = 800;
+    const trackH = 6;
+
+    ctx.save();
+    // Track background
+    ctx.fillStyle = "rgba(255, 255, 255, 0.20)";
+    ctx.beginPath();
+    ctx.roundRect(trackX, trackY, trackW, trackH, 3);
+    ctx.fill();
+
+    // Progress fill
+    ctx.fillStyle = "#38bdf8";
+    ctx.beginPath();
+    ctx.roundRect(trackX, trackY, Math.max(trackH, trackW * overallFrac), trackH, 3);
+    ctx.fill();
+
+    // Progress Dot
+    const dotX = trackX + trackW * overallFrac;
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowColor = "#38bdf8";
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(dotX, trackY + 3, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Time text below track
+    ctx.shadowBlur = 0;
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+    ctx.font = "500 18px 'JetBrains Mono', monospace";
+    const curMin = Math.floor(currentSec / 60);
+    const curSecRounded = Math.floor(currentSec % 60);
+    const timeStr = `${curMin}:${String(curSecRounded).padStart(2, '0')} / 0:30`;
+    ctx.fillText(timeStr, 540, trackY + 42);
+    ctx.restore();
   }
 
-  recorder.stop();
-  await exportPromise;
-  modal.classList.remove("open");
+  try {
+    // Check if WebCodecs VideoEncoder & Mp4Muxer are available
+    const useWebCodecs = (typeof VideoEncoder !== "undefined" && typeof Mp4Muxer !== "undefined");
+
+    if (useWebCodecs) {
+      // Primary High-Performance Engine: VideoEncoder + Mp4Muxer
+      const muxer = new Mp4Muxer.Muxer({
+        target: new Mp4Muxer.ArrayBufferTarget(),
+        video: {
+          codec: 'avc',
+          width: 1080,
+          height: 1920
+        },
+        fastStart: 'in-memory'
+      });
+
+      const encoder = new VideoEncoder({
+        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+        error: e => console.error("VideoEncoder error:", e)
+      });
+
+      encoder.configure({
+        codec: 'avc1.420028',
+        width: 1080,
+        height: 1920,
+        bitrate: 8500000,
+        framerate: fps
+      });
+
+      let currentFrame = 0;
+      for (let qIdx = 0; qIdx < tiles.length; qIdx++) {
+        const activeTile = tiles[qIdx];
+        const framesForTile = frameCounts[qIdx];
+
+        for (let f = 0; f < framesForTile; f++) {
+          renderSingleVideoFrame(activeTile, qIdx, f, framesForTile, currentFrame);
+
+          const timestampMicros = Math.round(currentFrame * (1000000 / fps));
+          const frame = new VideoFrame(canvas, {
+            timestamp: timestampMicros,
+            duration: Math.round(1000000 / fps)
+          });
+          encoder.encode(frame, { keyFrame: (currentFrame % 60 === 0) });
+          frame.close();
+
+          currentFrame++;
+          if (currentFrame % 15 === 0) {
+            const pct = Math.round((currentFrame / totalFrames) * 100);
+            const sec = (currentFrame / fps).toFixed(0);
+            progressFill.style.width = `${pct}%`;
+            statusText.textContent = `Rendering 30s Video: ${sec}s / 30s (${pct}%)`;
+            await new Promise(r => setTimeout(r, 0));
+          }
+        }
+      }
+
+      await encoder.flush();
+      muxer.finalize();
+
+      progressFill.style.width = "100%";
+      statusText.textContent = "Rendering 30s Video: 30s / 30s (100%) - Finalizing download...";
+
+      const buffer = muxer.target.buffer;
+      const blob = new Blob([buffer], { type: "video/mp4" });
+      const dlUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = dlUrl;
+      a.download = `${book.key}_replay_30s_9x16.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(dlUrl);
+
+    } else {
+      // Fallback Engine: MediaRecorder with real-time frame pacing over full 30 seconds
+      const stream = canvas.captureStream(fps);
+      let mimeType = 'video/mp4; codecs="avc1.420028"';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
+      }
+
+      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8500000 });
+      const recordedChunks = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+
+      const exportPromise = new Promise(resolve => {
+        recorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: mimeType });
+          const dlUrl = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = dlUrl;
+          const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+          a.download = `${book.key}_replay_30s_9x16.${ext}`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(dlUrl);
+          resolve();
+        };
+      });
+
+      recorder.start();
+
+      let currentFrame = 0;
+      const frameIntervalMs = 1000 / fps;
+      const startWallTime = performance.now();
+
+      for (let qIdx = 0; qIdx < tiles.length; qIdx++) {
+        const activeTile = tiles[qIdx];
+        const framesForTile = frameCounts[qIdx];
+
+        for (let f = 0; f < framesForTile; f++) {
+          renderSingleVideoFrame(activeTile, qIdx, f, framesForTile, currentFrame);
+
+          currentFrame++;
+          if (currentFrame % 5 === 0) {
+            const pct = Math.round((currentFrame / totalFrames) * 100);
+            const sec = (currentFrame / fps).toFixed(0);
+            progressFill.style.width = `${pct}%`;
+            statusText.textContent = `Rendering 30s Video: ${sec}s / 30s (${pct}%)`;
+          }
+
+          // Real-time pacing to ensure MediaRecorder records the full 30 seconds
+          const targetTime = startWallTime + currentFrame * frameIntervalMs;
+          const delay = Math.max(0, targetTime - performance.now());
+          await new Promise(r => setTimeout(r, delay));
+        }
+      }
+
+      recorder.stop();
+      await exportPromise;
+    }
+  } catch (err) {
+    console.error("Error during 30s video export:", err);
+    alert("Video rendering encountered an error: " + err.message);
+  } finally {
+    modal.classList.remove("open");
+  }
 }
 
 /* ---------- 9:16 Gallery Scene with Selected Quote JPEG Downloader ---------- */
@@ -3012,10 +3312,17 @@ function initEvents() {
   try {
     const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:";
     const previewsUrl = isLocal ? "../gallery_previews.json" : "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/gallery_previews.json";
+    const sectionsUrl = isLocal ? "../gallery_sections.json" : "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/gallery_sections.json";
 
-    const pResp = await fetch(previewsUrl, { cache: "no-store" });
+    const [pResp, sResp] = await Promise.all([
+      fetch(previewsUrl, { cache: "no-store" }),
+      fetch(sectionsUrl, { cache: "no-store" }).catch(() => null)
+    ]);
     if (!pResp.ok) throw new Error("Failed to load gallery previews data");
     previewsData = await pResp.json();
+    if (sResp && sResp.ok) {
+      try { sectionsDataCache = await sResp.json(); } catch(e) {}
+    }
 
     setRoom(currentRoom);
     setMode(currentMode);

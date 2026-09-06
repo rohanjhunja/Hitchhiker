@@ -1,0 +1,3362 @@
+{
+  "AliceInWonderland": {
+    "book": "ALICE'S ADVENTURES IN WONDERLAND",
+    "sections": [
+      {
+        "title": "ALICE'S ADVENTURES IN WONDERLAND",
+        "startRow": 0,
+        "endRow": 8
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "CH. II",
+        "label": "CHAPTER II.: THE POOL OF TEARS"
+      },
+      {
+        "row": 1,
+        "ci": 2,
+        "short": "CH. IV",
+        "label": "CHAPTER IV.: THE RABBIT SENDS IN A LITTLE BILL"
+      },
+      {
+        "row": 2,
+        "ci": 3,
+        "short": "CH. V",
+        "label": "CHAPTER V.: ADVICE FROM A CATERPILLAR"
+      },
+      {
+        "row": 3,
+        "ci": 5,
+        "short": "CH. VII",
+        "label": "CHAPTER VII.: A MAD TEA-PARTY"
+      },
+      {
+        "row": 4,
+        "ci": 6,
+        "short": "CH. VIII",
+        "label": "CHAPTER VIII.: THE QUEEN’S CROQUET-GROUND"
+      },
+      {
+        "row": 5,
+        "ci": 7,
+        "short": "CH. IX",
+        "label": "CHAPTER IX.: THE MOCK TURTLE’S STORY"
+      },
+      {
+        "row": 6,
+        "ci": 8,
+        "short": "CH. X",
+        "label": "CHAPTER X.: THE LOBSTER QUADRILLE"
+      },
+      {
+        "row": 7,
+        "ci": 9,
+        "short": "CH. XI",
+        "label": "CHAPTER XI.: WHO STOLE THE TARTS?"
+      },
+      {
+        "row": 8,
+        "ci": 10,
+        "short": "CH. XII",
+        "label": "CHAPTER XII.: ALICE’S EVIDENCE"
+      }
+    ]
+  },
+  "DeathInTheGunj": {
+    "book": "A DEATH IN THE GUNJ (SCREENPLAY)",
+    "sections": [
+      {
+        "title": "A DEATH IN THE GUNJ (SCREENPLAY)",
+        "startRow": 0,
+        "endRow": 11
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "SEQ. 1",
+        "label": "SCENE SEQUENCE 1"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "SEQ. 2",
+        "label": "SCENE SEQUENCE 2"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "SEQ. 3",
+        "label": "SCENE SEQUENCE 3"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "SEQ. 4",
+        "label": "SCENE SEQUENCE 4"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "SEQ. 5",
+        "label": "SCENE SEQUENCE 5"
+      },
+      {
+        "row": 5,
+        "ci": 6,
+        "short": "SEQ. 6",
+        "label": "SCENE SEQUENCE 6"
+      },
+      {
+        "row": 6,
+        "ci": 7,
+        "short": "SEQ. 7",
+        "label": "SCENE SEQUENCE 7"
+      },
+      {
+        "row": 7,
+        "ci": 8,
+        "short": "SEQ. 8",
+        "label": "SCENE SEQUENCE 8"
+      },
+      {
+        "row": 8,
+        "ci": 9,
+        "short": "SEQ. 9",
+        "label": "SCENE SEQUENCE 9"
+      },
+      {
+        "row": 9,
+        "ci": 10,
+        "short": "SEQ. 10",
+        "label": "SCENE SEQUENCE 10"
+      },
+      {
+        "row": 10,
+        "ci": 13,
+        "short": "SEQ. 11",
+        "label": "SCENE SEQUENCE 11"
+      },
+      {
+        "row": 11,
+        "ci": 14,
+        "short": "SEQ. 12",
+        "label": "SCENE SEQUENCE 12"
+      }
+    ]
+  },
+  "Dune": {
+    "book": "BOOK 1: DUNE",
+    "sections": [
+      {
+        "title": "BOOK 1: DUNE",
+        "startRow": 0,
+        "endRow": 21
+      },
+      {
+        "title": "BOOK 2: MUAD'DIB",
+        "startRow": 22,
+        "endRow": 36
+      },
+      {
+        "title": "BOOK 3: THE PROPHET",
+        "startRow": 37,
+        "endRow": 48
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "BK. 1",
+        "label": "BOOK 1: DUNE"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "CH. 2",
+        "label": "CH. 2"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "CH. 3",
+        "label": "CH. 3"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "CH. 4",
+        "label": "CH. 4"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "CH. 5",
+        "label": "CH. 5"
+      },
+      {
+        "row": 5,
+        "ci": 5,
+        "short": "CH. 6",
+        "label": "CH. 6"
+      },
+      {
+        "row": 6,
+        "ci": 6,
+        "short": "CH. 7",
+        "label": "CH. 7"
+      },
+      {
+        "row": 7,
+        "ci": 7,
+        "short": "CH. 8",
+        "label": "CH. 8"
+      },
+      {
+        "row": 8,
+        "ci": 8,
+        "short": "CH. 9",
+        "label": "CH. 9"
+      },
+      {
+        "row": 9,
+        "ci": 9,
+        "short": "CH. 10",
+        "label": "CH. 10"
+      },
+      {
+        "row": 10,
+        "ci": 10,
+        "short": "CH. 11",
+        "label": "CH. 11"
+      },
+      {
+        "row": 11,
+        "ci": 11,
+        "short": "CH. 12",
+        "label": "CH. 12"
+      },
+      {
+        "row": 12,
+        "ci": 12,
+        "short": "CH. 13",
+        "label": "CH. 13"
+      },
+      {
+        "row": 13,
+        "ci": 13,
+        "short": "CH. 14",
+        "label": "CH. 14"
+      },
+      {
+        "row": 14,
+        "ci": 14,
+        "short": "CH. 15",
+        "label": "CH. 15"
+      },
+      {
+        "row": 15,
+        "ci": 15,
+        "short": "CH. 16",
+        "label": "CH. 16"
+      },
+      {
+        "row": 16,
+        "ci": 16,
+        "short": "CH. 17",
+        "label": "CH. 17"
+      },
+      {
+        "row": 17,
+        "ci": 17,
+        "short": "CH. 18",
+        "label": "CH. 18"
+      },
+      {
+        "row": 18,
+        "ci": 18,
+        "short": "CH. 19",
+        "label": "CH. 19"
+      },
+      {
+        "row": 19,
+        "ci": 19,
+        "short": "CH. 20",
+        "label": "CH. 20"
+      },
+      {
+        "row": 20,
+        "ci": 20,
+        "short": "CH. 21",
+        "label": "CH. 21"
+      },
+      {
+        "row": 21,
+        "ci": 21,
+        "short": "CH. 22",
+        "label": "CH. 22"
+      },
+      {
+        "row": 22,
+        "ci": 22,
+        "short": "CH. 23",
+        "label": "CH. 23"
+      },
+      {
+        "row": 23,
+        "ci": 23,
+        "short": "CH. 24",
+        "label": "CH. 24"
+      },
+      {
+        "row": 24,
+        "ci": 24,
+        "short": "CH. 25",
+        "label": "CH. 25"
+      },
+      {
+        "row": 25,
+        "ci": 25,
+        "short": "CH. 26",
+        "label": "CH. 26"
+      },
+      {
+        "row": 26,
+        "ci": 26,
+        "short": "CH. 27",
+        "label": "CH. 27"
+      },
+      {
+        "row": 27,
+        "ci": 27,
+        "short": "CH. 28",
+        "label": "CH. 28"
+      },
+      {
+        "row": 28,
+        "ci": 28,
+        "short": "CH. 29",
+        "label": "CH. 29"
+      },
+      {
+        "row": 29,
+        "ci": 29,
+        "short": "CH. 30",
+        "label": "CH. 30"
+      },
+      {
+        "row": 30,
+        "ci": 30,
+        "short": "CH. 31",
+        "label": "CH. 31"
+      },
+      {
+        "row": 31,
+        "ci": 31,
+        "short": "CH. 32",
+        "label": "CH. 32"
+      },
+      {
+        "row": 32,
+        "ci": 32,
+        "short": "CH. 33",
+        "label": "CH. 33"
+      },
+      {
+        "row": 33,
+        "ci": 33,
+        "short": "CH. 34",
+        "label": "CH. 34"
+      },
+      {
+        "row": 34,
+        "ci": 34,
+        "short": "CH. 35",
+        "label": "CH. 35"
+      },
+      {
+        "row": 35,
+        "ci": 35,
+        "short": "CH. 36",
+        "label": "CH. 36"
+      },
+      {
+        "row": 36,
+        "ci": 37,
+        "short": "CH. 37",
+        "label": "CH. 37"
+      },
+      {
+        "row": 37,
+        "ci": 38,
+        "short": "CH. 38",
+        "label": "CH. 38"
+      },
+      {
+        "row": 38,
+        "ci": 39,
+        "short": "CH. 39",
+        "label": "CH. 39"
+      },
+      {
+        "row": 39,
+        "ci": 40,
+        "short": "CH. 40",
+        "label": "CH. 40"
+      },
+      {
+        "row": 40,
+        "ci": 41,
+        "short": "CH. 41",
+        "label": "CH. 41"
+      },
+      {
+        "row": 41,
+        "ci": 42,
+        "short": "CH. 42",
+        "label": "CH. 42"
+      },
+      {
+        "row": 42,
+        "ci": 43,
+        "short": "CH. 43",
+        "label": "CH. 43"
+      },
+      {
+        "row": 43,
+        "ci": 44,
+        "short": "CH. 44",
+        "label": "CH. 44"
+      },
+      {
+        "row": 44,
+        "ci": 45,
+        "short": "CH. 45",
+        "label": "CH. 45"
+      },
+      {
+        "row": 45,
+        "ci": 46,
+        "short": "CH. 46",
+        "label": "CH. 46"
+      },
+      {
+        "row": 46,
+        "ci": 47,
+        "short": "CH. 47",
+        "label": "CH. 47"
+      },
+      {
+        "row": 47,
+        "ci": 49,
+        "short": "CH. 48",
+        "label": "CH. 48"
+      },
+      {
+        "row": 48,
+        "ci": 50,
+        "short": "CH. 49",
+        "label": "CH. 49"
+      }
+    ]
+  },
+  "HitchhikersGuide": {
+    "book": "THE HITCHHIKER'S GUIDE TO THE GALAXY",
+    "sections": [
+      {
+        "title": "THE HITCHHIKER'S GUIDE TO THE GALAXY",
+        "startRow": 0,
+        "endRow": 29
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "CH. 1",
+        "label": "CHAPTER 1"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "CH. 2",
+        "label": "CHAPTER 2"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "CH. 3",
+        "label": "CHAPTER 3"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "CH. 4",
+        "label": "CHAPTER 4"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "CH. 5",
+        "label": "CHAPTER 5"
+      },
+      {
+        "row": 5,
+        "ci": 5,
+        "short": "CH. 6",
+        "label": "CHAPTER 6"
+      },
+      {
+        "row": 6,
+        "ci": 6,
+        "short": "CH. 7",
+        "label": "CHAPTER 7"
+      },
+      {
+        "row": 7,
+        "ci": 8,
+        "short": "CH. 9",
+        "label": "CHAPTER 9"
+      },
+      {
+        "row": 8,
+        "ci": 9,
+        "short": "CH. 10",
+        "label": "CHAPTER 10"
+      },
+      {
+        "row": 9,
+        "ci": 10,
+        "short": "CH. 11",
+        "label": "CHAPTER 11"
+      },
+      {
+        "row": 10,
+        "ci": 11,
+        "short": "CH. 12",
+        "label": "CHAPTER 12"
+      },
+      {
+        "row": 11,
+        "ci": 12,
+        "short": "CH. 13",
+        "label": "CHAPTER 13"
+      },
+      {
+        "row": 12,
+        "ci": 13,
+        "short": "CH. 14",
+        "label": "CHAPTER 14"
+      },
+      {
+        "row": 13,
+        "ci": 14,
+        "short": "CH. 15",
+        "label": "CHAPTER 15"
+      },
+      {
+        "row": 14,
+        "ci": 15,
+        "short": "CH. 16",
+        "label": "CHAPTER 16"
+      },
+      {
+        "row": 15,
+        "ci": 16,
+        "short": "CH. 17",
+        "label": "CHAPTER 17"
+      },
+      {
+        "row": 16,
+        "ci": 17,
+        "short": "CH. 18",
+        "label": "CHAPTER 18"
+      },
+      {
+        "row": 17,
+        "ci": 18,
+        "short": "CH. 19",
+        "label": "CHAPTER 19"
+      },
+      {
+        "row": 18,
+        "ci": 19,
+        "short": "CH. 20",
+        "label": "CHAPTER 20"
+      },
+      {
+        "row": 19,
+        "ci": 20,
+        "short": "CH. 21",
+        "label": "CHAPTER 21"
+      },
+      {
+        "row": 20,
+        "ci": 21,
+        "short": "CH. 22",
+        "label": "CHAPTER 22"
+      },
+      {
+        "row": 21,
+        "ci": 23,
+        "short": "CH. 24",
+        "label": "CHAPTER 24"
+      },
+      {
+        "row": 22,
+        "ci": 24,
+        "short": "CH. 25",
+        "label": "CHAPTER 25"
+      },
+      {
+        "row": 23,
+        "ci": 26,
+        "short": "CH. 27",
+        "label": "CHAPTER 27"
+      },
+      {
+        "row": 24,
+        "ci": 28,
+        "short": "CH. 29",
+        "label": "CHAPTER 29: ZAPHOD! WAKE UP!”"
+      },
+      {
+        "row": 25,
+        "ci": 29,
+        "short": "CH. 30",
+        "label": "CHAPTER 30"
+      },
+      {
+        "row": 26,
+        "ci": 30,
+        "short": "CH. 31",
+        "label": "CHAPTER 31"
+      },
+      {
+        "row": 27,
+        "ci": 31,
+        "short": "CH. 32",
+        "label": "CHAPTER 32"
+      },
+      {
+        "row": 28,
+        "ci": 33,
+        "short": "CH. 34",
+        "label": "CHAPTER 34"
+      },
+      {
+        "row": 29,
+        "ci": 34,
+        "short": "CH. 35",
+        "label": "CHAPTER 35"
+      }
+    ]
+  },
+  "LifeOfPi": {
+    "book": "PART 1: TORONTO AND PONDICHERRY",
+    "sections": [
+      {
+        "title": "PART 1: TORONTO AND PONDICHERRY",
+        "startRow": 0,
+        "endRow": 24
+      },
+      {
+        "title": "PART 2: THE PACIFIC OCEAN",
+        "startRow": 25,
+        "endRow": 63
+      },
+      {
+        "title": "PART 3: BENITO JUÁREZ INFIRMARY",
+        "startRow": 64,
+        "endRow": 67
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "CH. 1",
+        "label": "CHAPTER 1: MY SUFFERING LEFT ME SAD AND GLOOMY."
+      },
+      {
+        "row": 1,
+        "ci": 2,
+        "short": "CH. 3",
+        "label": "CHAPTER 3"
+      },
+      {
+        "row": 2,
+        "ci": 3,
+        "short": "CH. 4",
+        "label": "CHAPTER 4"
+      },
+      {
+        "row": 3,
+        "ci": 4,
+        "short": "CH. 5",
+        "label": "CHAPTER 5"
+      },
+      {
+        "row": 4,
+        "ci": 6,
+        "short": "CH. 7",
+        "label": "CHAPTER 7"
+      },
+      {
+        "row": 5,
+        "ci": 7,
+        "short": "CH. 8",
+        "label": "CHAPTER 8"
+      },
+      {
+        "row": 6,
+        "ci": 9,
+        "short": "CH. 10",
+        "label": "CHAPTER 10"
+      },
+      {
+        "row": 7,
+        "ci": 10,
+        "short": "CH. 11",
+        "label": "CHAPTER 11"
+      },
+      {
+        "row": 8,
+        "ci": 11,
+        "short": "CH. 12",
+        "label": "CHAPTER 12"
+      },
+      {
+        "row": 9,
+        "ci": 12,
+        "short": "CH. 13",
+        "label": "CHAPTER 13"
+      },
+      {
+        "row": 10,
+        "ci": 14,
+        "short": "CH. 15",
+        "label": "CHAPTER 15"
+      },
+      {
+        "row": 11,
+        "ci": 15,
+        "short": "CH. 16",
+        "label": "CHAPTER 16"
+      },
+      {
+        "row": 12,
+        "ci": 16,
+        "short": "CH. 17",
+        "label": "CHAPTER 17"
+      },
+      {
+        "row": 13,
+        "ci": 17,
+        "short": "CH. 18",
+        "label": "CHAPTER 18"
+      },
+      {
+        "row": 14,
+        "ci": 19,
+        "short": "CH. 20",
+        "label": "CHAPTER 20"
+      },
+      {
+        "row": 15,
+        "ci": 21,
+        "short": "CH. 22",
+        "label": "CHAPTER 22"
+      },
+      {
+        "row": 16,
+        "ci": 22,
+        "short": "CH. 23",
+        "label": "CHAPTER 23"
+      },
+      {
+        "row": 17,
+        "ci": 24,
+        "short": "CH. 25",
+        "label": "CHAPTER 25"
+      },
+      {
+        "row": 18,
+        "ci": 27,
+        "short": "CH. 28",
+        "label": "CHAPTER 28"
+      },
+      {
+        "row": 19,
+        "ci": 29,
+        "short": "CH. 30",
+        "label": "CHAPTER 30"
+      },
+      {
+        "row": 20,
+        "ci": 30,
+        "short": "CH. 31",
+        "label": "CHAPTER 31"
+      },
+      {
+        "row": 21,
+        "ci": 31,
+        "short": "CH. 32",
+        "label": "CHAPTER 32"
+      },
+      {
+        "row": 22,
+        "ci": 32,
+        "short": "CH. 33",
+        "label": "CHAPTER 33"
+      },
+      {
+        "row": 23,
+        "ci": 33,
+        "short": "CH. 34",
+        "label": "CHAPTER 34: FATHER SAID, “WE’LL SAIL LIKE COLUMBUS!”"
+      },
+      {
+        "row": 24,
+        "ci": 34,
+        "short": "CH. 35",
+        "label": "CHAPTER 35"
+      },
+      {
+        "row": 25,
+        "ci": 35,
+        "short": "CH. 36",
+        "label": "CHAPTER 36"
+      },
+      {
+        "row": 26,
+        "ci": 37,
+        "short": "CH. 38",
+        "label": "CHAPTER 38"
+      },
+      {
+        "row": 27,
+        "ci": 38,
+        "short": "CH. 39",
+        "label": "CHAPTER 39"
+      },
+      {
+        "row": 28,
+        "ci": 39,
+        "short": "CH. 40",
+        "label": "CHAPTER 40"
+      },
+      {
+        "row": 29,
+        "ci": 40,
+        "short": "CH. 41",
+        "label": "CHAPTER 41"
+      },
+      {
+        "row": 30,
+        "ci": 41,
+        "short": "CH. 43",
+        "label": "CHAPTER 43"
+      },
+      {
+        "row": 31,
+        "ci": 42,
+        "short": "CH. 44",
+        "label": "CHAPTER 44"
+      },
+      {
+        "row": 32,
+        "ci": 43,
+        "short": "CH. 45",
+        "label": "CHAPTER 45"
+      },
+      {
+        "row": 33,
+        "ci": 44,
+        "short": "CH. 46",
+        "label": "CHAPTER 46"
+      },
+      {
+        "row": 34,
+        "ci": 45,
+        "short": "CH. 47",
+        "label": "CHAPTER 47"
+      },
+      {
+        "row": 35,
+        "ci": 47,
+        "short": "CH. 49",
+        "label": "CHAPTER 49"
+      },
+      {
+        "row": 36,
+        "ci": 48,
+        "short": "CH. 50",
+        "label": "CHAPTER 50"
+      },
+      {
+        "row": 37,
+        "ci": 49,
+        "short": "CH. 51",
+        "label": "CHAPTER 51"
+      },
+      {
+        "row": 38,
+        "ci": 50,
+        "short": "CH. 52",
+        "label": "CHAPTER 52"
+      },
+      {
+        "row": 39,
+        "ci": 51,
+        "short": "CH. 53",
+        "label": "CHAPTER 53"
+      },
+      {
+        "row": 40,
+        "ci": 53,
+        "short": "CH. 55",
+        "label": "CHAPTER 55"
+      },
+      {
+        "row": 41,
+        "ci": 55,
+        "short": "CH. 57",
+        "label": "CHAPTER 57"
+      },
+      {
+        "row": 42,
+        "ci": 56,
+        "short": "CH. 58",
+        "label": "CHAPTER 58"
+      },
+      {
+        "row": 43,
+        "ci": 57,
+        "short": "CH. 59",
+        "label": "CHAPTER 59"
+      },
+      {
+        "row": 44,
+        "ci": 58,
+        "short": "CH. 60",
+        "label": "CHAPTER 60"
+      },
+      {
+        "row": 45,
+        "ci": 59,
+        "short": "CH. 61",
+        "label": "CHAPTER 61"
+      },
+      {
+        "row": 46,
+        "ci": 60,
+        "short": "CH. 62",
+        "label": "CHAPTER 62"
+      },
+      {
+        "row": 47,
+        "ci": 64,
+        "short": "CH. 66",
+        "label": "CHAPTER 66"
+      },
+      {
+        "row": 48,
+        "ci": 65,
+        "short": "CH. 67",
+        "label": "CHAPTER 67"
+      },
+      {
+        "row": 49,
+        "ci": 67,
+        "short": "CH. 69",
+        "label": "CHAPTER 69"
+      },
+      {
+        "row": 50,
+        "ci": 68,
+        "short": "CH. 70",
+        "label": "CHAPTER 70"
+      },
+      {
+        "row": 51,
+        "ci": 69,
+        "short": "CH. 71",
+        "label": "CHAPTER 71"
+      },
+      {
+        "row": 52,
+        "ci": 72,
+        "short": "CH. 74",
+        "label": "CHAPTER 74"
+      },
+      {
+        "row": 53,
+        "ci": 74,
+        "short": "CH. 77",
+        "label": "CHAPTER 77"
+      },
+      {
+        "row": 54,
+        "ci": 75,
+        "short": "CH. 78",
+        "label": "CHAPTER 78"
+      },
+      {
+        "row": 55,
+        "ci": 76,
+        "short": "CH. 79",
+        "label": "CHAPTER 79"
+      },
+      {
+        "row": 56,
+        "ci": 79,
+        "short": "CH. 82",
+        "label": "CHAPTER 82"
+      },
+      {
+        "row": 57,
+        "ci": 80,
+        "short": "CH. 83",
+        "label": "CHAPTER 83"
+      },
+      {
+        "row": 58,
+        "ci": 81,
+        "short": "CH. 84",
+        "label": "CHAPTER 84"
+      },
+      {
+        "row": 59,
+        "ci": 82,
+        "short": "CH. 85",
+        "label": "CHAPTER 85"
+      },
+      {
+        "row": 60,
+        "ci": 83,
+        "short": "CH. 86",
+        "label": "CHAPTER 86: “RICHARD PARKER, A SHIP!”"
+      },
+      {
+        "row": 61,
+        "ci": 85,
+        "short": "CH. 88",
+        "label": "CHAPTER 88"
+      },
+      {
+        "row": 62,
+        "ci": 86,
+        "short": "CH. 89",
+        "label": "CHAPTER 89"
+      },
+      {
+        "row": 63,
+        "ci": 87,
+        "short": "CH. 90",
+        "label": "CHAPTER 90"
+      },
+      {
+        "row": 64,
+        "ci": 89,
+        "short": "CH. 92",
+        "label": "CHAPTER 92"
+      },
+      {
+        "row": 65,
+        "ci": 91,
+        "short": "CH. 94",
+        "label": "CHAPTER 94"
+      },
+      {
+        "row": 66,
+        "ci": 95,
+        "short": "CH. 99",
+        "label": "CHAPTER 99"
+      },
+      {
+        "row": 67,
+        "ci": 96,
+        "short": "CH. 100",
+        "label": "CHAPTER 100"
+      }
+    ]
+  },
+  "MyNameIsRed": {
+    "book": "MY NAME IS RED",
+    "sections": [
+      {
+        "title": "MY NAME IS RED",
+        "startRow": 0,
+        "endRow": 49
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "CH. 1",
+        "label": "CHAPTER 1 I AM A CORPSE"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "CH. 2",
+        "label": "CHAPTER 2 I AM CALLED BLACK"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "CH. 3",
+        "label": "CHAPTER 3 I AM A DOG"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "CH. 4",
+        "label": "CHAPTER 4 I AM YOUR BELOVED UNCLE"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "CH. 5",
+        "label": "CHAPTER 5 I AM ORHAN"
+      },
+      {
+        "row": 5,
+        "ci": 5,
+        "short": "CH. 6",
+        "label": "CHAPTER 6 I AM CALLED BLACK"
+      },
+      {
+        "row": 6,
+        "ci": 6,
+        "short": "CH. 7",
+        "label": "CHAPTER 7 I AM ESTHER"
+      },
+      {
+        "row": 7,
+        "ci": 7,
+        "short": "CH. 8",
+        "label": "CHAPTER 8 I, SHEKURE"
+      },
+      {
+        "row": 8,
+        "ci": 9,
+        "short": "CH. 9",
+        "label": "CHAPTER 9 I AM A TREE"
+      },
+      {
+        "row": 9,
+        "ci": 10,
+        "short": "CH. 10",
+        "label": "CHAPTER 10 I AM CALLED BLACK"
+      },
+      {
+        "row": 10,
+        "ci": 11,
+        "short": "CH. 11",
+        "label": "BOOK OF FESTIVITIESWITH WHICH THE ENTIRE WORKSHOP WAS INVOLVED. THIS TIME, THE"
+      },
+      {
+        "row": 11,
+        "ci": 12,
+        "short": "CH. 11",
+        "label": "CHAPTER 11 I AM CALLED “BUTTERFLY”"
+      },
+      {
+        "row": 12,
+        "ci": 13,
+        "short": "CH. 12",
+        "label": "CHAPTER 12 DJIM"
+      },
+      {
+        "row": 13,
+        "ci": 14,
+        "short": "CH. 13",
+        "label": "CHAPTER 13 I AM CALLED “STORK”"
+      },
+      {
+        "row": 14,
+        "ci": 15,
+        "short": "CH. 14",
+        "label": "CHAPTER 14 I AM CALLED “OLIVE”"
+      },
+      {
+        "row": 15,
+        "ci": 16,
+        "short": "CH. 15",
+        "label": "CHAPTER 15 I AM ESTHER"
+      },
+      {
+        "row": 16,
+        "ci": 17,
+        "short": "CH. 16",
+        "label": "CHAPTER 16 I, SHEKURE"
+      },
+      {
+        "row": 17,
+        "ci": 18,
+        "short": "CH. 17",
+        "label": "CHAPTER 17 I AM YOUR BELOVED UNCLE"
+      },
+      {
+        "row": 18,
+        "ci": 19,
+        "short": "CH. 18",
+        "label": "CHAPTER 18 I WILL BE CALLED A MURDERER"
+      },
+      {
+        "row": 19,
+        "ci": 20,
+        "short": "CH. 19",
+        "label": "CHAPTER 19 I AM A GOLD COIN"
+      },
+      {
+        "row": 20,
+        "ci": 21,
+        "short": "CH. 20",
+        "label": "CHAPTER 20 I AM YOUR BELOVED UNCLE"
+      },
+      {
+        "row": 21,
+        "ci": 22,
+        "short": "CH. 21",
+        "label": "CHAPTER 21 I AM CALLED BLACK"
+      },
+      {
+        "row": 22,
+        "ci": 23,
+        "short": "CH. 22",
+        "label": "CHAPTER 22 I WILL BE CALLED A MURDERER"
+      },
+      {
+        "row": 23,
+        "ci": 24,
+        "short": "CH. 23",
+        "label": "CHAPTER 23 I AM DEATH"
+      },
+      {
+        "row": 24,
+        "ci": 25,
+        "short": "CH. 24",
+        "label": "CHAPTER 24 I, SHEKURE"
+      },
+      {
+        "row": 25,
+        "ci": 26,
+        "short": "CH. 25",
+        "label": "CHAPTER 25 I AM CALLED BLACK"
+      },
+      {
+        "row": 26,
+        "ci": 27,
+        "short": "CH. 25",
+        "label": "CHAPTER 25 I WILL BE CALLED A MURDERER"
+      },
+      {
+        "row": 27,
+        "ci": 28,
+        "short": "CH. 26",
+        "label": "CHAPTER 26 I AM YOUR BELOVED UNCLE"
+      },
+      {
+        "row": 28,
+        "ci": 29,
+        "short": "CH. 27",
+        "label": "CHAPTER 27 I, SHEKURE"
+      },
+      {
+        "row": 29,
+        "ci": 30,
+        "short": "CH. 28",
+        "label": "CHAPTER 28 I AM RED"
+      },
+      {
+        "row": 30,
+        "ci": 31,
+        "short": "CH. 29",
+        "label": "CHAPTER 29 I AM CALLED BLACK"
+      },
+      {
+        "row": 31,
+        "ci": 32,
+        "short": "CH. 30",
+        "label": "CHAPTER 30 I AM A HORSE"
+      },
+      {
+        "row": 32,
+        "ci": 33,
+        "short": "CH. 31",
+        "label": "CHAPTER 31 I AM CALLED BLACK"
+      },
+      {
+        "row": 33,
+        "ci": 34,
+        "short": "CH. 32",
+        "label": "CHAPTER 32 I AM YOUR BELOVED UNCLE"
+      },
+      {
+        "row": 34,
+        "ci": 35,
+        "short": "CH. 33",
+        "label": "CHAPTER 33 I AM ESTHER"
+      },
+      {
+        "row": 35,
+        "ci": 36,
+        "short": "CH. 34",
+        "label": "CHAPTER 34 I AM CALLED BLACK"
+      },
+      {
+        "row": 36,
+        "ci": 37,
+        "short": "CH. 35",
+        "label": "CHAPTER 35 I AM CALLED BLACK"
+      },
+      {
+        "row": 37,
+        "ci": 38,
+        "short": "CH. 38",
+        "label": "BOOK OF EQUINESTRANSLATED SO BEAUTIFULLY BY OUR ROYAL VETERINARIAN FUYUZI, AND I"
+      },
+      {
+        "row": 38,
+        "ci": 39,
+        "short": "CH. 36",
+        "label": "CHAPTER 36 I AM CALLED “OLIVE”"
+      },
+      {
+        "row": 39,
+        "ci": 40,
+        "short": "CH. 37",
+        "label": "CHAPTER 37 I AM CALLED “BUTTERFLY”"
+      },
+      {
+        "row": 40,
+        "ci": 41,
+        "short": "CH. 39",
+        "label": "CHAPTER 39 I AM CALLED BLACK"
+      },
+      {
+        "row": 41,
+        "ci": 42,
+        "short": "CH. 42",
+        "label": "BOOK OF"
+      },
+      {
+        "row": 42,
+        "ci": 43,
+        "short": "CH. 40",
+        "label": "CHAPTER 40 I AM CALLED BLACK"
+      },
+      {
+        "row": 43,
+        "ci": 44,
+        "short": "CH. 44",
+        "label": "BOOK OF"
+      },
+      {
+        "row": 44,
+        "ci": 45,
+        "short": "CH. 41",
+        "label": "CHAPTER 41 I AM ESTHER"
+      },
+      {
+        "row": 45,
+        "ci": 46,
+        "short": "CH. 41",
+        "label": "CHAPTER 41 I AM A WOMAN"
+      },
+      {
+        "row": 46,
+        "ci": 47,
+        "short": "CH. 42",
+        "label": "CHAPTER 42 I AM CALLED “BUTTERFLY”"
+      },
+      {
+        "row": 47,
+        "ci": 48,
+        "short": "CH. 43",
+        "label": "CHAPTER 43 I AM CALLED “STORK”"
+      },
+      {
+        "row": 48,
+        "ci": 49,
+        "short": "CH. 44",
+        "label": "CHAPTER 44 I AM CALLED “OLIVE”"
+      },
+      {
+        "row": 49,
+        "ci": 51,
+        "short": "CH. 50",
+        "label": "BOOK OF"
+      }
+    ]
+  },
+  "OscarAndLucinda": {
+    "book": "OSCAR AND LUCINDA",
+    "sections": [
+      {
+        "title": "OSCAR AND LUCINDA",
+        "startRow": 0,
+        "endRow": 103
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "CH. 1",
+        "label": "CHAPTER 1: THE CHURCH"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "CH. 2",
+        "label": "CHAPTER 2: THE ADVENT WREATH"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "CH. 3",
+        "label": "CHAPTER 3: CHRISTMAS PUDDING"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "CH. 4",
+        "label": "CHAPTER 4: AFTER PUDDING"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "CH. 5",
+        "label": "CHAPTER 5: A PRAYER"
+      },
+      {
+        "row": 5,
+        "ci": 5,
+        "short": "CH. 6",
+        "label": "CHAPTER 6: THE ANGLICAN CHURCH"
+      },
+      {
+        "row": 6,
+        "ci": 6,
+        "short": "CH. 7",
+        "label": "CHAPTER 7: STETHOSCOPE"
+      },
+      {
+        "row": 7,
+        "ci": 7,
+        "short": "CH. 8",
+        "label": "CHAPTER 8: PAGAN SIGNS"
+      },
+      {
+        "row": 8,
+        "ci": 8,
+        "short": "CH. 9",
+        "label": "CHAPTER 9: THROWING LOTS"
+      },
+      {
+        "row": 9,
+        "ci": 9,
+        "short": "CH. 10",
+        "label": "CHAPTER 10: FALSE INSTRUCTION"
+      },
+      {
+        "row": 10,
+        "ci": 10,
+        "short": "CH. 11",
+        "label": "CHAPTER 11: APOSTASY"
+      },
+      {
+        "row": 11,
+        "ci": 11,
+        "short": "CH. 12",
+        "label": "CHAPTER 12: TO SERVE AND TO RULE"
+      },
+      {
+        "row": 12,
+        "ci": 12,
+        "short": "CH. 13",
+        "label": "CHAPTER 13: RAISINS"
+      },
+      {
+        "row": 13,
+        "ci": 13,
+        "short": "CH. 14",
+        "label": "CHAPTER 14: TRIALS"
+      },
+      {
+        "row": 14,
+        "ci": 14,
+        "short": "CH. 15",
+        "label": "CHAPTER 15: THE VICARAGE KITCHEN"
+      },
+      {
+        "row": 15,
+        "ci": 15,
+        "short": "CH. 16",
+        "label": "CHAPTER 16: JOB AND JUDAS"
+      },
+      {
+        "row": 16,
+        "ci": 16,
+        "short": "CH. 17",
+        "label": "CHAPTER 17: SCUFFED BOOTS"
+      },
+      {
+        "row": 17,
+        "ci": 17,
+        "short": "CH. 18",
+        "label": "CHAPTER 18: THE THIRTY-NINE ARTICLES"
+      },
+      {
+        "row": 18,
+        "ci": 18,
+        "short": "CH. 9",
+        "label": "CHAPTER 9: CHRISTIAN STORIES"
+      },
+      {
+        "row": 19,
+        "ci": 19,
+        "short": "CH. 20",
+        "label": "CHAPTER 20: PALM SUNDAY IN NEW SOUTH WALES"
+      },
+      {
+        "row": 20,
+        "ci": 20,
+        "short": "CH. 21",
+        "label": "CHAPTER 21: LUCINDA"
+      },
+      {
+        "row": 21,
+        "ci": 21,
+        "short": "CH. 22",
+        "label": "CHAPTER 22: ELIZABETH"
+      },
+      {
+        "row": 22,
+        "ci": 22,
+        "short": "CH. 23",
+        "label": "CHAPTER 23: A SQUARE PEG"
+      },
+      {
+        "row": 23,
+        "ci": 25,
+        "short": "CH. 26",
+        "label": "CHAPTER 26: BLOOMERS"
+      },
+      {
+        "row": 24,
+        "ci": 26,
+        "short": "CH. 27",
+        "label": "CHAPTER 27: THE ODD BOD"
+      },
+      {
+        "row": 25,
+        "ci": 27,
+        "short": "CH. 28",
+        "label": "CHAPTER 28: STORE UP TREASURES FOR A FUTURE DAY"
+      },
+      {
+        "row": 26,
+        "ci": 28,
+        "short": "CH. 29",
+        "label": "CHAPTER 29: EPSOM DOWNS"
+      },
+      {
+        "row": 27,
+        "ci": 29,
+        "short": "CH. 30",
+        "label": "CHAPTER 30: COVETOUSNESS"
+      },
+      {
+        "row": 28,
+        "ci": 30,
+        "short": "CH. 31",
+        "label": "CHAPTER 31: ASCENSION DAY"
+      },
+      {
+        "row": 29,
+        "ci": 31,
+        "short": "CH. 32",
+        "label": "CHAPTER 32: PRINCE RUPERT’S DROPS"
+      },
+      {
+        "row": 30,
+        "ci": 32,
+        "short": "CH. 33",
+        "label": "CHAPTER 33: GLASSWORKS"
+      },
+      {
+        "row": 31,
+        "ci": 33,
+        "short": "CH. 34",
+        "label": "CHAPTER 34: AFTER WHITSUNDAY"
+      },
+      {
+        "row": 32,
+        "ci": 34,
+        "short": "CH. 35",
+        "label": "CHAPTER 35: A BETTING TICKET"
+      },
+      {
+        "row": 33,
+        "ci": 35,
+        "short": "CH. 36",
+        "label": "CHAPTER 36: UNE PETITE AMIE"
+      },
+      {
+        "row": 34,
+        "ci": 36,
+        "short": "CH. 37",
+        "label": "CHAPTER 37: A GAME OF CARDS"
+      },
+      {
+        "row": 35,
+        "ci": 37,
+        "short": "CH. 38",
+        "label": "CHAPTER 38: A DUCK TO WATER"
+      },
+      {
+        "row": 36,
+        "ci": 38,
+        "short": "CH. 39",
+        "label": "CHAPTER 39: PERSONAL EFFECTS"
+      },
+      {
+        "row": 37,
+        "ci": 39,
+        "short": "CH. 40",
+        "label": "CHAPTER 40: NOT IN LOVE"
+      },
+      {
+        "row": 38,
+        "ci": 40,
+        "short": "CH. 41",
+        "label": "CHAPTER 41: IF HE ASK A FISH, WILL HE GIVE HIM A SERPENT?"
+      },
+      {
+        "row": 39,
+        "ci": 41,
+        "short": "CH. 42",
+        "label": "CHAPTER 42: CALLED"
+      },
+      {
+        "row": 40,
+        "ci": 42,
+        "short": "CH. 43",
+        "label": "CHAPTER 43: LEVIATHAN"
+      },
+      {
+        "row": 41,
+        "ci": 43,
+        "short": "CH. 44",
+        "label": "CHAPTER 44: A BISHOP’S SON-IN-LAW"
+      },
+      {
+        "row": 42,
+        "ci": 44,
+        "short": "CH. 45",
+        "label": "CHAPTER 45: HYMNS"
+      },
+      {
+        "row": 43,
+        "ci": 45,
+        "short": "CH. 46",
+        "label": "CHAPTER 46: IN A TRICE"
+      },
+      {
+        "row": 44,
+        "ci": 46,
+        "short": "CH. 47",
+        "label": "CHAPTER 47: BABYLON"
+      },
+      {
+        "row": 45,
+        "ci": 47,
+        "short": "CH. 48",
+        "label": "CHAPTER 48: WHO CAN OPEN THE DOORS OF HIS FACE?"
+      },
+      {
+        "row": 46,
+        "ci": 48,
+        "short": "CH. 49",
+        "label": "CHAPTER 49: THE SYSTEM"
+      },
+      {
+        "row": 47,
+        "ci": 49,
+        "short": "CH. 50",
+        "label": "CHAPTER 50: PACHINKO"
+      },
+      {
+        "row": 48,
+        "ci": 50,
+        "short": "CH. 51",
+        "label": "CHAPTER 51: MR BORRODAILE AND MR SMITH"
+      },
+      {
+        "row": 49,
+        "ci": 51,
+        "short": "CH. 52",
+        "label": "CHAPTER 52: MONTAIGNE"
+      },
+      {
+        "row": 50,
+        "ci": 53,
+        "short": "CH. 54",
+        "label": "CHAPTER 54: PHOSPHORESCENCE (2)"
+      },
+      {
+        "row": 51,
+        "ci": 54,
+        "short": "CH. 55",
+        "label": "CHAPTER 55: JEALOUSY"
+      },
+      {
+        "row": 52,
+        "ci": 55,
+        "short": "CH. 56",
+        "label": "CHAPTER 56: LURE"
+      },
+      {
+        "row": 53,
+        "ci": 56,
+        "short": "CH. 57",
+        "label": "CHAPTER 57: CONFESSION"
+      },
+      {
+        "row": 54,
+        "ci": 58,
+        "short": "CH. 59",
+        "label": "CHAPTER 59: THOU RULEST THE RAGING OF THE SEA"
+      },
+      {
+        "row": 55,
+        "ci": 59,
+        "short": "CH. 60",
+        "label": "CHAPTER 60: CAPE TOWN TO PINCHGUT"
+      },
+      {
+        "row": 56,
+        "ci": 60,
+        "short": "CH. 61",
+        "label": "CHAPTER 61: A BUSINESS PRINCIPLE"
+      },
+      {
+        "row": 57,
+        "ci": 61,
+        "short": "CH. 62",
+        "label": "CHAPTER 62: HOME"
+      },
+      {
+        "row": 58,
+        "ci": 62,
+        "short": "CH. 63",
+        "label": "CHAPTER 63: LONGNOSE POINT"
+      },
+      {
+        "row": 59,
+        "ci": 63,
+        "short": "CH. 64",
+        "label": "CHAPTER 64: THE MULTITUDE OF THY SORCERIES"
+      },
+      {
+        "row": 60,
+        "ci": 64,
+        "short": "CH. 65",
+        "label": "CHAPTER 65: BISHOP DANCER’S FERRET"
+      },
+      {
+        "row": 61,
+        "ci": 65,
+        "short": "CH. 66",
+        "label": "CHAPTER 66: ST JOHN’S"
+      },
+      {
+        "row": 62,
+        "ci": 66,
+        "short": "CH. 67",
+        "label": "CHAPTER 67: THE MESSIAH"
+      },
+      {
+        "row": 63,
+        "ci": 67,
+        "short": "CH. 68",
+        "label": "CHAPTER 68: SERIOUS DAMAGE"
+      },
+      {
+        "row": 64,
+        "ci": 68,
+        "short": "CH. 69",
+        "label": "CHAPTER 69: THE TABLECLOTH"
+      },
+      {
+        "row": 65,
+        "ci": 69,
+        "short": "CH. 70",
+        "label": "CHAPTER 70: THE GOOD SAMARITAN"
+      },
+      {
+        "row": 66,
+        "ci": 70,
+        "short": "CH. 71",
+        "label": "CHAPTER 71: THE STRATTONS’ WAGER"
+      },
+      {
+        "row": 67,
+        "ci": 71,
+        "short": "CH. 72",
+        "label": "CHAPTER 72: MRS SMITH"
+      },
+      {
+        "row": 68,
+        "ci": 72,
+        "short": "CH. 73",
+        "label": "CHAPTER 73: JUDGE NOT"
+      },
+      {
+        "row": 69,
+        "ci": 73,
+        "short": "CH. 74",
+        "label": "CHAPTER 74: A DEGREE FROM OXFORD"
+      },
+      {
+        "row": 70,
+        "ci": 74,
+        "short": "CH. 75",
+        "label": "CHAPTER 75: HEADS OR TAILS"
+      },
+      {
+        "row": 71,
+        "ci": 75,
+        "short": "CH. 76",
+        "label": "CHAPTER 76: MR SMUDGE"
+      },
+      {
+        "row": 72,
+        "ci": 76,
+        "short": "CH. 77",
+        "label": "CHAPTER 77: HAPPINESS"
+      },
+      {
+        "row": 73,
+        "ci": 77,
+        "short": "CH. 78",
+        "label": "CHAPTER 78: CEREMONY"
+      },
+      {
+        "row": 74,
+        "ci": 78,
+        "short": "CH. 79",
+        "label": "CHAPTER 79: POT AND KETTLE"
+      },
+      {
+        "row": 75,
+        "ci": 79,
+        "short": "CH. 80",
+        "label": "CHAPTER 80: THE PRIVATE SOFTNESS OF HER SKIN"
+      },
+      {
+        "row": 76,
+        "ci": 80,
+        "short": "CH. 81",
+        "label": "CHAPTER 81: PROMENADE"
+      },
+      {
+        "row": 77,
+        "ci": 81,
+        "short": "CH. 82",
+        "label": "CHAPTER 82: OSCAR IN LOVE"
+      },
+      {
+        "row": 78,
+        "ci": 82,
+        "short": "CH. 83",
+        "label": "CHAPTER 83: ORPHANS"
+      },
+      {
+        "row": 79,
+        "ci": 83,
+        "short": "CH. 84",
+        "label": "CHAPTER 84: THE WEEKS BEFORE CHRISTMAS"
+      },
+      {
+        "row": 80,
+        "ci": 84,
+        "short": "CH. 85",
+        "label": "CHAPTER 85: A PRAYER"
+      },
+      {
+        "row": 81,
+        "ci": 85,
+        "short": "CH. 86",
+        "label": "CHAPTER 86: CHRISTMAS DAY"
+      },
+      {
+        "row": 82,
+        "ci": 86,
+        "short": "CH. 87",
+        "label": "CHAPTER 87: GRATITUDE"
+      },
+      {
+        "row": 83,
+        "ci": 87,
+        "short": "CH. 88",
+        "label": "CHAPTER 88: A LECTURE BASED UPON A PARABLE"
+      },
+      {
+        "row": 84,
+        "ci": 88,
+        "short": "CH. 90",
+        "label": "CHAPTER 90: A RECONCILIATION"
+      },
+      {
+        "row": 85,
+        "ci": 89,
+        "short": "CH. 91",
+        "label": "CHAPTER 91: A MAN OF AUTHORITY"
+      },
+      {
+        "row": 86,
+        "ci": 90,
+        "short": "CH. 92",
+        "label": "CHAPTER 92: THE LORD IS MY SHEPHERD"
+      },
+      {
+        "row": 87,
+        "ci": 91,
+        "short": "CH. 94",
+        "label": "CHAPTER 94: MR SMITH"
+      },
+      {
+        "row": 88,
+        "ci": 92,
+        "short": "CH. 95",
+        "label": "CHAPTER 95: ARRIVAL OF WARDLEY-FISH (1)"
+      },
+      {
+        "row": 89,
+        "ci": 93,
+        "short": "CH. 96",
+        "label": "CHAPTER 96: ARRIVAL OF WARDLEY-FISH (2)"
+      },
+      {
+        "row": 90,
+        "ci": 94,
+        "short": "CH. 97",
+        "label": "CHAPTER 97: LAUDANUM"
+      },
+      {
+        "row": 91,
+        "ci": 95,
+        "short": "CH. 98",
+        "label": "CHAPTER 98: AN EXPLORER"
+      },
+      {
+        "row": 92,
+        "ci": 96,
+        "short": "CH. 99",
+        "label": "CHAPTER 99: AN OLD BLACKFELLOW"
+      },
+      {
+        "row": 93,
+        "ci": 97,
+        "short": "CH. 100",
+        "label": "CHAPTER 100: GLASS CUTS"
+      },
+      {
+        "row": 94,
+        "ci": 98,
+        "short": "CH. 101",
+        "label": "CHAPTER 101: OSCAR AT BELLINGEN HEADS"
+      },
+      {
+        "row": 95,
+        "ci": 99,
+        "short": "CH. 102",
+        "label": "CHAPTER 102: A CHRISTIAN MAN"
+      },
+      {
+        "row": 96,
+        "ci": 100,
+        "short": "CH. 104",
+        "label": "CHAPTER 104: MARY MAGDALENE"
+      },
+      {
+        "row": 97,
+        "ci": 101,
+        "short": "CH. 105",
+        "label": "CHAPTER 105: MIRIAM"
+      },
+      {
+        "row": 98,
+        "ci": 102,
+        "short": "CH. 106",
+        "label": "CHAPTER 106: THE AISLE OF A CATHEDRAL"
+      },
+      {
+        "row": 99,
+        "ci": 103,
+        "short": "CH. 107",
+        "label": "CHAPTER 107: ARRIVAL OF ANGLICAN CHURCH AT BOAT HARBOUR"
+      },
+      {
+        "row": 100,
+        "ci": 104,
+        "short": "CH. 108",
+        "label": "CHAPTER 108: OSCAR AND MIRIAM"
+      },
+      {
+        "row": 101,
+        "ci": 105,
+        "short": "CH. 109",
+        "label": "CHAPTER 109: A CHEQUE AMIDST HER PETTICOAT"
+      },
+      {
+        "row": 102,
+        "ci": 106,
+        "short": "CH. 110",
+        "label": "CHAPTER 110: SONGS ABOUT THISTLES"
+      },
+      {
+        "row": 103,
+        "ci": 107,
+        "short": "CH. 111",
+        "label": "CHAPTER 111: A SONG FOR OSCAR"
+      }
+    ]
+  },
+  "WizardOfOz": {
+    "book": "THE WONDERFUL WIZARD OF OZ",
+    "sections": [
+      {
+        "title": "THE WONDERFUL WIZARD OF OZ",
+        "startRow": 0,
+        "endRow": 23
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "CH. I",
+        "label": "CHAPTER I: THE CYCLONE"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "CH. II",
+        "label": "CHAPTER II: THE COUNCIL WITH THE MUNCHKINS"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "CH. III",
+        "label": "CHAPTER III: HOW DOROTHY SAVED THE SCARECROW"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "CH. IV",
+        "label": "CHAPTER IV: THE ROAD THROUGH THE FOREST"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "CH. V",
+        "label": "CHAPTER V: THE RESCUE OF THE TIN WOODMAN"
+      },
+      {
+        "row": 5,
+        "ci": 5,
+        "short": "CH. VI",
+        "label": "CHAPTER VI: THE COWARDLY LION"
+      },
+      {
+        "row": 6,
+        "ci": 6,
+        "short": "CH. VII",
+        "label": "CHAPTER VII: THE JOURNEY TO THE GREAT OZ"
+      },
+      {
+        "row": 7,
+        "ci": 7,
+        "short": "CH. VIII",
+        "label": "CHAPTER VIII: THE DEADLY POPPY FIELD"
+      },
+      {
+        "row": 8,
+        "ci": 8,
+        "short": "CH. IX",
+        "label": "CHAPTER IX: THE QUEEN OF THE FIELD MICE"
+      },
+      {
+        "row": 9,
+        "ci": 9,
+        "short": "CH. X",
+        "label": "CHAPTER X: THE GUARDIAN OF THE GATE"
+      },
+      {
+        "row": 10,
+        "ci": 10,
+        "short": "CH. XI",
+        "label": "CHAPTER XI: THE WONDERFUL CITY OF OZ"
+      },
+      {
+        "row": 11,
+        "ci": 11,
+        "short": "CH. XII",
+        "label": "CHAPTER XII: THE SEARCH FOR THE WICKED WITCH"
+      },
+      {
+        "row": 12,
+        "ci": 12,
+        "short": "CH. XIII",
+        "label": "CHAPTER XIII: THE RESCUE"
+      },
+      {
+        "row": 13,
+        "ci": 13,
+        "short": "CH. XIV",
+        "label": "CHAPTER XIV: THE WINGED MONKEYS"
+      },
+      {
+        "row": 14,
+        "ci": 14,
+        "short": "CH. XV",
+        "label": "CHAPTER XV: THE DISCOVERY OF OZ, THE TERRIBLE"
+      },
+      {
+        "row": 15,
+        "ci": 15,
+        "short": "CH. XVI",
+        "label": "CHAPTER XVI: THE MAGIC ART OF THE GREAT HUMBUG"
+      },
+      {
+        "row": 16,
+        "ci": 16,
+        "short": "CH. XVII",
+        "label": "CHAPTER XVII: HOW THE BALLOON WAS LAUNCHED"
+      },
+      {
+        "row": 17,
+        "ci": 17,
+        "short": "CH. XVIII",
+        "label": "CHAPTER XVIII: AWAY TO THE SOUTH"
+      },
+      {
+        "row": 18,
+        "ci": 18,
+        "short": "CH. XIX",
+        "label": "CHAPTER XIX: ATTACKED BY THE FIGHTING TREES"
+      },
+      {
+        "row": 19,
+        "ci": 19,
+        "short": "CH. XX",
+        "label": "CHAPTER XX: THE DAINTY CHINA COUNTRY"
+      },
+      {
+        "row": 20,
+        "ci": 20,
+        "short": "CH. XXI",
+        "label": "CHAPTER XXI: THE LION BECOMES THE KING OF BEASTS"
+      },
+      {
+        "row": 21,
+        "ci": 21,
+        "short": "CH. XXII",
+        "label": "CHAPTER XXII: THE COUNTRY OF THE QUADLINGS"
+      },
+      {
+        "row": 22,
+        "ci": 22,
+        "short": "CH. XXIII",
+        "label": "CHAPTER XXIII: GLINDA THE GOOD WITCH GRANTS DOROTHY’S WISH"
+      },
+      {
+        "row": 23,
+        "ci": 23,
+        "short": "CH. XXIV",
+        "label": "CHAPTER XXIV: HOME AGAIN"
+      }
+    ]
+  },
+  "Namesake": {
+    "book": "THE NAMESAKE",
+    "sections": [
+      {
+        "title": "THE NAMESAKE",
+        "startRow": 0,
+        "endRow": 11
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "CH. 1",
+        "label": "CHAPTER 1"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "CH. 2",
+        "label": "CHAPTER 2"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "CH. 3",
+        "label": "CHAPTER 3"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "CH. 4",
+        "label": "CHAPTER 4"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "CH. 5",
+        "label": "CHAPTER 5"
+      },
+      {
+        "row": 5,
+        "ci": 5,
+        "short": "CH. 6",
+        "label": "CHAPTER 6"
+      },
+      {
+        "row": 6,
+        "ci": 6,
+        "short": "CH. 7",
+        "label": "CHAPTER 7"
+      },
+      {
+        "row": 7,
+        "ci": 7,
+        "short": "CH. 8",
+        "label": "CHAPTER 8"
+      },
+      {
+        "row": 8,
+        "ci": 8,
+        "short": "CH. 9",
+        "label": "CHAPTER 9"
+      },
+      {
+        "row": 9,
+        "ci": 9,
+        "short": "CH. 10",
+        "label": "CHAPTER 10"
+      },
+      {
+        "row": 10,
+        "ci": 10,
+        "short": "CH. 11",
+        "label": "CHAPTER 11"
+      },
+      {
+        "row": 11,
+        "ci": 11,
+        "short": "CH. 12",
+        "label": "CHAPTER 12"
+      }
+    ]
+  },
+  "Odyssey": {
+    "book": "PART 1: THE TELEMACHIAD",
+    "sections": [
+      {
+        "title": "PART 1: THE TELEMACHIAD",
+        "startRow": 0,
+        "endRow": 3
+      },
+      {
+        "title": "PART 2: ODYSSEUS' WANDERINGS",
+        "startRow": 4,
+        "endRow": 11
+      },
+      {
+        "title": "PART 3: RETURN TO ITHACA",
+        "startRow": 12,
+        "endRow": 23
+      },
+      {
+        "title": "NOTES & FOOTNOTES",
+        "startRow": 24,
+        "endRow": 24
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 2,
+        "short": "BK. I",
+        "label": "BOOK I"
+      },
+      {
+        "row": 1,
+        "ci": 3,
+        "short": "BK. II",
+        "label": "BOOK II"
+      },
+      {
+        "row": 2,
+        "ci": 4,
+        "short": "BK. III",
+        "label": "BOOK III: TELEMACHUS VISITS NESTOR AT PYLOS."
+      },
+      {
+        "row": 3,
+        "ci": 5,
+        "short": "BK. IV",
+        "label": "BOOK IV"
+      },
+      {
+        "row": 4,
+        "ci": 6,
+        "short": "BK. V",
+        "label": "BOOK V: CALYPSO—ULYSSES REACHES SCHERIA ON A RAFT."
+      },
+      {
+        "row": 5,
+        "ci": 7,
+        "short": "BK. VI",
+        "label": "BOOK VI: THE MEETING BETWEEN NAUSICAA AND ULYSSES."
+      },
+      {
+        "row": 6,
+        "ci": 8,
+        "short": "BK. VII",
+        "label": "BOOK VII"
+      },
+      {
+        "row": 7,
+        "ci": 9,
+        "short": "BK. VIII",
+        "label": "BOOK VIII: BANQUET IN THE HOUSE OF ALCINOUS—THE GAMES."
+      },
+      {
+        "row": 8,
+        "ci": 10,
+        "short": "BK. IX",
+        "label": "BOOK IX"
+      },
+      {
+        "row": 9,
+        "ci": 11,
+        "short": "BK. X",
+        "label": "BOOK X: AEOLUS, THE LAESTRYGONES, CIRCE."
+      },
+      {
+        "row": 10,
+        "ci": 12,
+        "short": "BK. XI",
+        "label": "BOOK XI: THE VISIT TO THE DEAD.88"
+      },
+      {
+        "row": 11,
+        "ci": 13,
+        "short": "BK. XII",
+        "label": "BOOK XII"
+      },
+      {
+        "row": 12,
+        "ci": 14,
+        "short": "BK. XIII",
+        "label": "BOOK XIII: ULYSSES LEAVES SCHERIA AND RETURNS TO ITHACA."
+      },
+      {
+        "row": 13,
+        "ci": 15,
+        "short": "BK. XIV",
+        "label": "BOOK XIV: ULYSSES IN THE HUT WITH EUMAEUS."
+      },
+      {
+        "row": 14,
+        "ci": 16,
+        "short": "BK. XV",
+        "label": "BOOK XV"
+      },
+      {
+        "row": 15,
+        "ci": 17,
+        "short": "BK. XVI",
+        "label": "BOOK XVI: ULYSSES REVEALS HIMSELF TO TELEMACHUS."
+      },
+      {
+        "row": 16,
+        "ci": 18,
+        "short": "BK. XVII",
+        "label": "BOOK XVII"
+      },
+      {
+        "row": 17,
+        "ci": 19,
+        "short": "BK. XVIII",
+        "label": "BOOK XVIII"
+      },
+      {
+        "row": 18,
+        "ci": 20,
+        "short": "BK. XIX",
+        "label": "BOOK XIX"
+      },
+      {
+        "row": 19,
+        "ci": 21,
+        "short": "BK. XX",
+        "label": "BOOK XX"
+      },
+      {
+        "row": 20,
+        "ci": 22,
+        "short": "BK. XXI",
+        "label": "BOOK XXI"
+      },
+      {
+        "row": 21,
+        "ci": 23,
+        "short": "BK. XXII",
+        "label": "BOOK XXII"
+      },
+      {
+        "row": 22,
+        "ci": 24,
+        "short": "BK. XXIII",
+        "label": "BOOK XXIII"
+      },
+      {
+        "row": 23,
+        "ci": 25,
+        "short": "BK. XXIV",
+        "label": "BOOK XXIV"
+      },
+      {
+        "row": 24,
+        "ci": 26,
+        "short": "CH. 25",
+        "label": "FOOTNOTES:"
+      }
+    ]
+  },
+  "LOTR": {
+    "book": "PART 1: THE FELLOWSHIP OF THE RING",
+    "sections": [
+      {
+        "title": "PART 1: THE FELLOWSHIP OF THE RING",
+        "startRow": 0,
+        "endRow": 21
+      },
+      {
+        "title": "PART 2: THE TWO TOWERS",
+        "startRow": 22,
+        "endRow": 42
+      },
+      {
+        "title": "PART 3: THE RETURN OF THE KING",
+        "startRow": 43,
+        "endRow": 61
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "CH. 1",
+        "label": "BOOK I: _CHAPTER 1"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "CH. 2",
+        "label": "CHAPTER 2"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "CH. 3",
+        "label": "CHAPTER 3"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "CH. 4",
+        "label": "CHAPTER 4"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "CH. 5",
+        "label": "CHAPTER 5"
+      },
+      {
+        "row": 5,
+        "ci": 5,
+        "short": "CH. 6",
+        "label": "CHAPTER 6"
+      },
+      {
+        "row": 6,
+        "ci": 6,
+        "short": "CH. 7",
+        "label": "CHAPTER 7"
+      },
+      {
+        "row": 7,
+        "ci": 7,
+        "short": "CH. 8",
+        "label": "CHAPTER 8"
+      },
+      {
+        "row": 8,
+        "ci": 8,
+        "short": "CH. 9",
+        "label": "CHAPTER 9"
+      },
+      {
+        "row": 9,
+        "ci": 9,
+        "short": "CH. 10",
+        "label": "CHAPTER 10"
+      },
+      {
+        "row": 10,
+        "ci": 10,
+        "short": "CH. 11",
+        "label": "CHAPTER 11"
+      },
+      {
+        "row": 11,
+        "ci": 11,
+        "short": "CH. 12",
+        "label": "CHAPTER 12"
+      },
+      {
+        "row": 12,
+        "ci": 12,
+        "short": "CH. 1",
+        "label": "CHAPTER 1"
+      },
+      {
+        "row": 13,
+        "ci": 13,
+        "short": "CH. 2",
+        "label": "CHAPTER 2"
+      },
+      {
+        "row": 14,
+        "ci": 14,
+        "short": "CH. 3",
+        "label": "CHAPTER 3"
+      },
+      {
+        "row": 15,
+        "ci": 15,
+        "short": "CH. 4",
+        "label": "CHAPTER 4"
+      },
+      {
+        "row": 16,
+        "ci": 16,
+        "short": "CH. 5",
+        "label": "CHAPTER 5"
+      },
+      {
+        "row": 17,
+        "ci": 17,
+        "short": "CH. 6",
+        "label": "CHAPTER 6"
+      },
+      {
+        "row": 18,
+        "ci": 18,
+        "short": "CH. 7",
+        "label": "CHAPTER 7"
+      },
+      {
+        "row": 19,
+        "ci": 19,
+        "short": "CH. 8",
+        "label": "CHAPTER 8"
+      },
+      {
+        "row": 20,
+        "ci": 20,
+        "short": "CH. 9",
+        "label": "CHAPTER 9"
+      },
+      {
+        "row": 21,
+        "ci": 21,
+        "short": "CH. 10",
+        "label": "CHAPTER 10"
+      },
+      {
+        "row": 22,
+        "ci": 22,
+        "short": "CH. 1",
+        "label": "CHAPTER 1"
+      },
+      {
+        "row": 23,
+        "ci": 23,
+        "short": "CH. 2",
+        "label": "CHAPTER 2"
+      },
+      {
+        "row": 24,
+        "ci": 24,
+        "short": "CH. 3",
+        "label": "CHAPTER 3"
+      },
+      {
+        "row": 25,
+        "ci": 25,
+        "short": "CH. 4",
+        "label": "CHAPTER 4"
+      },
+      {
+        "row": 26,
+        "ci": 26,
+        "short": "CH. 5",
+        "label": "CHAPTER 5"
+      },
+      {
+        "row": 27,
+        "ci": 27,
+        "short": "CH. 6",
+        "label": "CHAPTER 6"
+      },
+      {
+        "row": 28,
+        "ci": 28,
+        "short": "CH. 7",
+        "label": "CHAPTER 7"
+      },
+      {
+        "row": 29,
+        "ci": 29,
+        "short": "CH. 8",
+        "label": "CHAPTER 8"
+      },
+      {
+        "row": 30,
+        "ci": 30,
+        "short": "CH. 9",
+        "label": "CHAPTER 9"
+      },
+      {
+        "row": 31,
+        "ci": 31,
+        "short": "CH. 10",
+        "label": "CHAPTER 10"
+      },
+      {
+        "row": 32,
+        "ci": 32,
+        "short": "CH. 11",
+        "label": "CHAPTER 11"
+      },
+      {
+        "row": 33,
+        "ci": 33,
+        "short": "CH. 1",
+        "label": "CHAPTER 1"
+      },
+      {
+        "row": 34,
+        "ci": 34,
+        "short": "CH. 2",
+        "label": "CHAPTER 2"
+      },
+      {
+        "row": 35,
+        "ci": 35,
+        "short": "CH. 3",
+        "label": "CHAPTER 3"
+      },
+      {
+        "row": 36,
+        "ci": 36,
+        "short": "CH. 4",
+        "label": "CHAPTER 4"
+      },
+      {
+        "row": 37,
+        "ci": 37,
+        "short": "CH. 5",
+        "label": "CHAPTER 5"
+      },
+      {
+        "row": 38,
+        "ci": 38,
+        "short": "CH. 6",
+        "label": "CHAPTER 6"
+      },
+      {
+        "row": 39,
+        "ci": 39,
+        "short": "CH. 7",
+        "label": "CHAPTER 7"
+      },
+      {
+        "row": 40,
+        "ci": 40,
+        "short": "CH. 8",
+        "label": "CHAPTER 8"
+      },
+      {
+        "row": 41,
+        "ci": 41,
+        "short": "CH. 9",
+        "label": "CHAPTER 9"
+      },
+      {
+        "row": 42,
+        "ci": 42,
+        "short": "CH. 10",
+        "label": "CHAPTER 10"
+      },
+      {
+        "row": 43,
+        "ci": 43,
+        "short": "CH. 1",
+        "label": "BOOK V: CHAPTER 1"
+      },
+      {
+        "row": 44,
+        "ci": 44,
+        "short": "CH. 2",
+        "label": "CHAPTER 2: THE PASSING OF THE GREY COMPANY"
+      },
+      {
+        "row": 45,
+        "ci": 45,
+        "short": "CH. 3",
+        "label": "CHAPTER 3: THE MUSTER OF ROHAN"
+      },
+      {
+        "row": 46,
+        "ci": 46,
+        "short": "CH. 4",
+        "label": "CHAPTER 4: THE SIEGE OF GONDOR"
+      },
+      {
+        "row": 47,
+        "ci": 47,
+        "short": "CH. 5",
+        "label": "CHAPTER 5: THE RIDE OF THE ROHIRRIM"
+      },
+      {
+        "row": 48,
+        "ci": 48,
+        "short": "CH. 6",
+        "label": "CHAPTER 6: THE BATTLE OF THE PELENNOR FIELDS"
+      },
+      {
+        "row": 49,
+        "ci": 49,
+        "short": "CH. 7",
+        "label": "CHAPTER 7: THE PYRE OF DENETHOR"
+      },
+      {
+        "row": 50,
+        "ci": 50,
+        "short": "CH. 8",
+        "label": "CHAPTER 8: THE HOUSES OF HEALING"
+      },
+      {
+        "row": 51,
+        "ci": 51,
+        "short": "CH. 9",
+        "label": "CHAPTER 9: THE LAST DEBATE"
+      },
+      {
+        "row": 52,
+        "ci": 52,
+        "short": "CH. 10",
+        "label": "CHAPTER 10: THE BLACK GATE OPENS"
+      },
+      {
+        "row": 53,
+        "ci": 53,
+        "short": "CH. 1",
+        "label": "BOOK VI: CHAPTER 1"
+      },
+      {
+        "row": 54,
+        "ci": 54,
+        "short": "CH. 2",
+        "label": "CHAPTER 2: THE LAND OF SHADOW"
+      },
+      {
+        "row": 55,
+        "ci": 55,
+        "short": "CH. 3",
+        "label": "CHAPTER 3: MOUNT DOOM"
+      },
+      {
+        "row": 56,
+        "ci": 56,
+        "short": "CH. 4",
+        "label": "CHAPTER 4: THE FIELD OF CORMALLEN"
+      },
+      {
+        "row": 57,
+        "ci": 57,
+        "short": "CH. 5",
+        "label": "CHAPTER 5: THE STEWARD AND THE KING"
+      },
+      {
+        "row": 58,
+        "ci": 58,
+        "short": "CH. 6",
+        "label": "CHAPTER 6: MANY PARTINGS"
+      },
+      {
+        "row": 59,
+        "ci": 59,
+        "short": "CH. 7",
+        "label": "CHAPTER 7: HOMEWARD BOUND"
+      },
+      {
+        "row": 60,
+        "ci": 60,
+        "short": "CH. 8",
+        "label": "CHAPTER 8: THE SCOURING OF THE SHIRE"
+      },
+      {
+        "row": 61,
+        "ci": 61,
+        "short": "CH. 9",
+        "label": "CHAPTER 9: THE GREY HAVENS"
+      }
+    ]
+  },
+  "FellowshipOfTheRing": {
+    "book": "BOOK I",
+    "sections": [
+      {
+        "title": "BOOK I",
+        "startRow": 0,
+        "endRow": 11
+      },
+      {
+        "title": "BOOK II",
+        "startRow": 12,
+        "endRow": 21
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "CH. 1",
+        "label": "BOOK I: _CHAPTER 1"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "CH. 2",
+        "label": "CHAPTER 2"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "CH. 3",
+        "label": "CHAPTER 3"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "CH. 4",
+        "label": "CHAPTER 4"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "CH. 5",
+        "label": "CHAPTER 5"
+      },
+      {
+        "row": 5,
+        "ci": 5,
+        "short": "CH. 6",
+        "label": "CHAPTER 6"
+      },
+      {
+        "row": 6,
+        "ci": 6,
+        "short": "CH. 7",
+        "label": "CHAPTER 7"
+      },
+      {
+        "row": 7,
+        "ci": 7,
+        "short": "CH. 8",
+        "label": "CHAPTER 8"
+      },
+      {
+        "row": 8,
+        "ci": 8,
+        "short": "CH. 9",
+        "label": "CHAPTER 9"
+      },
+      {
+        "row": 9,
+        "ci": 9,
+        "short": "CH. 10",
+        "label": "CHAPTER 10"
+      },
+      {
+        "row": 10,
+        "ci": 10,
+        "short": "CH. 11",
+        "label": "CHAPTER 11"
+      },
+      {
+        "row": 11,
+        "ci": 11,
+        "short": "CH. 12",
+        "label": "CHAPTER 12"
+      },
+      {
+        "row": 12,
+        "ci": 12,
+        "short": "CH. 1",
+        "label": "CHAPTER 1"
+      },
+      {
+        "row": 13,
+        "ci": 13,
+        "short": "CH. 2",
+        "label": "CHAPTER 2"
+      },
+      {
+        "row": 14,
+        "ci": 14,
+        "short": "CH. 3",
+        "label": "CHAPTER 3"
+      },
+      {
+        "row": 15,
+        "ci": 15,
+        "short": "CH. 4",
+        "label": "CHAPTER 4"
+      },
+      {
+        "row": 16,
+        "ci": 16,
+        "short": "CH. 5",
+        "label": "CHAPTER 5"
+      },
+      {
+        "row": 17,
+        "ci": 17,
+        "short": "CH. 6",
+        "label": "CHAPTER 6"
+      },
+      {
+        "row": 18,
+        "ci": 18,
+        "short": "CH. 7",
+        "label": "CHAPTER 7"
+      },
+      {
+        "row": 19,
+        "ci": 19,
+        "short": "CH. 8",
+        "label": "CHAPTER 8"
+      },
+      {
+        "row": 20,
+        "ci": 20,
+        "short": "CH. 9",
+        "label": "CHAPTER 9"
+      },
+      {
+        "row": 21,
+        "ci": 21,
+        "short": "CH. 10",
+        "label": "CHAPTER 10"
+      }
+    ]
+  },
+  "TheTwoTowers": {
+    "book": "BOOK III",
+    "sections": [
+      {
+        "title": "BOOK III",
+        "startRow": 0,
+        "endRow": 10
+      },
+      {
+        "title": "BOOK IV",
+        "startRow": 11,
+        "endRow": 20
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "CH. 1",
+        "label": "CHAPTER 1"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "CH. 2",
+        "label": "CHAPTER 2"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "CH. 3",
+        "label": "CHAPTER 3"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "CH. 4",
+        "label": "CHAPTER 4"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "CH. 5",
+        "label": "CHAPTER 5"
+      },
+      {
+        "row": 5,
+        "ci": 5,
+        "short": "CH. 6",
+        "label": "CHAPTER 6"
+      },
+      {
+        "row": 6,
+        "ci": 6,
+        "short": "CH. 7",
+        "label": "CHAPTER 7"
+      },
+      {
+        "row": 7,
+        "ci": 7,
+        "short": "CH. 8",
+        "label": "CHAPTER 8"
+      },
+      {
+        "row": 8,
+        "ci": 8,
+        "short": "CH. 9",
+        "label": "CHAPTER 9"
+      },
+      {
+        "row": 9,
+        "ci": 9,
+        "short": "CH. 10",
+        "label": "CHAPTER 10"
+      },
+      {
+        "row": 10,
+        "ci": 10,
+        "short": "CH. 11",
+        "label": "CHAPTER 11"
+      },
+      {
+        "row": 11,
+        "ci": 11,
+        "short": "CH. 1",
+        "label": "CHAPTER 1"
+      },
+      {
+        "row": 12,
+        "ci": 12,
+        "short": "CH. 2",
+        "label": "CHAPTER 2"
+      },
+      {
+        "row": 13,
+        "ci": 13,
+        "short": "CH. 3",
+        "label": "CHAPTER 3"
+      },
+      {
+        "row": 14,
+        "ci": 14,
+        "short": "CH. 4",
+        "label": "CHAPTER 4"
+      },
+      {
+        "row": 15,
+        "ci": 15,
+        "short": "CH. 5",
+        "label": "CHAPTER 5"
+      },
+      {
+        "row": 16,
+        "ci": 16,
+        "short": "CH. 6",
+        "label": "CHAPTER 6"
+      },
+      {
+        "row": 17,
+        "ci": 17,
+        "short": "CH. 7",
+        "label": "CHAPTER 7"
+      },
+      {
+        "row": 18,
+        "ci": 18,
+        "short": "CH. 8",
+        "label": "CHAPTER 8"
+      },
+      {
+        "row": 19,
+        "ci": 19,
+        "short": "CH. 9",
+        "label": "CHAPTER 9"
+      },
+      {
+        "row": 20,
+        "ci": 20,
+        "short": "CH. 10",
+        "label": "CHAPTER 10"
+      }
+    ]
+  },
+  "ReturnOfTheKing": {
+    "book": "BOOK V",
+    "sections": [
+      {
+        "title": "BOOK V",
+        "startRow": 0,
+        "endRow": 9
+      },
+      {
+        "title": "BOOK VI",
+        "startRow": 10,
+        "endRow": 18
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "CH. 1",
+        "label": "BOOK V: CHAPTER 1"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "CH. 2",
+        "label": "CHAPTER 2: THE PASSING OF THE GREY COMPANY"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "CH. 3",
+        "label": "CHAPTER 3: THE MUSTER OF ROHAN"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "CH. 4",
+        "label": "CHAPTER 4: THE SIEGE OF GONDOR"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "CH. 5",
+        "label": "CHAPTER 5: THE RIDE OF THE ROHIRRIM"
+      },
+      {
+        "row": 5,
+        "ci": 5,
+        "short": "CH. 6",
+        "label": "CHAPTER 6: THE BATTLE OF THE PELENNOR FIELDS"
+      },
+      {
+        "row": 6,
+        "ci": 6,
+        "short": "CH. 7",
+        "label": "CHAPTER 7: THE PYRE OF DENETHOR"
+      },
+      {
+        "row": 7,
+        "ci": 7,
+        "short": "CH. 8",
+        "label": "CHAPTER 8: THE HOUSES OF HEALING"
+      },
+      {
+        "row": 8,
+        "ci": 8,
+        "short": "CH. 9",
+        "label": "CHAPTER 9: THE LAST DEBATE"
+      },
+      {
+        "row": 9,
+        "ci": 9,
+        "short": "CH. 10",
+        "label": "CHAPTER 10: THE BLACK GATE OPENS"
+      },
+      {
+        "row": 10,
+        "ci": 10,
+        "short": "CH. 1",
+        "label": "BOOK VI: CHAPTER 1"
+      },
+      {
+        "row": 11,
+        "ci": 11,
+        "short": "CH. 2",
+        "label": "CHAPTER 2: THE LAND OF SHADOW"
+      },
+      {
+        "row": 12,
+        "ci": 12,
+        "short": "CH. 3",
+        "label": "CHAPTER 3: MOUNT DOOM"
+      },
+      {
+        "row": 13,
+        "ci": 13,
+        "short": "CH. 4",
+        "label": "CHAPTER 4: THE FIELD OF CORMALLEN"
+      },
+      {
+        "row": 14,
+        "ci": 14,
+        "short": "CH. 5",
+        "label": "CHAPTER 5: THE STEWARD AND THE KING"
+      },
+      {
+        "row": 15,
+        "ci": 15,
+        "short": "CH. 6",
+        "label": "CHAPTER 6: MANY PARTINGS"
+      },
+      {
+        "row": 16,
+        "ci": 16,
+        "short": "CH. 7",
+        "label": "CHAPTER 7: HOMEWARD BOUND"
+      },
+      {
+        "row": 17,
+        "ci": 17,
+        "short": "CH. 8",
+        "label": "CHAPTER 8: THE SCOURING OF THE SHIRE"
+      },
+      {
+        "row": 18,
+        "ci": 18,
+        "short": "CH. 9",
+        "label": "CHAPTER 9: THE GREY HAVENS"
+      }
+    ]
+  },
+  "The Odyssey - Nolan": {
+    "book": "THE ODYSSEY - SCREENPLAY",
+    "sections": [
+      {
+        "title": "THE ODYSSEY - SCREENPLAY",
+        "startRow": 0,
+        "endRow": 12
+      }
+    ],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "SEQ. 1",
+        "label": "SCENE SEQUENCE 1"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "SEQ. 2",
+        "label": "SCENE SEQUENCE 2"
+      },
+      {
+        "row": 2,
+        "ci": 3,
+        "short": "SEQ. 3",
+        "label": "SCENE SEQUENCE 3"
+      },
+      {
+        "row": 3,
+        "ci": 5,
+        "short": "SEQ. 4",
+        "label": "SCENE SEQUENCE 4"
+      },
+      {
+        "row": 4,
+        "ci": 6,
+        "short": "SEQ. 5",
+        "label": "SCENE SEQUENCE 5"
+      },
+      {
+        "row": 5,
+        "ci": 7,
+        "short": "SEQ. 6",
+        "label": "SCENE SEQUENCE 6"
+      },
+      {
+        "row": 6,
+        "ci": 8,
+        "short": "SEQ. 7",
+        "label": "SCENE SEQUENCE 7"
+      },
+      {
+        "row": 7,
+        "ci": 9,
+        "short": "SEQ. 8",
+        "label": "SCENE SEQUENCE 8"
+      },
+      {
+        "row": 8,
+        "ci": 10,
+        "short": "SEQ. 9",
+        "label": "SCENE SEQUENCE 9"
+      },
+      {
+        "row": 9,
+        "ci": 11,
+        "short": "SEQ. 10",
+        "label": "SCENE SEQUENCE 10"
+      },
+      {
+        "row": 10,
+        "ci": 13,
+        "short": "SEQ. 11",
+        "label": "SCENE SEQUENCE 11"
+      },
+      {
+        "row": 11,
+        "ci": 14,
+        "short": "SEQ. 12",
+        "label": "SCENE SEQUENCE 12"
+      },
+      {
+        "row": 12,
+        "ci": 15,
+        "short": "SEQ. 13",
+        "label": "SCENE SEQUENCE 13"
+      }
+    ]
+  }
+}

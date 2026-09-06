@@ -292,6 +292,18 @@
   .gallery-footer a { color: inherit; text-decoration: underline; transition: color 0.2s ease }
   .gallery-footer a:hover { color: var(--text) }
   .gallery-footer .insta-link { display: inline-flex; align-items: center; text-decoration: none; margin-left: 0.2rem }
+  .gallery-variations {
+    text-align: center; padding: 1.5rem 2rem 0.5rem 2rem; color: var(--muted); font-size: 0.85rem;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    display: flex; align-items: center; justify-content: center; gap: 0.4rem; flex-wrap: wrap;
+  }
+  .gallery-variations .variation-label { opacity: 0.85; }
+  .gallery-variations .variation-sep { opacity: 0.4; margin: 0 0.25rem; }
+  .gallery-variations a.var-opt {
+    color: var(--muted); text-decoration: none; cursor: pointer; transition: color 0.2s ease, text-decoration 0.2s ease;
+  }
+  .gallery-variations a.var-opt:hover { color: var(--text); }
+  .gallery-variations a.var-opt.active { text-decoration: underline; font-weight: 700; color: var(--text); }
   .filter-group {
     display: inline-flex; gap: 0.2rem; background: var(--chip); border: 1px solid var(--border);
     padding: 0.15rem; border-radius: 999px; flex-shrink: 0;
@@ -749,6 +761,10 @@
       <a href="#" class="var-opt" data-param="minwidth" data-value="20">20%</a>
       <a href="#" class="var-opt" data-param="minwidth" data-value="10">10%</a>
       <a href="#" class="var-opt" data-param="minwidth" data-value="off">Off</a>
+      <span class="variation-sep">·</span>
+      <span class="variation-label">Labels:</span>
+      <a href="#" class="var-opt" data-param="labels" data-value="on">On</a>
+      <a href="#" class="var-opt active" data-param="labels" data-value="off">Off</a>
     </div>
 
     <!-- Attribution Footer -->
@@ -830,6 +846,8 @@ let model=null;
 let fullTextBuilt=false;
 let currentQuery = "";
 let hoverTimer = null;
+let cachedPreviewsData = null;
+let cachedSectionsData = null;
 
 if (!book) {
   document.body.classList.add('gallery-mode');
@@ -1547,10 +1565,12 @@ function getVariationParams() {
   if (rounding !== "full" && rounding !== "rounded" && rounding !== "off") rounding = "off";
   let minwidth = params.get("minwidth");
   if (minwidth !== "height" && minwidth !== "20" && minwidth !== "10" && minwidth !== "off") minwidth = "20";
-  return { minimalism, strips, rounding, minwidth };
+  let labels = params.get("labels");
+  if (labels !== "on" && labels !== "off") labels = "off";
+  return { minimalism, strips, rounding, minwidth, labels };
 }
 
-function updateVariationUI(minimalism, strips, rounding, minwidth) {
+function updateVariationUI(minimalism, strips, rounding, minwidth, labels) {
   const container = document.getElementById('gallery-variations');
   if (!container) return;
   
@@ -1562,7 +1582,8 @@ function updateVariationUI(minimalism, strips, rounding, minwidth) {
       (param === 'minimalism' && val === minimalism) ||
       (param === 'strips' && val === strips) ||
       (param === 'rounding' && val === rounding) ||
-      (param === 'minwidth' && val === minwidth)
+      (param === 'minwidth' && val === minwidth) ||
+      (param === 'labels' && val === labels)
     ) {
       link.classList.add('active');
     } else {
@@ -1571,7 +1592,7 @@ function updateVariationUI(minimalism, strips, rounding, minwidth) {
   });
 }
 
-function updateNavigationLinks(minimalism, strips, rounding, minwidth) {
+function updateNavigationLinks(minimalism, strips, rounding, minwidth, labels) {
   const cards = document.querySelectorAll('.poster-card');
   cards.forEach(card => {
     const rawHref = card.getAttribute('href');
@@ -1581,6 +1602,7 @@ function updateNavigationLinks(minimalism, strips, rounding, minwidth) {
     url.searchParams.set('strips', strips);
     url.searchParams.set('rounding', rounding);
     url.searchParams.set('minwidth', minwidth);
+    url.searchParams.set('labels', labels);
     card.setAttribute('href', '?' + url.searchParams.toString());
   });
 
@@ -1588,16 +1610,17 @@ function updateNavigationLinks(minimalism, strips, rounding, minwidth) {
   if (galleryBtn) {
     const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:";
     const basePath = isLocal ? "./index.html" : "./";
-    galleryBtn.href = `${basePath}?minimalism=${minimalism}&strips=${strips}&rounding=${rounding}&minwidth=${minwidth}`;
+    galleryBtn.href = `${basePath}?minimalism=${minimalism}&strips=${strips}&rounding=${rounding}&minwidth=${minwidth}&labels=${labels}`;
   }
 }
 
-function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minwidthOpt) {
-  const { minimalism: defaultMin, strips: defaultStrips, rounding: defaultRounding, minwidth: defaultMinwidth } = getVariationParams();
+function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minwidthOpt, labelsOpt) {
+  const { minimalism: defaultMin, strips: defaultStrips, rounding: defaultRounding, minwidth: defaultMinwidth, labels: defaultLabels } = getVariationParams();
   const minimalism = minimalismOpt || defaultMin;
   const strips = stripsOpt || defaultStrips;
   const rounding = roundingOpt || defaultRounding;
   const minwidth = minwidthOpt || defaultMinwidth;
+  const labels = labelsOpt || defaultLabels;
 
   const previews = document.querySelectorAll('.poster-preview');
   previews.forEach(previewContainer => {
@@ -1645,10 +1668,19 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
     svgEl.setAttribute('preserveAspectRatio', 'none');
     svgEl.style.display = 'block';
     
-    // Snug edge-to-edge portrait styling
-    const padX = 0, padY = 0;
+    // Edge-to-edge (padX=0) or labeled margins (padX=14)
+    const isLabelsOn = (labels === 'on');
+    const padX = isLabelsOn ? 14 : 0, padY = 0;
     const H = 300;
     const W = 200;
+
+    if (isLabelsOn) {
+      const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bgRect.setAttribute('width', W.toString());
+      bgRect.setAttribute('height', H.toString());
+      bgRect.setAttribute('fill', '#ffffff');
+      svgEl.appendChild(bgRect);
+    }
     
     // Dynamically balance gaps and row heights according to chapter count
     const rowGap = Math.max(0.4, Math.min(2.0, 50 / C));
@@ -1690,6 +1722,7 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
     
     const W_avail = W - padX * 2;
     let y = padY;
+    const rowGeometries = [];
     
     activeChapters.forEach((ch, chIdx) => {
       const h = heights[chIdx];
@@ -1773,9 +1806,9 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
       // Corner radius calculation
       let rx = 0;
       if (rounding === 'full') {
-        rx = h / 2;
+        rx = h / 2; // Pill shape / fully rounded edges
       } else if (rounding === 'rounded') {
-        rx = H * 0.01;
+        rx = H * 0.01; // 3px rounded corners
       }
       
       let x = padX;
@@ -1799,8 +1832,113 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
         x += w;
       });
       
+      rowGeometries.push({ idx: chIdx, y, h });
       y += h + rowGap;
     });
+
+    if (isLabelsOn) {
+      const bookSecData = (cachedSectionsData && cachedSectionsData[bookKey]) || null;
+      const chaptersList = (bookSecData && bookSecData.chapters) || [];
+      const sectionsList = (bookSecData && bookSecData.sections) || [
+        { title: bookKey.toUpperCase(), startRow: 0, endRow: Math.max(0, rowGeometries.length - 1) }
+      ];
+
+      // --- Left Margin: Chapter numbers/names (Rotated -90 degrees) ---
+      const leftGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      leftGroup.setAttribute('class', 'poster-labels-left');
+
+      const charW = 1.95;
+      const minGapY = 2.5;
+      let lastLeftYEnd = -Infinity;
+
+      rowGeometries.forEach((row, rIdx) => {
+        const chInfo = chaptersList[rIdx] || { short: `CH. ${rIdx + 1}`, label: `CH. ${rIdx + 1}` };
+        const centerY = row.y + row.h / 2;
+
+        let candidateText = (chInfo.label && chInfo.label.length < 32 && row.h > 12)
+          ? chInfo.label
+          : chInfo.short;
+
+        const maxSpan = Math.max(row.h * 1.6, 8);
+        const maxChars = Math.max(3, Math.floor(maxSpan / charW));
+
+        if (candidateText.length > maxChars) {
+          if (maxChars >= 6) {
+            candidateText = candidateText.slice(0, maxChars - 1).trim() + '…';
+          } else {
+            candidateText = chInfo.short;
+          }
+        }
+
+        const textLen = candidateText.length * charW;
+        const yStart = centerY - textLen / 2;
+        const yEnd = centerY + textLen / 2;
+
+        if (yStart < lastLeftYEnd + minGapY) return;
+        if (yStart < 2 || yEnd > H - 2) return;
+
+        const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        textEl.setAttribute('x', '7');
+        textEl.setAttribute('y', centerY.toFixed(2));
+        textEl.setAttribute('transform', `rotate(-90, 7, ${centerY.toFixed(2)})`);
+        textEl.setAttribute('text-anchor', 'middle');
+        textEl.setAttribute('dominant-baseline', 'central');
+        textEl.setAttribute('font-family', "'JetBrains Mono', monospace");
+        textEl.setAttribute('font-size', '3.2');
+        textEl.setAttribute('font-weight', '500');
+        textEl.setAttribute('fill', '#9ca3af');
+        textEl.setAttribute('letter-spacing', '0.4');
+        textEl.textContent = candidateText.toUpperCase();
+
+        leftGroup.appendChild(textEl);
+        lastLeftYEnd = yEnd;
+      });
+      svgEl.appendChild(leftGroup);
+
+      // --- Right Margin: Book/part information (Rotated 90 degrees) ---
+      const rightGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      rightGroup.setAttribute('class', 'poster-labels-right');
+
+      sectionsList.forEach(sec => {
+        const sRow = Math.max(0, Math.min(sec.startRow, rowGeometries.length - 1));
+        const eRow = Math.max(sRow, Math.min(sec.endRow, rowGeometries.length - 1));
+
+        const yTop = rowGeometries[sRow].y;
+        const yBottom = rowGeometries[eRow].y + rowGeometries[eRow].h;
+        const spanH = yBottom - yTop;
+        const centerY = (yTop + yBottom) / 2;
+
+        const rawTitle = sec.title.toUpperCase();
+        const maxChars = Math.max(3, Math.floor((spanH - 4) / charW));
+        let displayTitle = rawTitle;
+
+        if (displayTitle.length > maxChars) {
+          if (maxChars >= 6) {
+            displayTitle = displayTitle.slice(0, maxChars - 1).trim() + '…';
+          } else if (maxChars >= 3) {
+            displayTitle = displayTitle.slice(0, maxChars);
+          } else {
+            return;
+          }
+        }
+
+        const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        textEl.setAttribute('x', '193');
+        textEl.setAttribute('y', centerY.toFixed(2));
+        textEl.setAttribute('transform', `rotate(90, 193, ${centerY.toFixed(2)})`);
+        textEl.setAttribute('text-anchor', 'middle');
+        textEl.setAttribute('dominant-baseline', 'central');
+        textEl.setAttribute('font-family', "'JetBrains Mono', monospace");
+        textEl.setAttribute('font-size', '3.3');
+        textEl.setAttribute('font-weight', '600');
+        textEl.setAttribute('fill', '#9ca3af');
+        textEl.setAttribute('letter-spacing', '0.5');
+        textEl.textContent = displayTitle;
+
+        rightGroup.appendChild(textEl);
+      });
+      svgEl.appendChild(rightGroup);
+    }
     
     previewContainer.appendChild(svgEl);
   });
@@ -1876,29 +2014,32 @@ document.addEventListener('click', (e) => {
     const param = varOpt.getAttribute('data-param');
     const val = varOpt.getAttribute('data-value');
     
-    const { minimalism: currentMin, strips: currentStrips, rounding: currentRounding, minwidth: currentMinwidth } = getVariationParams();
+    const { minimalism: currentMin, strips: currentStrips, rounding: currentRounding, minwidth: currentMinwidth, labels: currentLabels } = getVariationParams();
     let newMin = currentMin;
     let newStrips = currentStrips;
     let newRounding = currentRounding;
     let newMinwidth = currentMinwidth;
+    let newLabels = currentLabels;
     
     if (param === 'minimalism') newMin = val;
     if (param === 'strips') newStrips = val;
     if (param === 'rounding') newRounding = val;
     if (param === 'minwidth') newMinwidth = val;
+    if (param === 'labels') newLabels = val;
     
     const currentUrl = new URL(window.location.href);
     currentUrl.searchParams.set('minimalism', newMin);
     currentUrl.searchParams.set('strips', newStrips);
     currentUrl.searchParams.set('rounding', newRounding);
     currentUrl.searchParams.set('minwidth', newMinwidth);
+    currentUrl.searchParams.set('labels', newLabels);
     window.history.replaceState({}, '', currentUrl.toString());
     
-    updateVariationUI(newMin, newStrips, newRounding, newMinwidth);
-    updateNavigationLinks(newMin, newStrips, newRounding, newMinwidth);
+    updateVariationUI(newMin, newStrips, newRounding, newMinwidth, newLabels);
+    updateNavigationLinks(newMin, newStrips, newRounding, newMinwidth, newLabels);
     
     if (cachedPreviewsData) {
-      renderGalleryPreviews(cachedPreviewsData, newMin, newStrips, newRounding, newMinwidth);
+      renderGalleryPreviews(cachedPreviewsData, newMin, newStrips, newRounding, newMinwidth, newLabels);
     }
   }
 
@@ -1932,21 +2073,30 @@ document.addEventListener('click', (e) => {
 /* ---------- Init: fetch JSON + TXT, validate, build, render ---------- */
 (async function init(){
   try{
-    const { minimalism, strips, rounding, minwidth } = getVariationParams();
-    updateVariationUI(minimalism, strips, rounding, minwidth);
-    updateNavigationLinks(minimalism, strips, rounding, minwidth);
+    const { minimalism, strips, rounding, minwidth, labels } = getVariationParams();
+    updateVariationUI(minimalism, strips, rounding, minwidth, labels);
+    updateNavigationLinks(minimalism, strips, rounding, minwidth, labels);
 
     if (!book) {
-      // Light-weight gallery load: fetch ONLY previews JSON!
+      // Light-weight gallery load: fetch previews JSON & sections JSON!
       const previewsUrl = isLocal
         ? "./gallery_previews.json"
         : "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/gallery_previews.json";
+      const sectionsUrl = isLocal
+        ? "./gallery_sections.json"
+        : "https://raw.githubusercontent.com/rohanjhunja/Hitchhiker/refs/heads/main/gallery_sections.json";
       
-      const resp = await fetch(previewsUrl, {cache:'no-store'});
+      const [resp, secResp] = await Promise.all([
+        fetch(previewsUrl, {cache:'no-store'}),
+        fetch(sectionsUrl, {cache:'no-store'}).catch(() => null)
+      ]);
       if (!resp.ok) throw new Error('Failed to load gallery previews');
       cachedPreviewsData = await resp.json();
+      if (secResp && secResp.ok) {
+        try { cachedSectionsData = await secResp.json(); } catch(e) {}
+      }
       
-      renderGalleryPreviews(cachedPreviewsData, minimalism, strips, rounding, minwidth);
+      renderGalleryPreviews(cachedPreviewsData, minimalism, strips, rounding, minwidth, labels);
       return;
     }
 
