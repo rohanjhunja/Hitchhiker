@@ -790,7 +790,7 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
           </button>
         </div>
-        <button type="button" class="export-video-btn" id="btn-export-video" title="Download 30s Replay Video (1080x1920)" aria-label="Download 30s Replay Video">
+        <button type="button" class="export-video-btn" id="btn-export-video" title="Download Replay Video (1080x1920 MP4)" aria-label="Download Replay Video">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
         </button>
       </div>
@@ -909,12 +909,12 @@
 <!-- 9:16 Video Export Modal -->
 <div class="export-modal" id="export-modal">
   <div class="export-card">
-    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem">Rendering 30s Replay Video</h3>
-    <p style="color: var(--muted); font-size: 0.85rem">Creating 30-second vertical 1080 × 1920 video with dynamic light leaks and quotes...</p>
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem">Exporting Replay Video</h3>
+    <p style="color: var(--muted); font-size: 0.85rem">Generating vertical 1080 × 1920 video with dynamic light leaks and quotes...</p>
     <div class="export-progress-bar">
       <div class="export-progress-fill" id="export-progress-fill"></div>
     </div>
-    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent)" id="export-status-text">Rendering: 0s / 30s (0%)</div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent)" id="export-status-text">Preparing render...</div>
   </div>
 </div>
 
@@ -2361,7 +2361,7 @@ document.querySelectorAll("#gallery-variations .ctrl-opt").forEach(link => {
   };
 });
 
-/* ---------- Direct 2D Canvas MP4 Video Export Engine (9:16, 1080x1920, Exact 30s) ---------- */
+/* ---------- Direct 2D Canvas MP4 Video Export Engine (9:16, 1080x1920, Adaptive Duration) ---------- */
 async function exportReplayVideo() {
   pauseReplay();
   const book = BOOK_CATALOG[currentBookIdx];
@@ -2381,31 +2381,50 @@ async function exportReplayVideo() {
   const statusText = document.getElementById("export-status-text");
   modal.classList.add("open");
   progressFill.style.width = "0%";
-  statusText.textContent = "Preparing 30s video render: 0s / 30s (0%)";
+  statusText.textContent = "Preparing video render (0%)...";
 
-  const totalDurationSec = 30.0;
   const fps = 30;
-  const totalFrames = Math.round(totalDurationSec * fps); // 900 frames
 
-  // Calculate weighted frame counts per tile ensuring exactly totalFrames (900)
-  const weights = tiles.map(t => isBookmarked(book.key, t.quote.id) ? 2.0 : 1.0);
-  const totalWeight = weights.reduce((s, w) => s + w, 0);
+  // Calculate dwell frames and transition frames per tile based on book size and pacing mode
+  // Minimum requirement: at least 1 frame per colour block (no length limit, considering transitions)
+  let baseDwell = 4;
+  let transFrames = (replayPacing === "smooth") ? 4 : 0;
 
-  const frameCounts = new Array(tiles.length).fill(0);
-  let accumulatedFrames = 0;
-  let targetAccumulated = 0;
-
-  for (let i = 0; i < tiles.length; i++) {
-    targetAccumulated += (totalFrames * weights[i]) / totalWeight;
-    const roundedTarget = Math.round(targetAccumulated);
-    frameCounts[i] = Math.max(1, roundedTarget - accumulatedFrames);
-    accumulatedFrames = roundedTarget;
+  if (replayPacing === "bookmarked") {
+    baseDwell = 36;  // Generous reading time per bookmarked quote (~1.2s dwell)
+    transFrames = 12; // Smooth crossfade (~0.4s)
+  } else if (replayPacing === "jump") {
+    transFrames = 0;
+    if (N >= 400) baseDwell = 1;       // Minimum requirement: exactly 1 frame per colour block
+    else if (N >= 150) baseDwell = 2;
+    else if (N >= 50) baseDwell = 4;
+    else baseDwell = 8;
+  } else {
+    // Smooth mode: dynamic scaling guaranteeing smooth transitions while respecting mobile memory
+    if (N > 600) {
+      baseDwell = 1;
+      transFrames = 1; // 2 frames total per block (1 dwell + 1 transition) for massive books (e.g. LOTR)
+    } else if (N > 200) {
+      baseDwell = 2;
+      transFrames = 2; // 4 frames total
+    } else if (N > 80) {
+      baseDwell = 4;
+      transFrames = 4; // 8 frames total
+    } else {
+      baseDwell = 8;
+      transFrames = 6; // 14 frames total
+    }
   }
-  // Ensure the final frame count sum is exactly totalFrames
-  let sumFrames = frameCounts.reduce((s, f) => s + f, 0);
-  if (sumFrames !== totalFrames) {
-    frameCounts[frameCounts.length - 1] += (totalFrames - sumFrames);
-  }
+
+  // Calculate frame counts for each tile (bookmarked tiles receive extra dwell)
+  const frameCounts = tiles.map(t => {
+    const isBm = isBookmarked(book.key, t.quote.id);
+    const dwell = (replayPacing !== "jump" && isBm) ? Math.round(baseDwell * 1.8) : baseDwell;
+    return Math.max(1, dwell + transFrames);
+  });
+
+  const totalFrames = frameCounts.reduce((s, f) => s + f, 0);
+  const totalDurationSec = totalFrames / fps;
 
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
@@ -2419,12 +2438,71 @@ async function exportReplayVideo() {
   const posterX = Math.round((1080 - posterW) / 2); // 200
   const posterY = 600;
 
-  // Helper to render one video frame
+  const posterMarginX = Math.round(posterW * 0.045);
+  const posterMarginTop = Math.round(posterW * 0.045);
+  const previewW = posterW - posterMarginX * 2;
+  const previewH = Math.round(posterH * 0.81);
+  const sX = previewW / 200;
+  const sY = previewH / 300;
+
+  // --- Pre-render Base Poster Offscreen (Massive Mobile Performance & Memory Optimization) ---
+  // Pre-bakes the white paper, all N color blocks, title, author, and glaze once so each frame only draws 1 blit
+  const posterBaseCanvas = document.createElement("canvas");
+  posterBaseCanvas.width = posterW;
+  posterBaseCanvas.height = posterH;
+  const pbCtx = posterBaseCanvas.getContext("2d");
+  pbCtx.imageSmoothingEnabled = true;
+  pbCtx.imageSmoothingQuality = "high";
+
+  // Base white sheet
+  pbCtx.fillStyle = "#ffffff";
+  pbCtx.fillRect(0, 0, posterW, posterH);
+
+  // Draw all base color blocks
+  tiles.forEach(t => {
+    const tgm = t.geom;
+    const tx = posterMarginX + tgm.x * sX;
+    const ty = posterMarginTop + tgm.y * sY;
+    const tw = tgm.w * sX;
+    const th = tgm.h * sY;
+    const trx = tgm.rx * sX;
+
+    pbCtx.fillStyle = tgm.color;
+    pbCtx.beginPath();
+    if (trx > 0) pbCtx.roundRect(tx, ty, tw, th, trx);
+    else pbCtx.rect(tx, ty, tw, th);
+    pbCtx.fill();
+  });
+
+  // Title & Author on Poster Sheet to scale
+  const metaY = posterMarginTop + previewH;
+  pbCtx.textAlign = "left";
+  pbCtx.fillStyle = "#0f172a";
+  let titleSize = 36;
+  pbCtx.font = `800 ${titleSize}px 'Geom', sans-serif`;
+  while (pbCtx.measureText(book.title).width > previewW && titleSize > 20) {
+    titleSize -= 2;
+    pbCtx.font = `800 ${titleSize}px 'Geom', sans-serif`;
+  }
+  pbCtx.fillText(book.title, posterMarginX, metaY + 48);
+
+  pbCtx.fillStyle = "#64748b";
+  pbCtx.font = "italic 400 24px 'Geom', sans-serif";
+  pbCtx.fillText(book.author, posterMarginX, metaY + 84);
+
+  // Subtle Glaze Reflection
+  const glazeGrad = pbCtx.createLinearGradient(0, 0, posterW, posterH);
+  glazeGrad.addColorStop(0, "rgba(255, 255, 255, 0.12)");
+  glazeGrad.addColorStop(0.35, "rgba(255, 255, 255, 0.03)");
+  glazeGrad.addColorStop(0.7, "transparent");
+  pbCtx.fillStyle = glazeGrad;
+  pbCtx.fillRect(0, 0, posterW, posterH);
+
+  // Helper to render one video frame (Minimalist Layout: text as in gallery preview, no cards, no extra header/timeline)
   function renderSingleVideoFrame(activeTile, qIdx, frameInTile, framesForTile, currentFrame) {
     const q = activeTile.quote;
-    const isBm = isBookmarked(book.key, q.id);
 
-    // 1. Black Background
+    // 1. Atmospheric Deep Background
     ctx.fillStyle = "#07090e";
     ctx.fillRect(0, 0, 1080, 1920);
 
@@ -2434,9 +2512,9 @@ async function exportReplayVideo() {
     const maxR = 1400;
 
     let activeColor = q.color || "#38bdf8";
-    if (replayPacing === "smooth" && framesForTile > 10 && frameInTile >= framesForTile - 10) {
+    if (replayPacing === "smooth" && transFrames > 0 && frameInTile >= framesForTile - transFrames) {
       const nextTile = tiles[(qIdx + 1) % N];
-      const blendFrac = (frameInTile - (framesForTile - 10)) / 10;
+      const blendFrac = (frameInTile - (framesForTile - transFrames)) / transFrames;
       activeColor = lerpColor(q.color, nextTile.quote.color || "#ec4899", blendFrac);
     }
 
@@ -2521,18 +2599,7 @@ async function exportReplayVideo() {
     ctx.fillRect(-750, -6, 1500, 12);
     ctx.restore();
 
-    // 3. Header Branding Typography
-    ctx.save();
-    ctx.textAlign = "center";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
-    ctx.font = "600 18px 'JetBrains Mono', monospace";
-    ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetY = 1;
-    ctx.fillText(`${book.title.toUpperCase()}  ·  ${book.author.toUpperCase()}`, 540, 75);
-    ctx.restore();
-
-    // 4. Quote Typography Above Poster (Monospaced, max-width <= posterW * 1.5 = 1020px)
+    // 3. Clean Quote Typography Above Poster (pure text as in gallery preview, no cards, no badges)
     ctx.save();
     const maxQuoteWidth = posterW * 1.5; // 1020px
     const quoteBoxCenter = 540;
@@ -2541,18 +2608,23 @@ async function exportReplayVideo() {
     ctx.shadowOffsetY = 2;
 
     const rawQuoteText = (q.quote || q.name || "").replace(/<[^>]+>/g, '').trim();
-    const displayString = (isBm ? "★ " : "") + rawQuoteText;
 
     let fontSize = 24;
-    if (displayString.length > 200) fontSize = 21;
-    if (displayString.length < 80) fontSize = 28;
+    if (rawQuoteText.length > 200) fontSize = 21;
+    if (rawQuoteText.length < 80) fontSize = 28;
 
     ctx.font = `500 ${fontSize}px 'JetBrains Mono', monospace`;
     ctx.textAlign = "center";
     ctx.fillStyle = "#ffffff";
 
+    // Text transition crossfade in smooth mode
+    if (replayPacing === "smooth" && transFrames > 0 && frameInTile >= framesForTile - transFrames) {
+      const fadeFrac = (frameInTile - (framesForTile - transFrames)) / transFrames;
+      ctx.globalAlpha = Math.max(0.15, 1.0 - fadeFrac);
+    }
+
     const wrapLimit = maxQuoteWidth - 40;
-    const words = displayString.split(/\s+/);
+    const words = rawQuoteText.split(/\s+/);
     const lines = [];
     let curLine = "";
 
@@ -2576,7 +2648,7 @@ async function exportReplayVideo() {
     }
     ctx.restore();
 
-    // 5. Framed Poster Flush with Wall
+    // 4. Framed Poster Flush with Wall
     ctx.save();
     ctx.shadowColor = "rgba(0,0,0,0.65)";
     ctx.shadowBlur = 40;
@@ -2586,120 +2658,36 @@ async function exportReplayVideo() {
     ctx.fillRect(posterX - frameBorder, posterY - frameBorder, posterW + frameBorder * 2, posterH + frameBorder * 2);
     ctx.restore();
 
-    // 6. White Poster Sheet & Preview to Scale
-    ctx.save();
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(posterX, posterY, posterW, posterH);
+    // 5. Blit Pre-Rendered Base Poster
+    ctx.drawImage(posterBaseCanvas, posterX, posterY);
 
-    const posterMarginX = Math.round(posterW * 0.045);
-    const posterMarginTop = Math.round(posterW * 0.045);
-    const previewW = posterW - posterMarginX * 2;
-    const previewH = Math.round(posterH * 0.81);
-    const sX = previewW / 200;
-    const sY = previewH / 300;
-
-    tiles.forEach((t, idx) => {
-      const tgm = t.geom;
-      const tx = posterX + posterMarginX + tgm.x * sX;
-      const ty = posterY + posterMarginTop + tgm.y * sY;
-      const tw = tgm.w * sX;
-      const th = tgm.h * sY;
-      const trx = tgm.rx * sX;
-
-      ctx.globalAlpha = 1.0;
-      ctx.fillStyle = tgm.color;
-      ctx.beginPath();
-      if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
-      else ctx.rect(tx, ty, tw, th);
-      ctx.fill();
-
-      if (idx === qIdx) {
-        ctx.save();
-        ctx.shadowColor = "#ffffff";
-        ctx.shadowBlur = 18;
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 3.5;
-        ctx.stroke();
-
-        // Specular shine gradient over active tile
-        const shineGrad = ctx.createLinearGradient(tx, ty, tx + tw, ty + th);
-        shineGrad.addColorStop(0, "rgba(255, 255, 255, 0.85)");
-        shineGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.25)");
-        shineGrad.addColorStop(0.7, "transparent");
-        ctx.fillStyle = shineGrad;
-        if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
-        else ctx.rect(tx, ty, tw, th);
-        ctx.fill();
-        ctx.restore();
-      }
-    });
-
-    // Title & Author on Poster Sheet to Scale
-    ctx.globalAlpha = 1.0;
-    const metaY = posterY + posterMarginTop + previewH;
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#0f172a";
-    let titleSize = 36;
-    ctx.font = `800 ${titleSize}px 'Geom', sans-serif`;
-    while (ctx.measureText(book.title).width > previewW && titleSize > 20) {
-      titleSize -= 2;
-      ctx.font = `800 ${titleSize}px 'Geom', sans-serif`;
-    }
-    ctx.fillText(book.title, posterX + posterMarginX, metaY + 48);
-
-    ctx.fillStyle = "#64748b";
-    ctx.font = "italic 400 24px 'Geom', sans-serif";
-    ctx.fillText(book.author, posterX + posterMarginX, metaY + 84);
-
-    // Glaze Reflection
-    const glazeGrad = ctx.createLinearGradient(posterX, posterY, posterX + posterW, posterY + posterH);
-    glazeGrad.addColorStop(0, "rgba(255, 255, 255, 0.12)");
-    glazeGrad.addColorStop(0.35, "rgba(255, 255, 255, 0.03)");
-    glazeGrad.addColorStop(0.7, "transparent");
-    ctx.fillStyle = glazeGrad;
-    ctx.fillRect(posterX, posterY, posterW, posterH);
-
-    ctx.restore();
-
-    // 7. Bottom Replay Timeline Progress Bar on Video
-    const currentSec = currentFrame / fps;
-    const overallFrac = Math.min(1.0, currentFrame / (totalFrames - 1));
-    const trackX = 140;
-    const trackY = 1780;
-    const trackW = 800;
-    const trackH = 6;
+    // 6. Active Tile Highlight & Specular Shine
+    const tgm = activeTile.geom;
+    const tx = posterX + posterMarginX + tgm.x * sX;
+    const ty = posterY + posterMarginTop + tgm.y * sY;
+    const tw = tgm.w * sX;
+    const th = tgm.h * sY;
+    const trx = tgm.rx * sX;
 
     ctx.save();
-    // Track background
-    ctx.fillStyle = "rgba(255, 255, 255, 0.20)";
+    ctx.shadowColor = "#ffffff";
+    ctx.shadowBlur = 18;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3.5;
     ctx.beginPath();
-    ctx.roundRect(trackX, trackY, trackW, trackH, 3);
-    ctx.fill();
+    if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
+    else ctx.rect(tx, ty, tw, th);
+    ctx.stroke();
 
-    // Progress fill
-    ctx.fillStyle = "#38bdf8";
+    const shineGrad = ctx.createLinearGradient(tx, ty, tx + tw, ty + th);
+    shineGrad.addColorStop(0, "rgba(255, 255, 255, 0.85)");
+    shineGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.25)");
+    shineGrad.addColorStop(0.7, "transparent");
+    ctx.fillStyle = shineGrad;
     ctx.beginPath();
-    ctx.roundRect(trackX, trackY, Math.max(trackH, trackW * overallFrac), trackH, 3);
+    if (trx > 0) ctx.roundRect(tx, ty, tw, th, trx);
+    else ctx.rect(tx, ty, tw, th);
     ctx.fill();
-
-    // Progress Dot
-    const dotX = trackX + trackW * overallFrac;
-    ctx.fillStyle = "#ffffff";
-    ctx.shadowColor = "#38bdf8";
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.arc(dotX, trackY + 3, 7, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Time text below track
-    ctx.shadowBlur = 0;
-    ctx.textAlign = "center";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
-    ctx.font = "500 18px 'JetBrains Mono', monospace";
-    const curMin = Math.floor(currentSec / 60);
-    const curSecRounded = Math.floor(currentSec % 60);
-    const timeStr = `${curMin}:${String(curSecRounded).padStart(2, '0')} / 0:30`;
-    ctx.fillText(timeStr, 540, trackY + 42);
     ctx.restore();
   }
 
@@ -2708,7 +2696,7 @@ async function exportReplayVideo() {
     const useWebCodecs = (typeof VideoEncoder !== "undefined" && typeof Mp4Muxer !== "undefined");
 
     if (useWebCodecs) {
-      // Primary High-Performance Engine: VideoEncoder + Mp4Muxer
+      // Primary High-Performance Engine: VideoEncoder + Mp4Muxer (streaming mode: fastStart false avoids duplicate sample buffer heap allocations)
       const muxer = new Mp4Muxer.Muxer({
         target: new Mp4Muxer.ArrayBufferTarget(),
         video: {
@@ -2716,7 +2704,7 @@ async function exportReplayVideo() {
           width: 1080,
           height: 1920
         },
-        fastStart: 'in-memory'
+        fastStart: false
       });
 
       const encoder = new VideoEncoder({
@@ -2728,7 +2716,7 @@ async function exportReplayVideo() {
         codec: 'avc1.420028',
         width: 1080,
         height: 1920,
-        bitrate: 8500000,
+        bitrate: 4500000,
         framerate: fps
       });
 
@@ -2741,19 +2729,29 @@ async function exportReplayVideo() {
           renderSingleVideoFrame(activeTile, qIdx, f, framesForTile, currentFrame);
 
           const timestampMicros = Math.round(currentFrame * (1000000 / fps));
-          const frame = new VideoFrame(canvas, {
-            timestamp: timestampMicros,
-            duration: Math.round(1000000 / fps)
-          });
-          encoder.encode(frame, { keyFrame: (currentFrame % 60 === 0) });
-          frame.close();
+          let frame = null;
+          try {
+            frame = new VideoFrame(canvas, {
+              timestamp: timestampMicros,
+              duration: Math.round(1000000 / fps)
+            });
+            encoder.encode(frame, { keyFrame: (currentFrame % 45 === 0) });
+          } finally {
+            if (frame) frame.close();
+          }
+
+          // Active mobile backpressure throttle: prevent hardware queue from overflowing
+          while (encoder.encodeQueueSize > 2) {
+            await new Promise(r => setTimeout(r, 4));
+          }
 
           currentFrame++;
-          if (currentFrame % 15 === 0) {
+          if (currentFrame % 2 === 0 || currentFrame === totalFrames) {
             const pct = Math.round((currentFrame / totalFrames) * 100);
-            const sec = (currentFrame / fps).toFixed(0);
+            const sec = (currentFrame / fps).toFixed(1);
+            const totSec = totalDurationSec.toFixed(1);
             progressFill.style.width = `${pct}%`;
-            statusText.textContent = `Rendering 30s Video: ${sec}s / 30s (${pct}%)`;
+            statusText.textContent = `Rendering Replay Video: ${sec}s / ${totSec}s (${pct}%)`;
             await new Promise(r => setTimeout(r, 0));
           }
         }
@@ -2763,28 +2761,28 @@ async function exportReplayVideo() {
       muxer.finalize();
 
       progressFill.style.width = "100%";
-      statusText.textContent = "Rendering 30s Video: 30s / 30s (100%) - Finalizing download...";
+      statusText.textContent = `Rendering Replay Video: 100% - Finalizing download...`;
 
       const buffer = muxer.target.buffer;
       const blob = new Blob([buffer], { type: "video/mp4" });
       const dlUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = dlUrl;
-      a.download = `${book.key}_replay_30s_9x16.mp4`;
+      a.download = `${book.key}_replay_9x16.mp4`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(dlUrl);
 
     } else {
-      // Fallback Engine: MediaRecorder with real-time frame pacing over full 30 seconds
+      // Fallback Engine: MediaRecorder with real-time frame pacing
       const stream = canvas.captureStream(fps);
       let mimeType = 'video/mp4; codecs="avc1.420028"';
       if (!MediaRecorder.isTypeSupported(mimeType)) {
         mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
       }
 
-      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8500000 });
+      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 4500000 });
       const recordedChunks = [];
       recorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
 
@@ -2795,7 +2793,7 @@ async function exportReplayVideo() {
           const a = document.createElement("a");
           a.href = dlUrl;
           const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-          a.download = `${book.key}_replay_30s_9x16.${ext}`;
+          a.download = `${book.key}_replay_9x16.${ext}`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
@@ -2818,14 +2816,15 @@ async function exportReplayVideo() {
           renderSingleVideoFrame(activeTile, qIdx, f, framesForTile, currentFrame);
 
           currentFrame++;
-          if (currentFrame % 5 === 0) {
+          if (currentFrame % 2 === 0 || currentFrame === totalFrames) {
             const pct = Math.round((currentFrame / totalFrames) * 100);
-            const sec = (currentFrame / fps).toFixed(0);
+            const sec = (currentFrame / fps).toFixed(1);
+            const totSec = totalDurationSec.toFixed(1);
             progressFill.style.width = `${pct}%`;
-            statusText.textContent = `Rendering 30s Video: ${sec}s / 30s (${pct}%)`;
+            statusText.textContent = `Rendering Replay Video: ${sec}s / ${totSec}s (${pct}%)`;
           }
 
-          // Real-time pacing to ensure MediaRecorder records the full 30 seconds
+          // Real-time pacing to ensure MediaRecorder records the full duration
           const targetTime = startWallTime + currentFrame * frameIntervalMs;
           const delay = Math.max(0, targetTime - performance.now());
           await new Promise(r => setTimeout(r, delay));
@@ -2836,7 +2835,7 @@ async function exportReplayVideo() {
       await exportPromise;
     }
   } catch (err) {
-    console.error("Error during 30s video export:", err);
+    console.error("Error during video export:", err);
     alert("Video rendering encountered an error: " + err.message);
   } finally {
     modal.classList.remove("open");
@@ -3160,7 +3159,7 @@ async function downloadSceneJpeg() {
       ctx.shadowOffsetY = 2;
 
       const rawQuoteText = (selectedQuote.quote || selectedQuote.name || "").replace(/<[^>]+>/g, '').trim();
-      const displayString = (isBm ? "★ " : "") + rawQuoteText;
+      const displayString = rawQuoteText;
 
       let fontSize = 24;
       if (displayString.length > 200) fontSize = 21;
@@ -3196,16 +3195,7 @@ async function downloadSceneJpeg() {
       ctx.restore();
     }
 
-    // Subtle Gallery Branding at Top (Minimalist JetBrains Mono)
-    ctx.save();
-    ctx.textAlign = "center";
-    ctx.font = "600 15px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
-    ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetY = 1;
-    ctx.fillText(`${book.title.toUpperCase()}  ·  ${book.author.toUpperCase()}`, 540, 72);
-    ctx.restore();
+
 
     // Export to JPEG
     canvas.toBlob(blob => {
