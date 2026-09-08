@@ -729,7 +729,7 @@
       <!-- Floating Label Block (Above Poster) - Pure white typography & bookmark toggle only (no card design) -->
       <div class="quote-display-container">
         <div class="quote-label-row" id="quote-card" style="opacity: 0">
-          <div class="quote-text" id="quote-text">Hover or tap on any color block below…</div>
+          <div class="quote-text" id="quote-text"></div>
           <button type="button" class="bookmark-btn" id="quote-bookmark-btn" title="Bookmark Quote (★)" aria-label="Bookmark Quote">
             <span id="bookmark-star-icon">☆</span>
           </button>
@@ -1554,17 +1554,21 @@ function triggerLoadAnimation() {
 
 /* ---------- Label Block Display: Pure White Text & Bookmark Toggle (No Card Design) ---------- */
 function displayQuote(quote, isInteractiveHover = false) {
-  if (quote) currentDisplayedQuote = quote;
   const card = document.getElementById("quote-card");
   const textEl = document.getElementById("quote-text");
   const bmBtn = document.getElementById("quote-bookmark-btn");
   const starIcon = document.getElementById("bookmark-star-icon");
 
   if (!quote) {
-    if (!pinnedBlock && card) card.style.opacity = "0";
+    if (!pinnedBlock) {
+      currentDisplayedQuote = null;
+      if (card) card.style.opacity = "0";
+      if (textEl) textEl.innerHTML = "";
+    }
     return;
   }
 
+  currentDisplayedQuote = quote;
   const book = BOOK_CATALOG[currentBookIdx];
   const bookmarked = isBookmarked(book.key, quote.id);
 
@@ -1623,6 +1627,9 @@ function onBlockClick(quote, rect) {
 
   if (pinnedBlock && pinnedBlock.id === quote.id) {
     pinnedBlock = null;
+    currentDisplayedQuote = null;
+    displayQuote(null);
+    rect.style.filter = "none";
   } else {
     pinnedBlock = quote;
     displayQuote(quote);
@@ -1632,12 +1639,26 @@ function onBlockClick(quote, rect) {
 document.getElementById("poster-wall-stage").addEventListener("pointerleave", () => {
   hoveredBlock = null;
   if (currentMode === "interactive" && !pinnedBlock) {
+    currentDisplayedQuote = null;
     displayQuote(null);
-  }
-  if (currentMode === "interactive") {
     activeTileElements.forEach(item => {
       item.element.style.filter = "none";
     });
+  }
+});
+
+// Clicking on the wall or background outside tiles deselects any pinned block
+document.addEventListener("click", (e) => {
+  if (currentMode === "interactive" && !e.target.closest("rect[data-block-id]") && !e.target.closest(".bookmark-btn") && !e.target.closest(".gallery-header") && !e.target.closest(".side-nav-btn") && !e.target.closest(".index-drawer") && !e.target.closest(".export-modal") && !e.target.closest(".pacing-toggle") && !e.target.closest(".mode-toggle")) {
+    if (pinnedBlock) {
+      pinnedBlock = null;
+      hoveredBlock = null;
+      currentDisplayedQuote = null;
+      displayQuote(null);
+      activeTileElements.forEach(item => {
+        item.element.style.filter = "none";
+      });
+    }
   }
 });
 
@@ -2877,23 +2898,8 @@ async function downloadSceneJpeg() {
     } else if (hoveredBlock) {
       selectedQuote = hoveredBlock;
       selectedTileIdx = activeTileElements.findIndex(t => t.quote.id === hoveredBlock.id);
-    } else if (currentDisplayedQuote) {
-      selectedQuote = currentDisplayedQuote;
-      selectedTileIdx = activeTileElements.findIndex(t => t.quote.id === currentDisplayedQuote.id);
-    } else {
-      const bms = getBookmarks(book.key);
-      if (bms.length > 0) {
-        const bmIdx = activeTileElements.findIndex(t => bms.includes(t.quote.id));
-        if (bmIdx !== -1) {
-          selectedQuote = activeTileElements[bmIdx].quote;
-          selectedTileIdx = bmIdx;
-        }
-      }
-      if (!selectedQuote && activeTileElements.length > 0) {
-        selectedQuote = activeTileElements[0].quote;
-        selectedTileIdx = 0;
-      }
     }
+    // When no block is selected in interactive mode, selectedQuote remains null and selectedTileIdx remains -1
 
     // Use full authentic cached text if available
     if (selectedQuote && quotesCache[book.key] && quotesCache[book.key][selectedQuote.id]) {
@@ -3072,7 +3078,7 @@ async function downloadSceneJpeg() {
       else ctx.rect(tx, ty, tw, th);
       ctx.fill();
 
-      if (selectedTileIdx === idx) {
+      if (selectedTileIdx !== -1 && selectedTileIdx === idx) {
         ctx.save();
         ctx.shadowColor = "#ffffff";
         ctx.shadowBlur = 18;
@@ -3090,7 +3096,7 @@ async function downloadSceneJpeg() {
         ctx.fillStyle = shineGrad;
         ctx.fill();
         ctx.restore();
-      } else if (bookmarksViewMode === "show" && isBookmarked(book.key, t.quote.id)) {
+      } else if (selectedTileIdx !== -1 && bookmarksViewMode === "show" && isBookmarked(book.key, t.quote.id)) {
         ctx.save();
         ctx.strokeStyle = "rgba(245, 158, 11, 0.85)";
         ctx.lineWidth = 2.5;
@@ -3119,17 +3125,19 @@ async function downloadSceneJpeg() {
     ctx.font = "italic 400 22px 'Geom', 'Inter', sans-serif";
     ctx.fillText(book.author, posterX + posterMarginX, metaY + 76);
 
-    // Glaze Reflection
-    const glazeGrad = ctx.createLinearGradient(posterX, posterY, posterX + posterW, posterY + posterH);
-    glazeGrad.addColorStop(0, "rgba(255, 255, 255, 0.12)");
-    glazeGrad.addColorStop(0.35, "rgba(255, 255, 255, 0.03)");
-    glazeGrad.addColorStop(0.7, "transparent");
-    ctx.fillStyle = glazeGrad;
-    ctx.fillRect(posterX, posterY, posterW, posterH);
+    // Glaze Reflection - only displayed on the poster when a block is actively selected
+    if (selectedTileIdx !== -1) {
+      const glazeGrad = ctx.createLinearGradient(posterX, posterY, posterX + posterW, posterY + posterH);
+      glazeGrad.addColorStop(0, "rgba(255, 255, 255, 0.12)");
+      glazeGrad.addColorStop(0.35, "rgba(255, 255, 255, 0.03)");
+      glazeGrad.addColorStop(0.7, "transparent");
+      ctx.fillStyle = glazeGrad;
+      ctx.fillRect(posterX, posterY, posterW, posterH);
+    }
     ctx.restore();
 
-    // Ambient lighting overlay on the poster itself
-    if (currentMode === "interactive") {
+    // Ambient lighting overlay on the poster itself - only displayed when a block is actively selected
+    if (currentMode === "interactive" && selectedTileIdx !== -1) {
       ctx.save();
       if (currentRoom === 3) {
         const posterLight = ctx.createLinearGradient(posterX + posterW, posterY, posterX, posterY + posterH);
@@ -3148,8 +3156,8 @@ async function downloadSceneJpeg() {
       ctx.restore();
     }
 
-    // Selected Quote Above Poster (JetBrains Mono, constrained to poster width + 50% = 960px)
-    if (selectedQuote) {
+    // Selected Quote Above Poster (only displayed when a block is actively selected)
+    if (selectedQuote && selectedTileIdx !== -1) {
       ctx.save();
       const maxQuoteWidth = posterW * 1.5; // 960px
       const quoteBoxCenter = 540;
@@ -3203,7 +3211,9 @@ async function downloadSceneJpeg() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${book.key}_scene_quote_9x16.jpg`;
+      a.download = (selectedQuote && selectedTileIdx !== -1)
+        ? `${book.key}_scene_quote_9x16.jpg`
+        : `${book.key}_scene_9x16.jpg`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
