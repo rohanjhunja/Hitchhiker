@@ -98,7 +98,7 @@ def clean_text(text, start_marker=None, end_marker=None, start_line=None, end_li
 
 
 def is_screenplay_format(text):
-    scene_pattern = re.compile(r'^(?:INT/EXT\.|EXT/INT\.|INT\.|EXT\.)(?:\s|$)', re.MULTILINE | re.IGNORECASE)
+    scene_pattern = re.compile(r'^\s*(?:INT/EXT\.|EXT/INT\.|INT\.|EXT\.)(?:\s|$)', re.MULTILINE | re.IGNORECASE)
     return len(scene_pattern.findall(text)) >= 5
 
 # --- Screenplay Parsing Helpers ---
@@ -122,7 +122,7 @@ def is_character_name(stripped):
     return len(stripped) <= 40
 
 def detect_screenplay_chapters(text):
-    scene_pattern = re.compile(r'^(?:INT/EXT\.|EXT/INT\.|INT\.|EXT\.)(?:\s|$).*$', re.MULTILINE | re.IGNORECASE)
+    scene_pattern = re.compile(r'^\s*(?:INT/EXT\.|EXT/INT\.|INT\.|EXT\.)(?:\s|$).*$', re.MULTILINE | re.IGNORECASE)
     scene_matches = list(scene_pattern.finditer(text))
     
     if not scene_matches:
@@ -463,8 +463,8 @@ def update_gallery_previews(repo_root, book_name, text, words):
     previews_path.write_text(json.dumps(previews, ensure_ascii=False), encoding='utf-8')
     print(f"Updated {previews_path} for '{book_name}' ({len(book_preview)} chapters).")
 
-def update_gallery_sections(repo_root, book_name, text, rows):
-    is_screenplay = ("DeathInTheGunj" in book_name) or ("Nolan" in book_name)
+def update_gallery_sections(repo_root, book_name, text, rows, title=None):
+    is_screenplay = is_screenplay_format(text) or ("DeathInTheGunj" in book_name) or ("Nolan" in book_name)
     if is_screenplay:
         spans = detect_screenplay_chapters(text)
     else:
@@ -576,10 +576,13 @@ def update_gallery_sections(repo_root, book_name, text, rows):
     existing_entry = sections_data.get(book_name, {})
     existing_sections = existing_entry.get("sections")
     if not existing_sections:
-        existing_sections = [{"title": book_name.upper(), "startRow": 0, "endRow": max(0, total_rows - 1)}]
+        existing_sections = []
+
+    display_title = (title or book_name).upper()
+    book_title = f"{display_title} (SCREENPLAY)" if is_screenplay and "(SCREENPLAY)" not in display_title else display_title
 
     sections_data[book_name] = {
-        "book": existing_sections[0]["title"],
+        "book": book_title,
         "sections": existing_sections,
         "chapters": chapters
     }
@@ -642,89 +645,13 @@ def generate_build_word_index_script(book_dir):
 # -*- coding: utf-8 -*-
 
 import argparse
-import json
-import csv
-import re
+import sys
 from pathlib import Path
 
-def detect_chapters(text):
-    pattern = re.compile(r'^\s*=\s*=\s*=\s*=\s*=\s*=\s*$', re.MULTILINE)
-    starts = [m.start() for m in pattern.finditer(text)]
-    if not starts:
-        return [(0, len(text), 0)]
-    if starts[0] > 0:
-        starts.insert(0, 0)
-    filtered_starts = []
-    for s in starts:
-        if not filtered_starts or (s - filtered_starts[-1] > 200):
-            filtered_starts.append(s)
-    spans = []
-    for i, s in enumerate(filtered_starts):
-        e = filtered_starts[i+1] if i+1 < len(filtered_starts) else len(text)
-        spans.append((s, e, i))
-    return spans
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
 
-def detect_paragraphs(text):
-    para_split = re.compile(r'(?:\r?\n){2,}|\r?\n(?=\s{4}|\t)|(?<=\n)(?=\s*=\s*=\s*=\s*=\s*=)')
-    spans = []
-    last = 0
-    for m in para_split.finditer(text):
-        if m.start() > last:
-            if text[last:m.start()].strip():
-                spans.append((last, m.start()))
-        last = m.end()
-    if last < len(text) and text[last:].strip():
-        spans.append((last, len(text)))
-    return spans
-
-def chapter_idx_for_position(spans, pos):
-    for s, e, ci in spans:
-        if s <= pos < e:
-            return ci
-    return spans[-1][2] if spans else 0
-
-def build_index(text, keep_hyphens=False):
-    if keep_hyphens:
-        word_pattern = re.compile(r"[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*")
-    else:
-        word_pattern = re.compile(r"[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?")
-
-    chapter_spans = detect_chapters(text)
-    para_spans = detect_paragraphs(text)
-
-    rows = []
-    wid = 0
-
-    for p_idx, (ps, pe) in enumerate(para_spans):
-        paragraph_text = text[ps:pe]
-        c_idx = chapter_idx_for_position(chapter_spans, ps)
-        for m in word_pattern.finditer(paragraph_text):
-            rows.append({
-                "word_idx": wid,
-                "start_char": ps + m.start(),
-                "word": m.group(0),
-                "paragraph_idx": p_idx,
-                "chapter_idx": c_idx
-            })
-            wid += 1
-    return rows
-
-def write_csv(rows, out_csv):
-    if not rows:
-        Path(out_csv).write_text("", encoding="utf-8")
-        return
-    with open(out_csv, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=["word_idx", "start_char", "word", "paragraph_idx", "chapter_idx"]
-        )
-        writer.writeheader()
-        for r in rows:
-            writer.writerow(r)
-
-def write_json(rows, out_json):
-    with open(out_json, "w", encoding="utf-8") as f:
-        json.dump(rows, f, ensure_ascii=False, indent=2)
+from scripts.process_book import build_index, write_csv, write_json
 
 def main():
     ap = argparse.ArgumentParser(
@@ -737,12 +664,26 @@ def main():
                     help="Treat hyphenated words as a single token")
     args = ap.parse_args()
 
-    text = Path(args.input_txt).read_text(encoding="utf-8", errors="ignore").replace("\\r\\n", "\\n").replace("\\r", "\\n")
-    rows = build_index(text, keep_hyphens=args.keep_hyphens)
-    write_csv(rows, args.csv)
-    write_json(rows, args.json)
+    book_dir = Path(__file__).resolve().parent
 
-    print(f"Done.\\nCSV : {args.csv}\\nJSON: {args.json}\\nWords indexed: {len(rows)}")
+    input_file = Path(args.input_txt)
+    if not input_file.is_absolute() and not input_file.exists():
+        input_file = book_dir / args.input_txt
+
+    csv_file = Path(args.csv)
+    if not csv_file.is_absolute() and len(csv_file.parts) == 1:
+        csv_file = input_file.parent / args.csv
+
+    json_file = Path(args.json)
+    if not json_file.is_absolute() and len(json_file.parts) == 1:
+        json_file = input_file.parent / args.json
+
+    text = input_file.read_text(encoding="utf-8", errors="ignore").replace("\r\n", "\n").replace("\r", "\n")
+    rows = build_index(text, keep_hyphens=args.keep_hyphens)
+    write_csv(rows, csv_file)
+    write_json(rows, json_file)
+
+    print(f"Done.\nCSV : {csv_file}\nJSON: {json_file}\nWords indexed: {len(rows)}")
 
 if __name__ == "__main__":
     main()
@@ -804,7 +745,7 @@ def process_book(book_dir_path, title=None, author=None, start_marker=None, end_
     verify_indices(book_dir, text, rows)
     update_gallery_previews(repo_root, book_name, text, rows)
     try:
-        update_gallery_sections(repo_root, book_name, text, rows)
+        update_gallery_sections(repo_root, book_name, text, rows, title=title)
     except Exception as e:
         print(f"Note: gallery sections update skipped ({e})")
 

@@ -1,13 +1,7 @@
 {
   "AliceInWonderland": {
     "book": "ALICE'S ADVENTURES IN WONDERLAND",
-    "sections": [
-      {
-        "title": "ALICE'S ADVENTURES IN WONDERLAND",
-        "startRow": 0,
-        "endRow": 8
-      }
-    ],
+    "sections": [],
     "chapters": [
       {
         "row": 0,
@@ -67,13 +61,7 @@
   },
   "DeathInTheGunj": {
     "book": "A DEATH IN THE GUNJ (SCREENPLAY)",
-    "sections": [
-      {
-        "title": "A DEATH IN THE GUNJ (SCREENPLAY)",
-        "startRow": 0,
-        "endRow": 11
-      }
-    ],
+    "sections": [],
     "chapters": [
       {
         "row": 0,
@@ -467,13 +455,7 @@
   },
   "HitchhikersGuide": {
     "book": "THE HITCHHIKER'S GUIDE TO THE GALAXY",
-    "sections": [
-      {
-        "title": "THE HITCHHIKER'S GUIDE TO THE GALAXY",
-        "startRow": 0,
-        "endRow": 29
-      }
-    ],
+    "sections": [],
     "chapters": [
       {
         "row": 0,
@@ -1089,13 +1071,7 @@
   },
   "MyNameIsRed": {
     "book": "MY NAME IS RED",
-    "sections": [
-      {
-        "title": "MY NAME IS RED",
-        "startRow": 0,
-        "endRow": 49
-      }
-    ],
+    "sections": [],
     "chapters": [
       {
         "row": 0,
@@ -1401,13 +1377,7 @@
   },
   "OscarAndLucinda": {
     "book": "OSCAR AND LUCINDA",
-    "sections": [
-      {
-        "title": "OSCAR AND LUCINDA",
-        "startRow": 0,
-        "endRow": 103
-      }
-    ],
+    "sections": [],
     "chapters": [
       {
         "row": 0,
@@ -2037,13 +2007,7 @@
   },
   "WizardOfOz": {
     "book": "THE WONDERFUL WIZARD OF OZ",
-    "sections": [
-      {
-        "title": "THE WONDERFUL WIZARD OF OZ",
-        "startRow": 0,
-        "endRow": 23
-      }
-    ],
+    "sections": [],
     "chapters": [
       {
         "row": 0,
@@ -2193,13 +2157,7 @@
   },
   "Namesake": {
     "book": "THE NAMESAKE",
-    "sections": [
-      {
-        "title": "THE NAMESAKE",
-        "startRow": 0,
-        "endRow": 11
-      }
-    ],
+    "sections": [],
     "chapters": [
       {
         "row": 0,
@@ -3271,13 +3229,7 @@
   },
   "The Odyssey - Nolan": {
     "book": "THE ODYSSEY - SCREENPLAY",
-    "sections": [
-      {
-        "title": "THE ODYSSEY - SCREENPLAY",
-        "startRow": 0,
-        "endRow": 12
-      }
-    ],
+    "sections": [],
     "chapters": [
       {
         "row": 0,
@@ -3356,6 +3308,84 @@
         "ci": 15,
         "short": "SEQ. 13",
         "label": "SCENE SEQUENCE 13"
+      }
+    ]
+  },
+  "BladeRunner": {
+    "book": "BLADE RUNNER (SCREENPLAY)",
+    "sections": [],
+    "chapters": [
+      {
+        "row": 0,
+        "ci": 0,
+        "short": "SEQ. 1",
+        "label": "SCENE SEQUENCE 1"
+      },
+      {
+        "row": 1,
+        "ci": 1,
+        "short": "SEQ. 2",
+        "label": "SCENE SEQUENCE 2"
+      },
+      {
+        "row": 2,
+        "ci": 2,
+        "short": "SEQ. 3",
+        "label": "SCENE SEQUENCE 3"
+      },
+      {
+        "row": 3,
+        "ci": 3,
+        "short": "SEQ. 4",
+        "label": "SCENE SEQUENCE 4"
+      },
+      {
+        "row": 4,
+        "ci": 4,
+        "short": "SEQ. 5",
+        "label": "SCENE SEQUENCE 5"
+      },
+      {
+        "row": 5,
+        "ci": 5,
+        "short": "SEQ. 6",
+        "label": "SCENE SEQUENCE 6"
+      },
+      {
+        "row": 6,
+        "ci": 6,
+        "short": "SEQ. 7",
+        "label": "SCENE SEQUENCE 7"
+      },
+      {
+        "row": 7,
+        "ci": 7,
+        "short": "SEQ. 8",
+        "label": "SCENE SEQUENCE 8"
+      },
+      {
+        "row": 8,
+        "ci": 8,
+        "short": "SEQ. 9",
+        "label": "SCENE SEQUENCE 9"
+      },
+      {
+        "row": 9,
+        "ci": 9,
+        "short": "SEQ. 10",
+        "label": "SCENE SEQUENCE 10"
+      },
+      {
+        "row": 10,
+        "ci": 10,
+        "short": "SEQ. 11",
+        "label": "SCENE SEQUENCE 11"
+      },
+      {
+        "row": 11,
+        "ci": 14,
+        "short": "SEQ. 12",
+        "label": "SCENE SEQUENCE 12"
       }
     ]
   }
