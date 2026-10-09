@@ -231,16 +231,10 @@
   .poster-author { font-size: 0.95rem; color: #64748b; margin: 0; font-style: italic }
   
   .poster-preview {
-    flex: 1; display: block; overflow: visible;
+    flex: 1; display: block; overflow: hidden;
     background: #ffffff; border: none;
     border-radius: 0; padding: 0; margin-bottom: 0;
     transition: all 0.3s ease;
-  }
-  .poster-preview svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
   }
 
   .poster-print-btn {
@@ -347,13 +341,7 @@
     <div class="gallery-hero">
       <h1>A Book By Its Color</h1>
       <p>A series visualising every color described in world-famous books and screenplays.<span id="caption-dots">... </span><button id="read-more-btn" class="read-more-btn">Read more</button><span id="caption-more" style="display: none;"> The posters here represent where colour words are found across the text. Each row is a chapter, sized by the length of text relative to the whole book/script. You'll find iconic color references like the 'Heart of Gold' in the Hitchhiker's Guide to the Galaxy, the 'White Rabbit' and 'Red Roses' in Alice in Wonderland and sand described all across Dune.</span></p>
-      <div class="hero-subcaption">
-        <span>Tap posters for colour references</span>
-        <a href="./gallery/" class="enter-3d-btn" style="margin-top: 0.6rem; display: inline-flex; align-items: center; gap: 0.5rem; background: var(--accent); color: #03223a; font-weight: 700; font-size: 0.88rem; padding: 0.45rem 1.2rem; border-radius: 999px; text-decoration: none; box-shadow: 0 4px 14px rgba(46, 160, 244, 0.35); transition: transform 0.2s ease;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          <span>Enter 3D Wall Gallery (/gallery)</span>
-        </a>
-      </div>
+      <div class="hero-subcaption">Tap posters for colour references</div>
     </div>
     <div class="gallery-grid">
       
@@ -1530,12 +1518,19 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
     svgEl.setAttribute('preserveAspectRatio', 'none');
     svgEl.style.display = 'block';
     
-    // Edge-to-edge styling (default preview margins are never changed!)
+    // Edge-to-edge (padX=0) or labeled margins (padX=14)
     const isLabelsOn = (labels === 'on');
-    const padX = 0, padY = 0;
+    const padX = isLabelsOn ? 14 : 0, padY = 0;
     const H = 300;
     const W = 200;
-    svgEl.style.overflow = 'visible';
+
+    if (isLabelsOn) {
+      const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bgRect.setAttribute('width', W.toString());
+      bgRect.setAttribute('height', H.toString());
+      bgRect.setAttribute('fill', '#ffffff');
+      svgEl.appendChild(bgRect);
+    }
     
     // Dynamically balance gaps and row heights according to chapter count
     const rowGap = Math.max(0.4, Math.min(2.0, 50 / C));
@@ -1694,27 +1689,29 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
     if (isLabelsOn) {
       const bookSecData = (cachedSectionsData && cachedSectionsData[bookKey]) || null;
       const chaptersList = (bookSecData && bookSecData.chapters) || [];
-      const sectionsList = (bookSecData && bookSecData.sections) || [];
-      const hasMultipleBooks = sectionsList.length > 1;
+      const sectionsList = (bookSecData && bookSecData.sections && bookSecData.sections.length > 0)
+        ? bookSecData.sections
+        : [
+            { title: (bookSecData && bookSecData.book) || bookKey.toUpperCase(), startRow: 0, endRow: Math.max(0, rowGeometries.length - 1) }
+          ];
 
       // --- Left Margin: Chapter numbers/names (Rotated -90 degrees) ---
       const leftGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       leftGroup.setAttribute('class', 'poster-labels-left');
 
-      const charW = 1.8;
-      const minGapY = 2.4;
+      const charW = 1.95;
+      const minGapY = 2.5;
       let lastLeftYEnd = -Infinity;
 
       rowGeometries.forEach((row, rIdx) => {
         const chInfo = chaptersList[rIdx] || { short: `CH. ${rIdx + 1}`, label: `CH. ${rIdx + 1}` };
         const centerY = row.y + row.h / 2;
-        const dotY = row.y + Math.min(row.h / 2, 2.2);
 
-        let candidateText = (chInfo.label && chInfo.label.length < 28 && row.h > 10)
+        let candidateText = (chInfo.label && chInfo.label.length < 32 && row.h > 12)
           ? chInfo.label
           : chInfo.short;
 
-        const maxSpan = Math.max(row.h * 1.5, 7);
+        const maxSpan = Math.max(row.h * 1.6, 8);
         const maxChars = Math.max(3, Math.floor(maxSpan / charW));
 
         if (candidateText.length > maxChars) {
@@ -1729,28 +1726,20 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
         const yStart = centerY - textLen / 2;
         const yEnd = centerY + textLen / 2;
 
-        if (yStart < lastLeftYEnd + minGapY || yStart < 2 || yEnd > H - 2) return;
+        if (yStart < lastLeftYEnd + minGapY) return;
+        if (yStart < 2 || yEnd > H - 2) return;
 
-        // Dot indicating the start of a book chapter in the margin alongside the starting chapter row
-        const dotEl = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        dotEl.setAttribute('cx', '-2.2');
-        dotEl.setAttribute('cy', dotY.toFixed(2));
-        dotEl.setAttribute('r', '0.8');
-        dotEl.setAttribute('fill', '#9ca3af');
-        leftGroup.appendChild(dotEl);
-
-        // Chapter label text in the available left white margin
         const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        textEl.setAttribute('x', '-5.8');
+        textEl.setAttribute('x', '7');
         textEl.setAttribute('y', centerY.toFixed(2));
-        textEl.setAttribute('transform', `rotate(-90, -5.8, ${centerY.toFixed(2)})`);
+        textEl.setAttribute('transform', `rotate(-90, 7, ${centerY.toFixed(2)})`);
         textEl.setAttribute('text-anchor', 'middle');
         textEl.setAttribute('dominant-baseline', 'central');
         textEl.setAttribute('font-family', "'JetBrains Mono', monospace");
-        textEl.setAttribute('font-size', '2.8');
+        textEl.setAttribute('font-size', '3.2');
         textEl.setAttribute('font-weight', '500');
         textEl.setAttribute('fill', '#9ca3af');
-        textEl.setAttribute('letter-spacing', '0.35');
+        textEl.setAttribute('letter-spacing', '0.4');
         textEl.textContent = candidateText.toUpperCase();
 
         leftGroup.appendChild(textEl);
@@ -1759,64 +1748,48 @@ function renderGalleryPreviews(data, minimalismOpt, stripsOpt, roundingOpt, minw
       svgEl.appendChild(leftGroup);
 
       // --- Right Margin: Book/part information (Rotated 90 degrees) ---
-      // Only display book labels on the right if the poster covers multiple books
-      if (hasMultipleBooks) {
-        const rightGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        rightGroup.setAttribute('class', 'poster-labels-right');
+      const rightGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      rightGroup.setAttribute('class', 'poster-labels-right');
 
-        sectionsList.forEach(sec => {
-          const sRow = Math.max(0, Math.min(sec.startRow, rowGeometries.length - 1));
-          const eRow = Math.max(sRow, Math.min(sec.endRow, rowGeometries.length - 1));
-          const startRow = rowGeometries[sRow];
-          const dotY = startRow.y + Math.min(startRow.h / 2, 2.2);
+      sectionsList.forEach(sec => {
+        const sRow = Math.max(0, Math.min(sec.startRow, rowGeometries.length - 1));
+        const eRow = Math.max(sRow, Math.min(sec.endRow, rowGeometries.length - 1));
 
-          const yTop = rowGeometries[sRow].y;
-          const yBottom = rowGeometries[eRow].y + rowGeometries[eRow].h;
-          const spanH = yBottom - yTop;
-          const centerY = (yTop + yBottom) / 2;
+        const yTop = rowGeometries[sRow].y;
+        const yBottom = rowGeometries[eRow].y + rowGeometries[eRow].h;
+        const spanH = yBottom - yTop;
+        const centerY = (yTop + yBottom) / 2;
 
-          // Dot indicating the start of a book section in the margin alongside its starting chapter row
-          if (dotY >= 2 && dotY <= H - 2) {
-            const dotEl = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            dotEl.setAttribute('cx', '202.2');
-            dotEl.setAttribute('cy', dotY.toFixed(2));
-            dotEl.setAttribute('r', '0.9');
-            dotEl.setAttribute('fill', '#9ca3af');
-            rightGroup.appendChild(dotEl);
+        const rawTitle = sec.title.toUpperCase();
+        const maxChars = Math.max(3, Math.floor((spanH - 4) / charW));
+        let displayTitle = rawTitle;
+
+        if (displayTitle.length > maxChars) {
+          if (maxChars >= 6) {
+            displayTitle = displayTitle.slice(0, maxChars - 1).trim() + '…';
+          } else if (maxChars >= 3) {
+            displayTitle = displayTitle.slice(0, maxChars);
+          } else {
+            return;
           }
+        }
 
-          const rawTitle = sec.title.toUpperCase();
-          const maxChars = Math.max(3, Math.floor((spanH - 4) / charW));
-          let displayTitle = rawTitle;
+        const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        textEl.setAttribute('x', '193');
+        textEl.setAttribute('y', centerY.toFixed(2));
+        textEl.setAttribute('transform', `rotate(90, 193, ${centerY.toFixed(2)})`);
+        textEl.setAttribute('text-anchor', 'middle');
+        textEl.setAttribute('dominant-baseline', 'central');
+        textEl.setAttribute('font-family', "'JetBrains Mono', monospace");
+        textEl.setAttribute('font-size', '3.3');
+        textEl.setAttribute('font-weight', '600');
+        textEl.setAttribute('fill', '#9ca3af');
+        textEl.setAttribute('letter-spacing', '0.5');
+        textEl.textContent = displayTitle;
 
-          if (displayTitle.length > maxChars) {
-            if (maxChars >= 6) {
-              displayTitle = displayTitle.slice(0, maxChars - 1).trim() + '…';
-            } else if (maxChars >= 3) {
-              displayTitle = displayTitle.slice(0, maxChars);
-            } else {
-              return;
-            }
-          }
-
-          // Book title in the available right white margin
-          const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          textEl.setAttribute('x', '205.8');
-          textEl.setAttribute('y', centerY.toFixed(2));
-          textEl.setAttribute('transform', `rotate(90, 205.8, ${centerY.toFixed(2)})`);
-          textEl.setAttribute('text-anchor', 'middle');
-          textEl.setAttribute('dominant-baseline', 'central');
-          textEl.setAttribute('font-family', "'JetBrains Mono', monospace");
-          textEl.setAttribute('font-size', '2.9');
-          textEl.setAttribute('font-weight', '600');
-          textEl.setAttribute('fill', '#9ca3af');
-          textEl.setAttribute('letter-spacing', '0.45');
-          textEl.textContent = displayTitle;
-
-          rightGroup.appendChild(textEl);
-        });
-        svgEl.appendChild(rightGroup);
-      }
+        rightGroup.appendChild(textEl);
+      });
+      svgEl.appendChild(rightGroup);
     }
     
     previewContainer.appendChild(svgEl);
